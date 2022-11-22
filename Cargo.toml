@@ -1,0 +1,20 @@
+[package]
+name = "tsdownsample_rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jeroen Van Der Donckt"]
+description = "Python bindings for time series downsampling algorithms"
+repository = "https://github.com/predict-idlab/tsdownsample"
+license = "MIT"
+
+
+[dependencies]
+downsample_rs = { path = "downsample_rs", features = ["half"]}
+pyo3 = { version = "0.17.2", features = ["extension-module"] }
+numpy = { git = "https://github.com/PyO3/rust-numpy", features = ["half"] }  # Replace this once new release is done
+half = { version = "2.1", default-features = false }
+paste = { version = "1.0.9", default-features = false }
+
+[lib]
+name = "tsdownsample_rs"
+crate-type = ["cdylib"]

@@ -1,0 +1,32 @@
+[package]
+name = "downsample_rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jeroen Van Der Donckt"]
+description = "Downsample time series data"
+license = "MIT"
+
+[dependencies]
+ndarray = {version = "0.15.6", default-features = false, features = ["rayon"] }
+argminmax = { version = "0.2" , features = ["half"] }
+half = { version = "2.1", default-features = false , optional = true}
+
+[dev-dependencies]
+criterion = "0.3.0"
+dev_utils = { path = "dev_utils" }
+
+[[bench]]
+name = "bench_m4"
+harness = false
+
+[[bench]]
+name = "bench_minmax"
+harness = false
+
+[[bench]]
+name = "bench_lttb"
+harness = false
+
+[[bench]]
+name = "bench_minmaxlttb"
+harness = false

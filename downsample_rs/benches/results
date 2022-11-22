@@ -1,0 +1,89 @@
+overlap_random_long_f32 time:   [45.116 µs 45.175 µs 45.255 µs]
+simple_random_long_f32  time:   [24.639 µs 24.711 µs 24.793 µs]
+simd_random_long_f32    time:   [10.549 µs 10.580 µs 10.615 µs]
+
+---
+
+overlap_random_long_f32 time:   [8.9179 ms 8.9405 ms 8.9688 ms]
+simple_random_long_f32  time:   [7.9809 ms 8.0065 ms 8.0416 ms]
+simd_random_long_f32    time:   [2.4118 ms 2.4177 ms 2.4242 ms]
+
+
+overlap_random_long_f32 time:   [45.010 µs 45.040 µs 45.071 µs]
+simple_random_long_f32  time:   [22.929 µs 22.979 µs 23.036 µs]
+simd_random_long_f32    time:   [9.8801 µs 9.8925 µs 9.9034 µs]
+overlap_random_10m_f32  time:   [9.0349 ms 9.0440 ms 9.0537 ms]
+simple_random_10m_f32   time:   [7.7164 ms 7.7322 ms 7.7481 ms]
+simd_random_10m_f32     time:   [2.4348 ms 2.4424 ms 2.4505 ms]
+
+-> parallel
+
+overlap_random_long_f32 time:   [17.514 µs 17.711 µs 17.960 µs]
+simple_random_long_f32  time:   [6.9441 µs 6.9717 µs 7.0060 µs]
+simd_random_long_f32    time:   [33.948 µs 34.284 µs 34.674 µs]
+overlap_random_10m_f32  time:   [8.9596 ms 8.9664 ms 8.9736 ms]
+simple_random_10m_f32   time:   [8.4142 ms 8.4373 ms 8.4582 ms]
+simd_random_10m_f32     time:   [1.5374 ms 1.5640 ms 1.5931 ms]
+
+
+overlap_rand_long_f32   time:   [17.789 µs 17.953 µs 18.180 µs]
+simple_rand_long_f32    time:   [6.8148 µs 6.8297 µs 6.8479 µs]
+simd_rand_long_f32      time:   [9.5135 µs 9.5796 µs 9.6567 µs]
+simple_p_rand_long_f32  time:   [34.526 µs 35.000 µs 35.524 µs]
+simd_p_rand_long_f32    time:   [35.538 µs 36.052 µs 36.584 µs]
+overlap_rand_50m_f32    time:   [44.472 ms 44.533 ms 44.594 ms]
+simple_rand_50m_f32     time:   [45.433 ms 45.514 ms 45.589 ms]
+simd_rand_50m_f32       time:   [15.185 ms 15.221 ms 15.263 ms]
+simple_p_rand_50m_f32   time:   [6.8875 ms 6.9377 ms 6.9899 ms]
+simd_p_rand_50m_f32     time:   [7.2611 ms 7.2999 ms 7.3410 ms]
+
+
+
+overlap_rand_50m_f32    time:   [260.86 ms 262.64 ms 264.74 ms]
+simple_rand_50m_f32     time:   [97.680 ms 98.330 ms 99.087 ms]
+simple_rand__50m_f32    time:   [97.766 ms 98.251 ms 98.774 ms]
+simd_rand_50m_f32       time:   [39.015 ms 39.545 ms 40.096 ms]
+
+overlap_rand_50m_f32    time:   [87.381 ms 87.739 ms 88.166 ms]
+simple_rand_50m_f32     time:   [35.099 ms 35.327 ms 35.573 ms]
+simple_rand__50m_f32    time:   [35.639 ms 35.858 ms 36.104 ms]
+simd_rand_50m_f32       time:   [16.300 ms 16.498 ms 16.710 ms]
+
+-> op de redoxv2 server
+overlap_rand_50m_f32    time:   [118.54 ms 118.67 ms 118.80 ms]
+simple_rand_50m_f32     time:   [55.846 ms 56.661 ms 57.730 ms]
+simple_p_rand_50m_f32   time:   [5.8644 ms 5.8852 ms 5.9127 ms]
+
+
+----
+mmlttb_rand_10m_f32     time:   [25.205 ms 25.450 ms 25.754 ms]
+mmlttb_p_rand_10m_f32   time:   [25.090 ms 25.283 ms 25.498 ms]
+mmlttb_rand_50m_f32     time:   [41.006 ms 41.430 ms 41.892 ms]
+mmlttb_p_rand_50m_f32   time:   [39.729 ms 40.115 ms 40.730 ms]
+
+
+simple_rand_50m_f32     time:   [36.226 ms 37.007 ms 37.984 ms]
+simd_rand_50m_f32       time:   [17.323 ms 17.350 ms 17.378 ms]
+simple_p_rand_50m_f32   time:   [10.506 ms 10.529 ms 10.553 ms]
+simd_p_rand_50m_f32     time:   [10.102 ms 10.126 ms 10.154 ms]
+
+mmltb_rand_50mf32       time:   [48.331 ms 48.417 ms 48.514 ms]
+mmltb_p_rand_50mf32     time:   [8.9456 ms 8.9841 ms 9.0265 ms]
+mmltb_nox_rand_50mf32   time:   [47.381 ms 47.446 ms 47.527 ms]
+mmltb_p_nox_rand_50mf32 time:   [8.6851 ms 8.7108 ms 8.7373 ms]
+
+
+mmltb_rand_1Bf32        time:   [844.96 ms 846.33 ms 847.83 ms]
+mmltb_p_rand_1Bf32      time:   [151.16 ms 151.48 ms 151.85 ms]
+mmltb_nox_rand_1Bf32    time:   [842.46 ms 843.47 ms 844.56 ms]
+mmltb_p_nox_rand_1Bf32  time:   [150.72 ms 151.04 ms 151.40 ms]
+--> do not wrap the simple_argminmax into an option function
+mmltb_rand_1Bf32        time:   [846.90 ms 848.46 ms 850.11 ms]
+mmltb_p_rand_1Bf32      time:   [147.21 ms 147.99 ms 148.90 ms]
+mmltb_nox_rand_1Bf32    time:   [843.30 ms 844.33 ms 845.55 ms]
+mmltb_p_nox_rand_1Bf32  time:   [147.32 ms 148.14 ms 149.07 ms]
+---> optimize the simple_argminmax function
+mmltb_rand_1Bf32        time:   [786.27 ms 786.83 ms 787.45 ms]
+mmltb_p_rand_1Bf32      time:   [138.83 ms 139.19 ms 139.58 ms]
+mmltb_nox_rand_1Bf32    time:   [785.77 ms 786.92 ms 788.46 ms]
+mmltb_p_nox_rand_1Bf32  time:   [138.14 ms 138.42 ms 138.73 ms]
