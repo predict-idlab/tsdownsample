@@ -1,7 +1,6 @@
 extern crate downsample_rs;
 extern crate paste;
 
-
 // TODO
 // - support bool
 //      => issue: does not have to_primitive (necessary for lttb)
@@ -39,22 +38,21 @@ macro_rules! _create_pyfunc_without_x {
         }
         // Add the function to the module
         $mod.add_wrapped(wrap_pyfunction!($name))?;
-    }; 
-    // ($name:ident, $resample_mod:ident, $resample_fn:ident, $type:ty, $mod:ident, $cast_type:ty) => {
-    //     // Create the Python function
-    //     #[pyfunction]
-    //     fn $name<'py>(
-    //         py: Python<'py>,
-    //         y: PyReadonlyArray1<$type>,
-    //         n_out: usize,
-    //     ) -> &'py PyArray1<usize> {
-    //         let y = y.as_array().mapv(|v| v as $cast_type);
-    //         let sampled_indices = $resample_mod::$resample_fn(y.view(), n_out);
-    //         sampled_indices.into_pyarray(py)
-    //     }
-    //     // Add the function to the module
-    //     $mod.add_wrapped(wrap_pyfunction!($name))?;
-    // };
+    }; // ($name:ident, $resample_mod:ident, $resample_fn:ident, $type:ty, $mod:ident, $cast_type:ty) => {
+       //     // Create the Python function
+       //     #[pyfunction]
+       //     fn $name<'py>(
+       //         py: Python<'py>,
+       //         y: PyReadonlyArray1<$type>,
+       //         n_out: usize,
+       //     ) -> &'py PyArray1<usize> {
+       //         let y = y.as_array().mapv(|v| v as $cast_type);
+       //         let sampled_indices = $resample_mod::$resample_fn(y.view(), n_out);
+       //         sampled_indices.into_pyarray(py)
+       //     }
+       //     // Add the function to the module
+       //     $mod.add_wrapped(wrap_pyfunction!($name))?;
+       // };
 }
 
 macro_rules! _create_pyfuncs_without_x {
@@ -62,7 +60,7 @@ macro_rules! _create_pyfuncs_without_x {
         $(
             paste! {
                 _create_pyfunc_without_x!([<downsample_ $t>], $resample_mod, $resample_fn, $t, $mod);
-            }    
+            }
         )*
     };
 }
@@ -99,7 +97,7 @@ macro_rules! _create_pyfuncs_with_x {
         $(
             paste! {
                 _create_pyfunc_with_x!([<downsample_ $tx _ $ty>], $resample_mod, $resample_fn, $tx, $ty, $mod);
-            }    
+            }
         )*
     };
 }
