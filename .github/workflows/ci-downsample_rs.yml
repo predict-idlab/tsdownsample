@@ -1,0 +1,151 @@
+name: CI downsample_rs
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+    working-directory: downsample_rs
+
+jobs:
+  Check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: clippy, rustfmt
+      - name: Setup Rust
+        run: |
+          rustup update nightly --no-self-update
+          rustup default nightly
+
+      - name: Rust toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+          cargo clippy --version
+          cargo fmt --version
+      
+      - name: check no optional features
+        run: cargo check --verbose
+      - name: check with all features
+        run: cargo check --verbose --all-features
+      - name: formatting check
+        run: cargo fmt --all -- --check
+      # TODO: enable clippy once I write docs for all public items
+      # - name: check with clippy
+      #   run: cargo clippy --all --all-targets --all-features -- -D warnings
+
+  Test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['windows-latest', 'macOS-latest', 'ubuntu-latest']
+        rust: ['nightly']  # ['stable', 'beta']
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+      - name: Setup Rust
+        run: |
+          rustup update nightly --no-self-update
+          rustup default nightly
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v1
+      
+      - name: Run tests (debug)
+        run: cargo test --verbose --all-features
+      - name: Run tests (release)
+        run: cargo test --verbose --all-features --release
+  
+  Bench:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']  # ['windows-latest', 'macOS-latest']
+        rust: ['nightly']  # ['stable', 'beta']
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+      - name: Setup Rust
+        run: |
+          rustup update nightly --no-self-update
+          rustup default nightly
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@v1
+      
+      - name: Run benchmarks
+        run: cargo bench --quiet --message-format=short  --all-features | grep "time:"
+  
+  Build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # We shouldn't really have any OS-specific code, so think of this as a list of architectures
+          - x86_64-unknown-linux-gnu
+          - i686-unknown-linux-gnu
+          - i586-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - armv7-unknown-linux-gnueabihf
+          - mips-unknown-linux-gnu
+          - mips64-unknown-linux-gnuabi64
+          - powerpc-unknown-linux-gnu
+          - powerpc64-unknown-linux-gnu
+          - riscv64gc-unknown-linux-gnu
+          - s390x-unknown-linux-gnu
+          - sparc64-unknown-linux-gnu
+          - wasm32-unknown-unknown
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Rust
+        run: |
+          rustup update nightly --no-self-update
+          rustup default nightly
+          rustup target add ${{ matrix.target }}
+          # rustup component add clippy
+      # - name: Run Clippy
+        # run: cargo clippy --all-targets --target ${{ matrix.target }}
+      - name: Build (release)
+        run: cargo build --target ${{ matrix.target }} --release --all-features
+
+
+      # - name: Run cargo-tarpaulin
+      #   uses: actions-rs/tarpaulin@v0.1
+      #   with:
+      #     args: '--features half -- --test-threads 1'
+
+      # - name: Upload to codecov.io
+      #   uses: codecov/codecov-action@v3
+
+
+# largely inspired by: https://github.com/rust-lang/portable-simd/blob/master/.github/workflows/ci.yml
