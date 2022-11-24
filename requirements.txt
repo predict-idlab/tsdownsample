@@ -1,0 +1,5 @@
+setuptools-rust
+setuptools
+wheel
+numpy
+pandas
