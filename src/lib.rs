@@ -122,7 +122,7 @@ use downsample_rs::minmax as minmax_mod;
 
 // Create a sub module for the minmax algorithm
 #[pymodule]
-fn min_max(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // ----------------- SCALAR
 
     let scalar_mod = PyModule::new(_py, "scalar")?;
@@ -320,7 +320,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
 #[pymodule] // The super module
 fn tsdownsample_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pymodule!(min_max))?;
+    m.add_wrapped(wrap_pymodule!(minmax))?;
     m.add_wrapped(wrap_pymodule!(m4))?;
     m.add_wrapped(wrap_pymodule!(lttb))?;
     m.add_wrapped(wrap_pymodule!(minmaxlttb))?;
@@ -328,7 +328,7 @@ fn tsdownsample_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     _py.run(
         "\
 import sys
-sys.modules['tsdownsample_rs.min_max'] = min_max
+sys.modules['tsdownsample_rs.minmax'] = minmax
 sys.modules['tsdownsample_rs.m4'] = m4
 sys.modules['tsdownsample_rs.lttb'] = lttb
 sys.modules['tsdownsample_rs.minmaxlttb'] = minmaxlttb

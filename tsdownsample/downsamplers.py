@@ -1,13 +1,30 @@
+# ------------------ Rust Downsamplers ------------------
 import tsdownsample._rust.tsdownsample_rs as tsdownsample_rs
 from .downsampling_interface import RustDownsamplingInterface
 
-# ------------------ Rust Downsamplers ------------------
+MinMaxDownsampler = RustDownsamplingInterface("MinMax", tsdownsample_rs.minmax)
+M4Downsampler = RustDownsamplingInterface("M4", tsdownsample_rs.m4)
+LTTBDownsampler = RustDownsamplingInterface("LTTB", tsdownsample_rs.lttb)
+MinMaxLTTBDownsampler = RustDownsamplingInterface("MinMaxLTTB", tsdownsample_rs.minmaxlttb)
 
-MinMaxDownsampler = RustDownsamplingInterface(tsdownsample_rs.minmax)
-M4Downsampler = RustDownsamplingInterface(tsdownsample_rs.m4)
-LTTBDownsampler = RustDownsamplingInterface(tsdownsample_rs.lttb)
-MinMaxLTTBDownsampler = RustDownsamplingInterface(tsdownsample_rs.minmax_lttb)
+# ------------------ Function Downsamplers ------------------
+import numpy as np
+from .downsampling_interface import FuncDownsamplingInterface
 
-# ------------------ Python Downsamplers ------------------
+MeanDownsampler = FuncDownsamplingInterface("Mean", np.mean)
+MedianDownsampler = FuncDownsamplingInterface("Median", np.median)
 
-MeanDownsampler = PythonDownsamplingInterface(np.mean)
+# ------------------ EveryNth Downsampler ------------------
+import math
+import pandas as pd
+from .downsampling_interface import DownsampleInterface
+
+class _EveryNthDownsampler(DownsampleInterface):
+
+    def __init__(self) -> None:
+        super().__init__(f"EveryNth")
+    
+    def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series:
+        return s[:: max(1, math.ceil(len(s) / n_out))]
+
+EveryNthDownsampler = _EveryNthDownsampler()

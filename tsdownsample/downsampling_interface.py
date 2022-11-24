@@ -9,8 +9,8 @@ DOWNSAMPLE_F = 'downsample'
 
 class DownsampleInterface(ABC):
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, name: str) -> None:
+        self.name = name
 
     @staticmethod
     def _construct_output_series(s: pd.Series, idxs: np.ndarray) -> pd.Series:
@@ -29,7 +29,7 @@ class DownsampleInterface(ABC):
             f"{s.dtype} doesn't match with any regex in {self.dtype_regex_list}"
         )
 
-    def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series
+    def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series:
         """Downsample a pandas series to n_out samples.
 
         Parameters
@@ -47,6 +47,9 @@ class DownsampleInterface(ABC):
             The downsampled series.
         """
         raise NotImplementedError
+    
+    def __repr__(self) -> str:
+        return f"{self.name}"
 
 # ------------------- Rust Downsample Interface -------------------
 
@@ -59,14 +62,14 @@ def _switch_mod_with_y(y_dtype: np.dtype, mod: ModuleType, downsample_func: str 
     ----------
     y_dtype : np.dtype
         The dtype of the y-data
-    mod : Module
+    mod : ModuleType
         The module to select the appropriate function from
     downsample_func : str, optional
         The name of the function to use, by default DOWNSAMPLE_FUNC.
     """
     # FLOATS
     if np.issubdtype(y_dtype, np.floating):
-        if y.dtype == np.float16:
+        if y_dtype == np.float16:
             return getattr(mod, downsample_func + '_f16')
         elif y_dtype == np.float32:
             return getattr(mod, downsample_func + '_f32')
@@ -105,33 +108,33 @@ def _switch_mod_with_x_and_y(x_dtype: np.dtype, y_dtype: np.dtype, mod: ModuleTy
         The dtype of the x-data
     y_dtype : np.dtype
         The dtype of the y-data
-    mod : Module
+    mod : ModuleType
         The module to select the appropriate function from
     """
     # FLOATS
     if np.issubdtype(x_dtype, np.floating):
         if x_dtype == np.float16:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_f16')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_f16')
         elif x_dtype == np.float32:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_f32')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_f32')
         elif x_dtype == np.float64:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_f64')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_f64')
     # INTS
     elif np.issubdtype(x_dtype, np.integer):
         if x_dtype == np.int16:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_i16')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_i16')
         elif x_dtype == np.int32:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_i32')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_i32')
         elif x_dtype == np.int64:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_i64')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_i64')
     # UINTS
     elif np.issubdtype(x_dtype, np.unsignedinteger):
         if x_dtype == np.uint16:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_u16')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_u16')
         elif x_dtype == np.uint32:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_u32')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_u32')
         elif x_dtype == np.uint64:
-            return switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_u64')
+            return _switch_mod_with_y(y_dtype, mod, f'{DOWNSAMPLE_F}_u64')
     # BOOLS
     # TODO: support bools
     # elif data_dtype == np.bool:
@@ -140,14 +143,25 @@ def _switch_mod_with_x_and_y(x_dtype: np.dtype, y_dtype: np.dtype, mod: ModuleTy
 
 class RustDownsamplingInterface(DownsampleInterface):
 
-    def __init__(self, resampling_mod: Module) -> None:
-        self._mod = resampling_mod
-        if hasattr(self.mod, 'simd'):
-            self.mod_single_core = self._mod.simd
-            self.mod_multi_core = self._mod.simd_parallel
-        else:
-            self.mod_single_core = self._mod.scalar
-            self.mod_multi_core = self._mod.scalar_parallel
+    def __init__(self, name: str, resampling_mod: ModuleType) -> None:
+        super().__init__(name + " [tsdownsample_rs]")
+        self.rust_mod = resampling_mod
+
+        # Store the single core sub module
+        self.mod_single_core = self.rust_mod.scalar
+        if hasattr(self.rust_mod, "simd"):
+            # use SIMD implementation if available
+            self.mod_single_core = self.rust_mod.simd
+
+        # Store the multi-core sub module (if present)
+        self.mod_multi_core = None  # no multi-core implementation (default)
+        if hasattr(self.rust_mod, "simd_parallel"):
+            # use SIMD implementation if available
+            self.mod_multi_core = self.rust_mod.simd_parallel
+        elif hasattr(self.rust_mod, "scalar_parallel"):
+            # use scalar implementation if available (when no SIMD available)
+            self.mod_multi_core = self.rust_mod.scalar_parallel
+        
         
     def _downsample_without_x(self, s: pd.Series, n_out: int) -> pd.Series:
         downsample_method = _switch_mod_with_y(s.dtype, self.mod_single_core)
@@ -170,7 +184,10 @@ class RustDownsamplingInterface(DownsampleInterface):
         return self._construct_output_series(s, idxs)
 
     def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series:
-        if s.index.freq is None:  # TODO: or the other way around??
+        fixed_sr = False
+        if isinstance(s.index, pd.RangeIndex) or s.index.freq is not None:
+            fixed_sr = True
+        if fixed_sr:  # TODO: or the other way around??
             if parallel:
                 return self._downsample_without_x_parallel(s, n_out)
             else:
@@ -183,10 +200,39 @@ class RustDownsamplingInterface(DownsampleInterface):
 
 # ------------------ Numpy Downsample Interface ------------------ 
 
-class NumpyDownsamplingInterface():
+class FuncDownsamplingInterface(DownsampleInterface):
 
-    def __init__(self, resampling_func: Callable) -> None:
-        self._func = resampling_func
+    def __init__(self, name: str, downsample_func: Callable) -> None:
+        super().__init__("[Func]_" + name)
+        self.downsample_func = downsample_func
 
     def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series:
-        
+        if isinstance(s.index, pd.DatetimeIndex):
+            t_start, t_end = s.index[:: len(s) - 1]
+            rate = (t_end - t_start) / n_out
+            return s.resample(rate).apply(self.downsample_func).dropna()
+
+        # no time index -> use the every nth heuristic
+        group_size = max(1, np.ceil(len(s) / n_out))
+        s_out = (
+            s.groupby(
+                # create an array of [0, 0, 0, ...., n_out, n_out]
+                # where each value is repeated based $len(s)/n_out$ times
+                by=np.repeat(np.arange(n_out), group_size)[: len(s)]
+            )
+            .agg(self.downsample_func)
+            .dropna()
+        )
+        # Create an index-estimation for real-time data
+        # Add one to the index so it's pointed at the end of the window
+        # Note: this can be adjusted to .5 to center the data
+        # Multiply it with the group size to get the real index-position
+        # TODO: add option to select start / middle / end as index
+        idx_locs = (np.arange(len(s_out)) + 1) * group_size
+        idx_locs[-1] = len(s) - 1
+        return pd.Series(
+            index=s.iloc[idx_locs.astype(s.index.dtype)].index.astype(s.index.dtype),
+            data=s_out.values,
+            name=str(s.name),
+            copy=False,
+        )

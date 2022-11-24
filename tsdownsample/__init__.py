@@ -1,4 +1,4 @@
-MinMaxAggregator = RustDownsamplingInterface(resampling_rs.minmax)
-M4Aggregator = RustDownsamplingInterface(resampling_rs.m4)
-LTTBAggregator = RustDownsamplingInterface(resampling_rs.lttb)
-MinMaxLTTBAggregator = RustDownsamplingInterface(resampling_rs.minmax_lttb)
+__version__ = "0.1.0a1"
+__author__ = "Jeroen Van Der Donckt"
+
+from .downsamplers import *

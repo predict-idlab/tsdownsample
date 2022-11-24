@@ -104,6 +104,7 @@ pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
         let avg_y: f64 = avg_y.to_f64() / (avg_range_end - avg_range_start) as f64;
+        let avg_x: f64 = (avg_range_start + avg_range_end - 1) as f64 / 2.0;
 
         // Get the range for this bucket
         let range_offs = (every * i as f64) as usize + 1;
@@ -111,11 +112,14 @@ pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
 
         // Point a
         let point_ay = y[a].to_f64();
+        let point_ax = a as f64;
 
         let mut max_area = -1.0;
         for i in range_offs..range_to {
             // Calculate triangle area over three buckets
-            let area = ((y[i].to_f64() - point_ay) - (avg_y - point_ay)).abs();
+            let area = ((point_ax - avg_x) * (y[i].to_f64() - point_ay)
+                - (point_ax - i as f64) * (avg_y - point_ay))
+                .abs();
             if area > max_area {
                 max_area = area;
                 a = i;
@@ -167,13 +171,9 @@ mod tests {
             let n = 5_000;
             let x: Array1<i32> = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
             let y = utils::get_random_array(n, f32::MIN, f32::MAX);
-            let sampled_indices = lttb(x.view(), y.view(), 200);
+            let sampled_indices1 = lttb(x.view(), y.view(), 200);
             let sampled_indices2 = lttb_without_x(y.view(), 200);
-            // TODO: for some reason the second last point is off..
-            assert_eq!(
-                sampled_indices.slice(s![0..198]),
-                sampled_indices2.slice(s![0..198])
-            );
+            assert_eq!(sampled_indices1, sampled_indices2);
         }
     }
 }
