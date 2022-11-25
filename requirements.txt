@@ -1,5 +1,4 @@
-setuptools-rust
-setuptools
-wheel
 numpy
 pandas
+# Build dependencies
+setuptools_rust
