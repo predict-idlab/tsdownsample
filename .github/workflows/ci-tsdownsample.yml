@@ -86,6 +86,7 @@ jobs:
         uses: codecov/codecov-action@v3
 
   Build:
+  # Perhaps smth more in line with this https://github.com/messense/crfs-rs/blob/main/.github/workflows/Python.yml
     name: build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
     # only run on push to main and on release
     # if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build'))"
@@ -144,13 +145,13 @@ jobs:
 
     - name: build sdist
       if: ${{ matrix.os == 'ubuntu' && matrix.target == 'x86_64' && matrix.manylinux == 'auto' }}
-      uses: messense/maturin-action@v1
+      uses: PyO3/maturin-action@v1
       with:
         command: sdist
         args: --out dist
 
     - name: build wheels
-      uses: messense/maturin-action@v1
+      uses: PyO3/maturin-action@v1
       with:
         rust-toolchain: nightly
         target: ${{ matrix.target }}
@@ -164,5 +165,34 @@ jobs:
       with:
         name: pypi_files
         path: dist
+
+  Release:
+    needs: [Lint_and_Check, Test, Build]
+    # if: "success() && startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      # with:
+        # python-version: '3.10'
+
+    - run: pip install -U twine
+
+    - name: get dist artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: pypi_files
+        path: dist
+
+    - run: twine check dist/*
+
+    - name: upload to pypi
+      run: twine upload dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.pypi_token }}
 
 # https://github.com/samuelcolvin/rtoml/blob/main/.github/workflows/ci.yml
