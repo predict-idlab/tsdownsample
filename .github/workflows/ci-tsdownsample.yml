@@ -152,6 +152,7 @@ jobs:
     - name: build wheels
       uses: messense/maturin-action@v1
       with:
+        rusttoolchain: nightly
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux || 'auto' }}
         container: ${{ matrix.container }}
