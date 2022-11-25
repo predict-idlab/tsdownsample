@@ -73,7 +73,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: install develop version
-      - run: make install
+        run: make install
       # python setup.py develop
         
       - run: pip install -r tests/requirements.txt
