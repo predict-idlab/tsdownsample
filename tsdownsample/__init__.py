@@ -1,1 +1,4 @@
-import tsdownample_rs as _tsdownsample_rs
+__version__ = "0.1.0a1"
+__author__ = "Jeroen Van Der Donckt"
+
+from .downsamplers import *
