@@ -40,4 +40,49 @@ jobs:
       - run: make lint  # Lint Python & Rust
       - run: make mypy  # Type check Python
 
+  Test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['windows-latest', 'macOS-latest', 'ubuntu-latest']
+        rust: ['nightly']  # ['stable', 'beta']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+    
+    env:
+      PYTHON: ${{ matrix.python-version }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r tests/requirements.txt
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: clippy, rustfmt
+      - name: Setup Rust
+        run: |
+          rustup update nightly --no-self-update
+          rustup default nightly
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: install develop version
+      - run: make install
+      # python setup.py develop
+        
+      - run: pip install -r tests/requirements.txt
+
+      - run: pip freeze
+
+      - run: make test  # Test Python
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+
 # https://github.com/samuelcolvin/rtoml/blob/main/.github/workflows/ci.yml

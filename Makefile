@@ -2,6 +2,9 @@
 isort = isort tsdownsample tests
 black = black tsdownsample tests
 
+install:
+	pip install -r requirements.txt
+	pip install -e .
 
 .PHONY: format
 format:
@@ -29,8 +32,14 @@ lint: lint-python lint-rust
 mypy:
 	mypy tsdownsample
 
+
+.PHONY: test
+test:
+	pytest --cov=tsdownsample --cov-report=term-missing --cov-report=html --cov-report=xml
+
+
 .PHONY: all
-all: lint mypy testcov
+all: lint mypy test
 
 .PHONY: clean
 clean:
