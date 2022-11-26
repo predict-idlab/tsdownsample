@@ -28,11 +28,12 @@
     - supported datatypes are `f16`, `f32`, `f64`, `i16`, `i32`, `i64`, `u16`, `u32`, `u64`
     <details>
       <summary><i>!! 🚀 <code>f16</code> <a href="https://github.com/jvdd/argminmax">argminmax</a> is 200-300x faster than numpy</i></summary>
-      In contrast with all other data types above, <code>f16</code> is *not* hardware supported (i.e., no instructions for f16) by most modern CPUs. Programming languages facilitate support for this datatype by either (i) upcasting to `f32` or (ii) using a software implementation. <br>
-      As for argminmax (finding the index of the minimum and maximum value in an array), only comparisons are needed - and thus no arithmetic operations - creating a (symmetrical) ordinal mapping from <code>f16</code> to <code>i16</code> is sufficient. This mapping allows to use (i) the hardware supported <code>i16</code> instructions for the scalar implementation, or (ii) the hardware supported <code>i16</code> instructions for the SIMD implementation - while not producing any memory overhead. <br>
-      More details are described in the <a href="https://github.com/jvdd/argminmax/pull/1'>argminmax PR</a>.
+      In contrast with all other data types above, <code>f16</code> is *not* hardware supported (i.e., no instructions for f16) by most modern CPUs!! <br>
+      🐌 Programming languages facilitate support for this datatype by either (i) upcasting to `f32` or (ii) using a software implementation. <br>
+      💡 As for argminmax, only comparisons are needed - and thus no arithmetic operations - creating a <ins>symmetrical ordinal mapping from <code>f16</code> to <code>i16</code></ins> is sufficient. This mapping allows to use the hardware supported scalar and SIMD <code>i16</code> instructions - while not producing any memory overhead 🎉 <br>
+      <i>More details are described in <a href="https://github.com/jvdd/argminmax/pull/1">argminmax PR #1</a>.</i>
     </details>
-* **Easy to use**: simple API
+* **Easy to use**: simple & flexible API
 
 ## Install
 
@@ -46,7 +47,7 @@ pip install tsdownsample
 ## Usage
 
 ```python
-from tsdownsample import MinMaxLTTB
+from tsdownsample import MinMaxLTTBDowsampler
 import pandas as pd; import numpy as np
 
 # Create a time series
@@ -54,7 +55,7 @@ y = np.random.randn(10_000_000)
 s = pd.Series(y)
 
 # Downsample to 1000 points
-s_ds = MinMaxLTTB.downsample(s, n_out=1000)
+s_ds = MinMaxLTTBDownsampler.downsample(s, n_out=1000)
 ```
 
 ---
