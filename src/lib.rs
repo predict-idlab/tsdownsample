@@ -319,23 +319,12 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 // ------------------------------- DOWNSAMPLING MODULE ------------------------------ //
 
 #[pymodule] // The super module
-fn tsdownsample_rs(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+#[pyo3(name = "_tsdownsample_rs")] // How the module is imported in Python: https://github.com/PyO3/maturin/issues/256#issuecomment-1038576218
+fn tsdownsample(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(minmax))?;
     m.add_wrapped(wrap_pymodule!(m4))?;
     m.add_wrapped(wrap_pymodule!(lttb))?;
     m.add_wrapped(wrap_pymodule!(minmaxlttb))?;
-
-    _py.run(
-        "\
-import sys
-sys.modules['tsdownsample_rs.minmax'] = minmax
-sys.modules['tsdownsample_rs.m4'] = m4
-sys.modules['tsdownsample_rs.lttb'] = lttb
-sys.modules['tsdownsample_rs.minmaxlttb'] = minmaxlttb
-            ",
-        None,
-        Some(m.dict()),
-    )?;
 
     Ok(())
 }

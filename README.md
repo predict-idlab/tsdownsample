@@ -47,7 +47,7 @@ pip install tsdownsample
 ## Usage
 
 ```python
-from tsdownsample import MinMaxLTTBDowsampler
+from tsdownsample import MinMaxLTTBDownsampler
 import pandas as pd; import numpy as np
 
 # Create a time series

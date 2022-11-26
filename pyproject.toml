@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools", "wheel", "setuptools-rust"] #, "maturin"]
-# build-backend = "maturin"  # TODO: this works as well!
+requires = ["maturin"]
+build-backend = "maturin"
 
 [project]
 name = "tsdownsample"
-version = "0.1.0a2"
+version = "0.1.0a3"
 requires-python = ">=3.7"
 description = "Time series downsampling in rust"
 authors = [{name = "Jeroen Van Der Donckt"}]

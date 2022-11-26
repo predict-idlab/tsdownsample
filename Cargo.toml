@@ -1,5 +1,5 @@
 [package]
-name = "tsdownsample_rs"
+name = "tsdownsample"  # Same name as the Python package
 version = "0.1.0"
 edition = "2021"
 authors = ["Jeroen Van Der Donckt"]
@@ -7,6 +7,10 @@ description = "Python bindings for time series downsampling algorithms"
 repository = "https://github.com/predict-idlab/tsdownsample"
 license = "MIT"
 
+[package.metadata.maturin]
+# Import the Rust library under this path
+# See: https://www.maturin.rs/project_layout.html#import-rust-as-a-submodule-of-your-project
+name = "tsdownsample._rust._tsdownsample_rs"
 
 [dependencies]
 downsample_rs = { path = "downsample_rs", features = ["half"]}
@@ -16,5 +20,5 @@ half = { version = "2.1", default-features = false }
 paste = { version = "1.0.9", default-features = false }
 
 [lib]
-name = "tsdownsample_rs"
+name = "tsdownsample"
 crate-type = ["cdylib"]

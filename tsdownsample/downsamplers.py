@@ -1,13 +1,13 @@
 # ------------------ Rust Downsamplers ------------------
-import tsdownsample._rust.tsdownsample_rs as tsdownsample_rs
+from tsdownsample._rust import _tsdownsample_rs
 
 from .downsampling_interface import RustDownsamplingInterface
 
-MinMaxDownsampler = RustDownsamplingInterface("MinMax", tsdownsample_rs.minmax)
-M4Downsampler = RustDownsamplingInterface("M4", tsdownsample_rs.m4)
-LTTBDownsampler = RustDownsamplingInterface("LTTB", tsdownsample_rs.lttb)
+MinMaxDownsampler = RustDownsamplingInterface("MinMax", _tsdownsample_rs.minmax)
+M4Downsampler = RustDownsamplingInterface("M4", _tsdownsample_rs.m4)
+LTTBDownsampler = RustDownsamplingInterface("LTTB", _tsdownsample_rs.lttb)
 MinMaxLTTBDownsampler = RustDownsamplingInterface(
-    "MinMaxLTTB", tsdownsample_rs.minmaxlttb
+    "MinMaxLTTB", _tsdownsample_rs.minmaxlttb
 )
 
 # ------------------ Function Downsamplers ------------------
