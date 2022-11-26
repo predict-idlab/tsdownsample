@@ -1,9 +1,10 @@
 [build-system]
-requires = ["setuptools", "wheel", "setuptools-rust"]
+requires = ["setuptools", "wheel", "setuptools-rust"] #, "maturin"]
+# build-backend = "maturin"  # TODO: this works as well!
 
 [project]
 name = "tsdownsample"
-version = "0.1.0a1"
+version = "0.1.0a2"
 requires-python = ">=3.7"
 description = "Time series downsampling in rust"
 authors = [{name = "Jeroen Van Der Donckt"}]
@@ -15,7 +16,6 @@ classifiers = [
     'License :: OSI Approved :: MIT License',
     'Intended Audience :: Developers',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.6',  # TODO?
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
