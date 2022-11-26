@@ -1,5 +1,5 @@
 # ------------------ Rust Downsamplers ------------------
-from tsdownsample._rust import _tsdownsample_rs
+from tsdownsample._rust import _tsdownsample_rs  # type: ignore[attr-defined]
 
 from .downsampling_interface import RustDownsamplingInterface
 

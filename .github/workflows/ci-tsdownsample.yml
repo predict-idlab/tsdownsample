@@ -34,8 +34,6 @@ jobs:
       - name: Cache rust
         uses: Swatinem/rust-cache@v2
 
-      - run: make install
-
       - run: pip install -r tests/requirements-linting.txt
       - run: pip freeze
       - run: make lint  # Lint Python & Rust
