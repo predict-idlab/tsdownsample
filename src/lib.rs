@@ -88,18 +88,28 @@ macro_rules! _create_pyfunc_with_x {
 }
 
 macro_rules! _create_pyfuncs_with_x {
-    ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)*) => {
-        // When only one expression of type $t is passed, the macro will implement the
-        // function for all combinations of $t (for type x and y).
-        _create_pyfuncs_with_x!($resample_mod, $resample_fn, $mod, $($t)*, $($t)*);
+    ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
+        // The macro will implement the function for all combinations of $t (for type x and y).
+        // (duplicate the list of types to iterate over all combinations)
+        _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
     };
-    ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)*, $($ty:ty)*) => {
+
+    // Base case: there is only one type (for y) left
+    (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty:ty) => {
         $(
             paste! {
                 _create_pyfunc_with_x!([<downsample_ $tx _ $ty>], $resample_mod, $resample_fn, $tx, $ty, $mod);
             }
         )*
     };
+    // The head/tail recursion: pick the first element -> apply the base case, and recurse over the rest.
+    (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty_head:ty, $($ty_rest:ty),+) => {
+        _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $ty_head);
+        _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $($ty_rest),+);
+    };
+
+    // Huge thx to https://stackoverflow.com/a/54552848
+    // and https://users.rust-lang.org/t/tail-recursive-macros/905/3
 }
 
 // ------ Main macros ------

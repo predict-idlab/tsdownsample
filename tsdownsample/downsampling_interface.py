@@ -127,14 +127,6 @@ def _switch_mod_with_x_and_y(
             return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_f32")
         elif x_dtype == np.float64:
             return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_f64")
-    # INTS
-    elif np.issubdtype(x_dtype, np.integer):
-        if x_dtype == np.int16:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i16")
-        elif x_dtype == np.int32:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i32")
-        elif x_dtype == np.int64:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i64")
     # UINTS
     elif np.issubdtype(x_dtype, np.unsignedinteger):
         if x_dtype == np.uint16:
@@ -143,6 +135,14 @@ def _switch_mod_with_x_and_y(
             return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_u32")
         elif x_dtype == np.uint64:
             return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_u64")
+    # INTS (need to be last because uint is subdtype of int)
+    elif np.issubdtype(x_dtype, np.integer):
+        if x_dtype == np.int16:
+            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i16")
+        elif x_dtype == np.int32:
+            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i32")
+        elif x_dtype == np.int64:
+            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i64")
     # BOOLS
     # TODO: support bools
     # elif data_dtype == np.bool:
