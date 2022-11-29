@@ -38,28 +38,53 @@ macro_rules! _create_pyfunc_without_x {
         }
         // Add the function to the module
         $mod.add_wrapped(wrap_pyfunction!($name))?;
-    }; // ($name:ident, $resample_mod:ident, $resample_fn:ident, $type:ty, $mod:ident, $cast_type:ty) => {
-       //     // Create the Python function
-       //     #[pyfunction]
-       //     fn $name<'py>(
-       //         py: Python<'py>,
-       //         y: PyReadonlyArray1<$type>,
-       //         n_out: usize,
-       //     ) -> &'py PyArray1<usize> {
-       //         let y = y.as_array().mapv(|v| v as $cast_type);
-       //         let sampled_indices = $resample_mod::$resample_fn(y.view(), n_out);
-       //         sampled_indices.into_pyarray(py)
-       //     }
-       //     // Add the function to the module
-       //     $mod.add_wrapped(wrap_pyfunction!($name))?;
-       // };
+    };
 }
 
-macro_rules! _create_pyfuncs_without_x {
-    ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)*) => {
+// macro_rules! _create_pyfuncs_without_x {
+//     ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)*) => {
+//         $(
+//             paste! {
+//                 _create_pyfunc_without_x!([<downsample_ $t>], $resample_mod, $resample_fn, $t, $mod);
+//             }
+//         )*
+//     };
+// }
+
+macro_rules! _create_pyfunc_without_x_with_ratio {
+    ($name:ident, $resample_mod:ident, $resample_fn:ident, $type:ty, $mod:ident) => {
+        // Create the Python function
+        #[pyfunction]
+        fn $name<'py>(
+            py: Python<'py>,
+            y: PyReadonlyArray1<$type>,
+            n_out: usize,
+            ratio: usize,
+        ) -> &'py PyArray1<usize> {
+            let y = y.as_array();
+            let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio);
+            sampled_indices.into_pyarray(py)
+        }
+        // Add the function to the module
+        $mod.add_wrapped(wrap_pyfunction!($name))?;
+    };
+}
+
+// macro_rules! _create_pyfuncs_without_x_with_ratio {
+//     ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)*) => {
+//         $(
+//             paste! {
+//                 _create_pyfunc_without_x_with_ratio!([<downsample_ $t>], $resample_mod, $resample_fn, $t, $mod);
+//             }
+//         )*
+//     };
+// }
+
+macro_rules! _create_pyfuncs_without_x_generic {
+    ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)*) => {
         $(
             paste! {
-                _create_pyfunc_without_x!([<downsample_ $t>], $resample_mod, $resample_fn, $t, $mod);
+                $create_macro!([<downsample_ $t>], $resample_mod, $resample_fn, $t, $mod);
             }
         )*
     };
@@ -87,42 +112,126 @@ macro_rules! _create_pyfunc_with_x {
     };
 }
 
-macro_rules! _create_pyfuncs_with_x {
-    ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
+// macro_rules! _create_pyfuncs_with_x {
+//     ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
+//         // The macro will implement the function for all combinations of $t (for type x and y).
+//         // (duplicate the list of types to iterate over all combinations)
+//         _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
+//     };
+
+//     // Base case: there is only one type (for y) left
+//     (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty:ty) => {
+//         $(
+//             paste! {
+//                 _create_pyfunc_with_x!([<downsample_ $tx _ $ty>], $resample_mod, $resample_fn, $tx, $ty, $mod);
+//             }
+//         )*
+//     };
+//     // The head/tail recursion: pick the first element -> apply the base case, and recurse over the rest.
+//     (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty_head:ty, $($ty_rest:ty),+) => {
+//         _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $ty_head);
+//         _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $($ty_rest),+);
+//     };
+
+//     // Huge thx to https://stackoverflow.com/a/54552848
+//     // and https://users.rust-lang.org/t/tail-recursive-macros/905/3
+// }
+
+macro_rules! _create_pyfunc_with_x_with_ratio {
+    ($name:ident, $resample_mod:ident, $resample_fn:ident, $type_x:ty, $type_y:ty, $mod:ident) => {
+        // Create the Python function
+        #[pyfunction]
+        fn $name<'py>(
+            py: Python<'py>,
+            x: PyReadonlyArray1<$type_x>,
+            y: PyReadonlyArray1<$type_y>,
+            n_out: usize,
+            ratio: usize,
+        ) -> &'py PyArray1<usize> {
+            let x = x.as_array();
+            let y = y.as_array();
+            let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio);
+            sampled_indices.into_pyarray(py)
+        }
+        // Add the function to the module
+        $mod.add_wrapped(wrap_pyfunction!($name))?;
+    };
+}
+
+// macro_rules! _create_pyfuncs_with_x_with_ratio {
+//     ($resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
+//         // The macro will implement the function for all combinations of $t (for type x and y).
+//         // (duplicate the list of types to iterate over all combinations)
+//         _create_pyfuncs_with_x_with_ratio!(@inner $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
+//     };
+
+//     // Base case: there is only one type (for y) left
+//     (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty:ty) => {
+//         $(
+//             paste! {
+//                 _create_pyfunc_with_x_with_ratio!([<downsample_ $tx _ $ty>], $resample_mod, $resample_fn, $tx, $ty, $mod);
+//             }
+//         )*
+//     };
+//     // The head/tail recursion: pick the first element -> apply the base case, and recurse over the rest.
+//     (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty_head:ty, $($ty_rest:ty),+) => {
+//         _create_pyfuncs_with_x_with_ratio!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $ty_head);
+//         _create_pyfuncs_with_x_with_ratio!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $($ty_rest),+);
+//     };
+
+//     // Huge thx to https://stackoverflow.com/a/54552848
+//     // and https://users.rust-lang.org/t/tail-recursive-macros/905/3
+// }
+
+macro_rules! _create_pyfuncs_with_x_generic {
+    ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
         // The macro will implement the function for all combinations of $t (for type x and y).
         // (duplicate the list of types to iterate over all combinations)
-        _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
+        _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
     };
 
     // Base case: there is only one type (for y) left
-    (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty:ty) => {
+    (@inner $create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty:ty) => {
         $(
             paste! {
-                _create_pyfunc_with_x!([<downsample_ $tx _ $ty>], $resample_mod, $resample_fn, $tx, $ty, $mod);
+                $create_macro!([<downsample_ $tx _ $ty>], $resample_mod, $resample_fn, $tx, $ty, $mod);
             }
         )*
     };
     // The head/tail recursion: pick the first element -> apply the base case, and recurse over the rest.
-    (@inner $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty_head:ty, $($ty_rest:ty),+) => {
-        _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $ty_head);
-        _create_pyfuncs_with_x!(@inner $resample_mod, $resample_fn, $mod, $($tx)+; $($ty_rest),+);
+    (@inner $create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty_head:ty, $($ty_rest:ty),+) => {
+        _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($tx)+; $ty_head);
+        _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($tx)+; $($ty_rest),+);
     };
 
     // Huge thx to https://stackoverflow.com/a/54552848
     // and https://users.rust-lang.org/t/tail-recursive-macros/905/3
 }
 
+
 // ------ Main macros ------
 
 macro_rules! create_pyfuncs_without_x {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_without_x!($resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+        _create_pyfuncs_without_x_generic!(_create_pyfunc_without_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+    };
+}
+
+macro_rules! create_pyfuncs_without_x_with_ratio {
+    ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_without_x_generic!(_create_pyfunc_without_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
     };
 }
 
 macro_rules! create_pyfuncs_with_x {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x!($resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+    };
+}
+
+macro_rules! create_pyfuncs_with_x_with_ratio {
+    ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
     };
 }
 
@@ -255,12 +364,12 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmaxlttb_mod, minmaxlttb_scalar_without_x, scalar_mod);
+        create_pyfuncs_without_x_with_ratio!(minmaxlttb_mod, minmaxlttb_scalar_without_x, scalar_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(minmaxlttb_mod, minmaxlttb_scalar, scalar_mod);
+        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_scalar, scalar_mod);
     }
 
     // ----------------- SCALAR PARALLEL
@@ -269,7 +378,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(
+        create_pyfuncs_without_x_with_ratio!(
             minmaxlttb_mod,
             minmaxlttb_scalar_without_x_parallel,
             scalar_parallel_mod
@@ -278,7 +387,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(
+        create_pyfuncs_with_x_with_ratio!(
             minmaxlttb_mod,
             minmaxlttb_scalar_parallel,
             scalar_parallel_mod
@@ -291,12 +400,12 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmaxlttb_mod, minmaxlttb_simd_without_x, simd_mod);
+        create_pyfuncs_without_x_with_ratio!(minmaxlttb_mod, minmaxlttb_simd_without_x, simd_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(minmaxlttb_mod, minmaxlttb_simd, simd_mod);
+        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_simd, simd_mod);
     }
 
     // ----------------- SIMD PARALLEL
@@ -305,7 +414,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(
+        create_pyfuncs_without_x_with_ratio!(
             minmaxlttb_mod,
             minmaxlttb_simd_without_x_parallel,
             simd_parallel_mod
@@ -314,7 +423,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(minmaxlttb_mod, minmaxlttb_simd_parallel, simd_parallel_mod);
+        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_simd_parallel, simd_parallel_mod);
     }
 
     // Add the submodules to the module
