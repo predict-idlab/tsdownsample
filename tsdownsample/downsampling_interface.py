@@ -240,7 +240,7 @@ class FuncDownsamplingInterface(DownsampleInterface):
         super().__init__("[Func]_" + name)
         self.downsample_func = downsample_func
 
-    def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series:
+    def downsample(self, s: pd.Series, n_out: int, *args, parallel: bool = False) -> pd.Series:
         if isinstance(s.index, pd.DatetimeIndex):
             t_start, t_end = s.index[:: len(s) - 1]
             rate = (t_end - t_start) / n_out
