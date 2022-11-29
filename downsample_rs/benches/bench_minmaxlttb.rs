@@ -119,11 +119,21 @@ fn minmaxlttb_without_x_f32_random_array_50M_single_core(c: &mut Criterion) {
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
     c.bench_function("mmlttbnox_scal_50M_f32", |b| {
         b.iter(|| {
-            minmaxlttb_mod::minmaxlttb_scalar_without_x(black_box(y.view()), black_box(2_000), black_box(MINMAX_RATIO))
+            minmaxlttb_mod::minmaxlttb_scalar_without_x(
+                black_box(y.view()),
+                black_box(2_000),
+                black_box(MINMAX_RATIO),
+            )
         })
     });
     c.bench_function("mmlttbnox_simd_50M_f32", |b| {
-        b.iter(|| minmaxlttb_mod::minmaxlttb_simd_without_x(black_box(y.view()), black_box(2_000), black_box(MINMAX_RATIO)))
+        b.iter(|| {
+            minmaxlttb_mod::minmaxlttb_simd_without_x(
+                black_box(y.view()),
+                black_box(2_000),
+                black_box(MINMAX_RATIO),
+            )
+        })
     });
 }
 
