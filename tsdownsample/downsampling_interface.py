@@ -29,7 +29,9 @@ class DownsampleInterface(ABC):
     #     )
 
     @abstractmethod
-    def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series:
+    def downsample(
+        self, s: pd.Series, n_out: int, *args, parallel: bool = False
+    ) -> pd.Series:
         """Downsample a pandas series to n_out samples.
 
         Parameters
@@ -170,19 +172,21 @@ class RustDownsamplingInterface(DownsampleInterface):
             # use scalar implementation if available (when no SIMD available)
             self.mod_multi_core = self.rust_mod.scalar_parallel
 
-    def _downsample_without_x(self, s: pd.Series, n_out: int) -> pd.Series:
+    def _downsample_without_x(self, s: pd.Series, n_out: int, *args) -> pd.Series:
         downsample_method = _switch_mod_with_y(s.dtype, self.mod_single_core)
-        idxs = downsample_method(s.values, n_out)
+        idxs = downsample_method(s.values, n_out, *args)
         return self._construct_output_series(s, idxs)
 
-    def _downsample_with_x(self, s: pd.Series, n_out: int) -> pd.Series:
+    def _downsample_with_x(self, s: pd.Series, n_out: int, *args) -> pd.Series:
         downsample_method = _switch_mod_with_x_and_y(
             s.index.dtype, s.dtype, self.mod_single_core
         )
-        idxs = downsample_method(s.index.values, s.values, n_out)
+        idxs = downsample_method(s.index.values, s.values, n_out, *args)
         return self._construct_output_series(s, idxs)
 
-    def _downsample_without_x_parallel(self, s: pd.Series, n_out: int) -> pd.Series:
+    def _downsample_without_x_parallel(
+        self, s: pd.Series, n_out: int, *args
+    ) -> pd.Series:
         if self.mod_multi_core is not None:
             downsample_method = _switch_mod_with_y(s.dtype, self.mod_multi_core)
         else:
@@ -191,10 +195,10 @@ class RustDownsamplingInterface(DownsampleInterface):
                 "Falling back to single core implementation."
             )
             downsample_method = _switch_mod_with_y(s.dtype, self.mod_single_core)
-        idxs = downsample_method(s.values, n_out)
+        idxs = downsample_method(s.values, n_out, *args)
         return self._construct_output_series(s, idxs)
 
-    def _downsample_with_x_parallel(self, s: pd.Series, n_out: int) -> pd.Series:
+    def _downsample_with_x_parallel(self, s: pd.Series, n_out: int, *args) -> pd.Series:
         if self.mod_multi_core is not None:
             downsample_method = _switch_mod_with_x_and_y(
                 s.index.dtype, s.dtype, self.mod_multi_core
@@ -207,23 +211,25 @@ class RustDownsamplingInterface(DownsampleInterface):
             downsample_method = _switch_mod_with_x_and_y(
                 s.index.dtype, s.dtype, self.mod_single_core
             )
-        idxs = downsample_method(s.index.values, s.values, n_out)
+        idxs = downsample_method(s.index.values, s.values, n_out, *args)
         return self._construct_output_series(s, idxs)
 
-    def downsample(self, s: pd.Series, n_out: int, parallel: bool = False) -> pd.Series:
+    def downsample(
+        self, s: pd.Series, n_out: int, *args, parallel: bool = False
+    ) -> pd.Series:
         fixed_sr = False
         if isinstance(s.index, pd.RangeIndex) or s.index.freq is not None:
             fixed_sr = True
         if fixed_sr:  # TODO: or the other way around??
             if parallel:
-                return self._downsample_without_x_parallel(s, n_out)
+                return self._downsample_without_x_parallel(s, n_out, *args)
             else:
-                return self._downsample_without_x(s, n_out)
+                return self._downsample_without_x(s, n_out, *args)
         else:
             if parallel:
-                return self._downsample_with_x_parallel(s, n_out)
+                return self._downsample_with_x_parallel(s, n_out, *args)
             else:
-                return self._downsample_with_x(s, n_out)
+                return self._downsample_with_x(s, n_out, *args)
 
 
 # ------------------ Numpy Downsample Interface ------------------

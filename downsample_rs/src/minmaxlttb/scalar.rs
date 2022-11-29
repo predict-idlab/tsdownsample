@@ -12,7 +12,7 @@ pub fn minmaxlttb_scalar<Tx: Num, Ty: Num + PartialOrd>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -23,7 +23,7 @@ where
 pub fn minmaxlttb_scalar_without_x<Ty: Num + PartialOrd>(
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -37,7 +37,7 @@ pub fn minmaxlttb_scalar_parallel<Tx: Num + Send + Sync, Ty: Num + PartialOrd + 
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -48,7 +48,7 @@ where
 pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + PartialOrd + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,

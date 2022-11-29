@@ -16,7 +16,7 @@ pub fn minmaxlttb_simd<Tx: Num, Ty: Num + PartialOrd>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
@@ -29,7 +29,7 @@ where
 pub fn minmaxlttb_simd_without_x<Ty: Num + PartialOrd>(
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
@@ -45,7 +45,7 @@ pub fn minmaxlttb_simd_parallel<Tx: Num, Ty: Num + PartialOrd + Send + Sync>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
@@ -58,7 +58,7 @@ where
 pub fn minmaxlttb_simd_without_x_parallel<Ty: Num + PartialOrd + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
-    minmax_ratio: usize
+    minmax_ratio: usize,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
