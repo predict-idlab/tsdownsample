@@ -3,7 +3,6 @@ isort = isort tsdownsample tests
 black = black tsdownsample tests
 
 install:
-	pip install -r requirements.txt
 	pip install -e .
 
 .PHONY: format
@@ -47,6 +46,7 @@ clean:
 	rm -f `find . -type f -name '*.py[co]' `
 	rm -f `find . -type f -name '*~' `
 	rm -f `find . -type f -name '.*~' `
+	rm -f `find . -type f -name '*.cpython-*' `
 	rm -rf dist
 	rm -rf build
 	rm -rf target
@@ -55,8 +55,8 @@ clean:
 	rm -rf .mypy_cache
 	rm -rf htmlcov
 	rm -rf *.egg-info
+	rm -rf .ruff*
 	rm -f .coverage
 	rm -f .coverage.*
 	rm -rf build
 	rm -f tsdownsample/*.so
-	python setup.py clean

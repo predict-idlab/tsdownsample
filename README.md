@@ -30,7 +30,7 @@
       <summary><i>!! 🚀 <code>f16</code> <a href="https://github.com/jvdd/argminmax">argminmax</a> is 200-300x faster than numpy</i></summary>
       In contrast with all other data types above, <code>f16</code> is *not* hardware supported (i.e., no instructions for f16) by most modern CPUs!! <br>
       🐌 Programming languages facilitate support for this datatype by either (i) upcasting to `f32` or (ii) using a software implementation. <br>
-      💡 As for argminmax, only comparisons are needed - and thus no arithmetic operations - creating a <ins>symmetrical ordinal mapping from <code>f16</code> to <code>i16</code></ins> is sufficient. This mapping allows to use the hardware supported scalar and SIMD <code>i16</code> instructions - while not producing any memory overhead 🎉 <br>
+      💡 As for argminmax, only comparisons are needed - and thus no arithmetic operations - creating a <u>symmetrical ordinal mapping from <code>f16</code> to <code>i16</code></u> is sufficient. This mapping allows to use the hardware supported scalar and SIMD <code>i16</code> instructions - while not producing any memory overhead 🎉 <br>
       <i>More details are described in <a href="https://github.com/jvdd/argminmax/pull/1">argminmax PR #1</a>.</i>
     </details>
 * **Easy to use**: simple & flexible API
@@ -47,7 +47,7 @@ pip install tsdownsample
 ## Usage
 
 ```python
-from tsdownsample import MinMaxLTTBDowsampler
+from tsdownsample import MinMaxLTTBDownsampler
 import pandas as pd; import numpy as np
 
 # Create a time series

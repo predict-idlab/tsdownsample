@@ -51,7 +51,7 @@ def test_minmaxlttb_downsampler():
     """Test MinMaxLTTB downsampler."""
     arr = np.array(np.arange(10_000))
     s = pd.Series(arr)
-    s_downsampled = MinMaxLTTBDownsampler.downsample(s, 100)
+    s_downsampled = MinMaxLTTBDownsampler.downsample(s, 100, 30)
     assert s_downsampled.values[0] == 0
     assert s_downsampled.values[-1] == len(arr) - 1
 
@@ -98,8 +98,11 @@ def test_parallel_downsampling():
     arr = np.random.randn(10_000).astype(np.float32)
     s = pd.Series(arr)
     for downsampler in rust_downsamplers:
-        s_downsampled = downsampler.downsample(s, 100, parallel=False)
-        s_downsampled_p = downsampler.downsample(s, 100, parallel=True)
+        args = []
+        if downsampler == MinMaxLTTBDownsampler:
+            args = [30]
+        s_downsampled = downsampler.downsample(s, 100, *args, parallel=False)
+        s_downsampled_p = downsampler.downsample(s, 100, *args, parallel=True)
         assert s_downsampled.equals(s_downsampled_p)
 
 

@@ -47,6 +47,7 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
     sampled_indices
 }
 
+#[inline(always)]
 pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: ArrayView1<T>,
     n_out: usize,

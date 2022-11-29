@@ -1,5 +1,0 @@
-numpy
-pandas
-# Build dependencies
-setuptools_rust
-# maturin

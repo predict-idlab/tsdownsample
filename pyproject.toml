@@ -1,12 +1,13 @@
 [build-system]
-requires = ["setuptools", "wheel", "setuptools-rust"] #, "maturin"]
-# build-backend = "maturin"  # TODO: this works as well!
+requires = ["maturin>=0.14,<0.15"]
+build-backend = "maturin"
 
 [project]
 name = "tsdownsample"
-version = "0.1.0a2"
-requires-python = ">=3.7"
 description = "Time series downsampling in rust"
+version = "0.1.0a4"
+requires-python = ">=3.7"
+dependencies = ["numpy", "pandas"]
 authors = [{name = "Jeroen Van Der Donckt"}]
 readme = "README.md"
 license = {text = "MIT"}
@@ -14,7 +15,6 @@ keywords = ["time series", "downsampling", "rust", "data science", "visualizatio
 classifiers = [
     'Intended Audience :: Developers',
     'License :: OSI Approved :: MIT License',
-    'Intended Audience :: Developers',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
@@ -27,8 +27,8 @@ classifiers = [
 ]
 
 [project.urls]
-homepage = "https://github.com/predict-idlab/tsdownsample"
-repository = "https://github.com/predict-idlab/tsdownsample"
+Homepage = "https://github.com/predict-idlab/tsdownsample"
+Repository = "https://github.com/predict-idlab/tsdownsample"
 
 # Build Python bindings for rust
 [tool.maturin]
@@ -66,6 +66,6 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 check_untyped_defs = true
 no_implicit_reexport = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
 disallow_any_generics = false
 ignore_missing_imports = true
