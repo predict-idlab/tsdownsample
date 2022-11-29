@@ -30,7 +30,9 @@ class _EveryNthDownsampler(DownsampleInterface):
     def __init__(self) -> None:
         super().__init__("EveryNth")
 
-    def downsample(self, s: pd.Series, n_out: int, *args, parallel: bool = False) -> pd.Series:
+    def downsample(
+        self, s: pd.Series, n_out: int, *args, parallel: bool = False
+    ) -> pd.Series:
         return s[:: max(1, math.ceil(len(s) / n_out))]
 
 
