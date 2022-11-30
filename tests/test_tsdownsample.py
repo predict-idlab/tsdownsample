@@ -1,12 +1,10 @@
-import pytest
 import numpy as np
+import pytest
 
-from tsdownsample import (
+from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     EveryNthDownsampler,
     LTTBDownsampler,
     M4Downsampler,
-    # MeanDownsampler,
-    # MedianDownsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
 )
@@ -96,7 +94,9 @@ def test_parallel_downsampling():
         s_downsampled_p = downsampler.downsample(arr, n_out=100, parallel=True)
         assert np.all(s_downsampled == s_downsampled_p)
 
+
 ## Using x
+
 
 def test_downsampling_with_x():
     """Test downsampling with x."""
@@ -134,6 +134,7 @@ def test_downsampling_different_dtypes():
     for i in range(1, len(res)):
         assert np.all(res[0] == res[i])
 
+
 def test_downsampling_different_dtypes_with_x():
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
@@ -148,7 +149,9 @@ def test_downsampling_different_dtypes_with_x():
         for i in range(1, len(res)):
             assert np.all(res[0] == res[i])
 
+
 ### Unsupported dtype
+
 
 def test_error_unsupported_dtype():
     """Test unsupported dtype."""
@@ -156,6 +159,7 @@ def test_error_unsupported_dtype():
     arr = arr.astype(np.bool)
     with pytest.raises(ValueError):
         MinMaxDownsampler().downsample(arr, n_out=100)
+
 
 def test_error_invalid_args():
     """Test invalid arguments."""
@@ -174,7 +178,9 @@ def test_error_invalid_args():
     assert "y must be 1D" in str(e_msg.value)
     # Invalid x
     with pytest.raises(ValueError) as e_msg:
-        MinMaxDownsampler().downsample(arr.reshape(5, 2_000), arr, n_out=100, parallel=True)
+        MinMaxDownsampler().downsample(
+            arr.reshape(5, 2_000), arr, n_out=100, parallel=True
+        )
     assert "x must be 1D" in str(e_msg.value)
     # Invalid x and y (different length)
     with pytest.raises(ValueError) as e_msg:
