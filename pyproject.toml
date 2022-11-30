@@ -7,7 +7,7 @@ name = "tsdownsample"
 description = "Time series downsampling in rust"
 version = "0.1.0a4"
 requires-python = ">=3.7"
-dependencies = ["numpy", "pandas"]
+dependencies = ["numpy"]
 authors = [{name = "Jeroen Van Der Donckt"}]
 readme = "README.md"
 license = {text = "MIT"}

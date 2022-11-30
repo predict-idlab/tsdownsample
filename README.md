@@ -48,14 +48,13 @@ pip install tsdownsample
 
 ```python
 from tsdownsample import MinMaxLTTBDownsampler
-import pandas as pd; import numpy as np
+import numpy as np
 
 # Create a time series
 y = np.random.randn(10_000_000)
-s = pd.Series(y)
 
 # Downsample to 1000 points
-s_ds = MinMaxLTTBDownsampler.downsample(s, n_out=1000)
+s_ds = MinMaxLTTBDownsampler().downsample(y, n_out=1000)
 ```
 
 ---
