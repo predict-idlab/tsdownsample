@@ -49,7 +49,7 @@ class M4Downsampler(AbstractRustDownsampler):
         if x is not None:
             warnings.warn(
                 f"x is passed to downsample method of {self.name}, but is not taken "
-                / f"into account by the current implementation of  {self.name} algorithm."
+                f"into account by the current implementation of  {self.name} algorithm."
             )
         return super()._downsample(None, *args, **kwargs)
 
