@@ -15,7 +15,6 @@ class AbstractDownsampler(ABC):
     """AbstractDownsampler interface-class, subclassed by concrete downsamplers."""
 
     def __init__(self, name: str, dtype_regex_list: List[str] = None):
-        """Initialize the downsampler with a list of regexes to match the data-types to downsample."""
         self.name = name
         self.dtype_regex_list = dtype_regex_list
 
@@ -211,7 +210,6 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
     def __init__(
         self, name: str, resampling_mod: ModuleType, dtype_regex_list: List[str]
     ):
-        """Initialize the downsampler with a list of regexes to match the data-types to downsample."""
         super().__init__(name, dtype_regex_list)
         self.rust_mod = resampling_mod
 
