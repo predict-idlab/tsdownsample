@@ -2,6 +2,7 @@
 
 __author__ = "Jeroen Van Der Donckt"
 
+import warnings
 import re
 from abc import ABC, abstractmethod
 from typing import Callable, List, ModuleType, Union
@@ -61,14 +62,13 @@ class AbstractDownsampler(ABC):
         x: Union[np.ndarray, None] = None,
         y: Union[np.ndarray, None] = None,
         n_out: int = None,
-        **kwargs,
     ):
         """Downsample the data in x and y."""
         self._check_valid_downsample_args(x, y, n_out)
         if x is not None:
             self._supports_dtype(x)
         self._supports_dtype(y)
-        return self._downsample(x, y, n_out, **kwargs)
+        return self._downsample(x, y, n_out)
 
     def __repr__(self) -> str:
         return f"{self.name}"
@@ -172,7 +172,7 @@ def _switch_mod_with_x_and_y(
     raise ValueError(f"Unsupported data type (for x): {x_dtype}")
 
 
-class RustDownsampler(AbstractDownsampler):
+class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
     def __init__(
@@ -197,17 +197,21 @@ class RustDownsampler(AbstractDownsampler):
             # use scalar implementation if available (when no SIMD available)
             self.mod_multi_core = self.rust_mod.scalar_parallel
 
-    @abstractmethod
     def _downsample(
         self,
-        x: Union[np.ndarray, None] = None,
-        y: Union[np.ndarray, None] = None,
+        x: Union[np.ndarray, None],
+        y: Union[np.ndarray, None],
         n_out: int = None,
         parallel: bool = False,
-        **kwargs,
     ) -> np.ndarray:
         """Downsample the data in x and y."""
-        mod = self.mod_single_core if not parallel else self.mod_multi_core
+        mod = self.mod_single_core
+        if parallel:
+            if self.mod_multi_core is None:
+                warnings.warn(
+                    f"No parallel implementation available for {self.name}. "/
+                    "Falling back to single-core implementation."
+                )
         if x is None:
             downsample_f = _switch_mod_with_y(y.dtype, mod)
             return downsample_f(y, n_out)
@@ -220,11 +224,10 @@ class RustDownsampler(AbstractDownsampler):
         y: Union[np.ndarray, None] = None,
         n_out: int = None,
         parallel: bool = False,
-        **kwargs,
     ):
         """Downsample the data in x and y."""
         self._check_valid_downsample_args(x, y, n_out)
         self._supports_dtype(y)
         if x is not None:
             self._supports_dtype(x)
-        return self._downsample(x, y, n_out, parallel=parallel, **kwargs)
+        return self._downsample(x, y, n_out, parallel)
