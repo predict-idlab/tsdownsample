@@ -2,7 +2,7 @@ import warnings
 import numpy as np
 
 from typing import Union
-from .downsampling_interface import DownsampleInterface
+from .downsampling_interface import AbstractDownsampler
 
 # ------------------ Rust Downsamplers ------------------
 from tsdownsample._rust import _tsdownsample_rs  # type: ignore[attr-defined]
@@ -39,7 +39,7 @@ class MinMaxDownsampler(AbstractRustDownsampler):
                 f"x is passed to downsample method of {self.name}, but is not taken "/
                 f"into account by the current implementation of  {self.name} algorithm."
             )
-        super()._downsample(x, *args, **kwargs)
+        return super()._downsample(x, *args, **kwargs)
 
 class M4Downsampler(AbstractRustDownsampler):
 
@@ -52,7 +52,7 @@ class M4Downsampler(AbstractRustDownsampler):
                 f"x is passed to downsample method of {self.name}, but is not taken "/
                 f"into account by the current implementation of  {self.name} algorithm."
             )
-        super()._downsample(x, *args, **kwargs)
+        return super()._downsample(x, *args, **kwargs)
 
 class LTTBDownsampler(AbstractRustDownsampler):
 
@@ -64,11 +64,15 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
     def __init__(self):
         super().__init__("MinMaxLTTB", _tsdownsample_rs.minmaxlttb, rust_dtypes)
 
+    def downsample(self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False):
+        assert minmax_ratio > 0, "minmax_ratio must be greater than 0"
+        return super().downsample(*args, n_out=n_out, parallel=parallel, ratio=minmax_ratio)
+
 
 # ------------------ EveryNth Downsampler ------------------
 import math
 
-class EveryNthDownsampler(DownsampleInterface):
+class EveryNthDownsampler(AbstractDownsampler):
     def __init__(self) -> None:
         super().__init__("EveryNth")
 
@@ -83,6 +87,6 @@ class EveryNthDownsampler(DownsampleInterface):
 
 # ------------------ Function Downsampler ------------------
 
-class FuncDownsampler(DownsampleInterface):
+class FuncDownsampler(AbstractDownsampler):
 
     pass

@@ -5,7 +5,8 @@ __author__ = "Jeroen Van Der Donckt"
 import warnings
 import re
 from abc import ABC, abstractmethod
-from typing import Callable, List, ModuleType, Union
+from typing import Callable, List, Union, Tuple
+from types import ModuleType
 
 import numpy as np
 
@@ -32,13 +33,26 @@ class AbstractDownsampler(ABC):
         )
 
     @staticmethod
-    def _check_valid_downsample_args(x, y, n_out):
-        if y is None:
-            raise ValueError("y cannot be None")
-        if x is not None and x.shape[0] != y.shape[0]:
-            raise ValueError("x and y must have the same length")
-        if n_out is None:
-            raise ValueError("n_out cannot be None")
+    def _check_valid_downsample_args(*args) -> Tuple[Union[np.ndarray, None], np.ndarray]:
+        if len(args) == 2:
+            x, y = args
+        elif len(args) == 1:
+            x, y = None, args[0]
+        else:
+            raise ValueError(
+                "downsample() takes 1 or 2 positional arguments but "
+                f"{len(args)} were given"
+            )
+        # y must be 1D array
+        if y.ndim != 1:
+            raise ValueError("y must be 1D array")
+        # x must be 1D array with same length as y or None
+        if x is not None:
+            if x.ndim != 1:
+                raise ValueError("x must be 1D array")
+            if len(x) != len(y):
+                raise ValueError("x and y must have the same length")
+        return x, y
 
     @abstractmethod
     def _downsample(
@@ -59,16 +73,38 @@ class AbstractDownsampler(ABC):
 
     def downsample(
         self,
-        x: Union[np.ndarray, None] = None,
-        y: Union[np.ndarray, None] = None,
-        n_out: int = None,
+        *args, # x and y are optional
+        n_out: int,
+        **kwargs,
     ):
-        """Downsample the data in x and y."""
-        self._check_valid_downsample_args(x, y, n_out)
+        """Downsample y (and x).
+
+        Call signatures::
+            downsample([x], y, n_out, **kwargs)
+
+
+        Parameters
+        ----------
+        x, y : array-like
+            The horizontal / vertical coordinates of the data points.
+            *x* values are optional.
+            These parameters should be 1D arrays.
+            These arguments cannot be passed as keywords.
+        n_out : int
+            The number of points to keep.
+        **kwargs
+            Additional keyword arguments are passed to the downsampler.
+        
+        Returns
+        -------
+        np.ndarray
+            The selected indices.
+        """
+        x, y = self._check_valid_downsample_args(*args)
+        self._supports_dtype(y)
         if x is not None:
             self._supports_dtype(x)
-        self._supports_dtype(y)
-        return self._downsample(x, y, n_out)
+        return self._downsample(x, y, n_out, **kwargs)
 
     def __repr__(self) -> str:
         return f"{self.name}"
@@ -196,13 +232,14 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         elif hasattr(self.rust_mod, "scalar_parallel"):
             # use scalar implementation if available (when no SIMD available)
             self.mod_multi_core = self.rust_mod.scalar_parallel
-
+        
     def _downsample(
         self,
         x: Union[np.ndarray, None],
         y: Union[np.ndarray, None],
         n_out: int = None,
         parallel: bool = False,
+        **kwargs,
     ) -> np.ndarray:
         """Downsample the data in x and y."""
         mod = self.mod_single_core
@@ -214,20 +251,16 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                 )
         if x is None:
             downsample_f = _switch_mod_with_y(y.dtype, mod)
-            return downsample_f(y, n_out)
+            return downsample_f(y, n_out, **kwargs)
         downsample_f = _switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
-        return downsample_f(x, y, n_out)
+        return downsample_f(x, y, n_out, **kwargs)
 
     def downsample(
         self,
-        x: Union[np.ndarray, None] = None,
-        y: Union[np.ndarray, None] = None,
-        n_out: int = None,
+        *args, # x and y are optional
+        n_out: int,
         parallel: bool = False,
+        **kwargs,
     ):
         """Downsample the data in x and y."""
-        self._check_valid_downsample_args(x, y, n_out)
-        self._supports_dtype(y)
-        if x is not None:
-            self._supports_dtype(x)
-        return self._downsample(x, y, n_out, parallel)
+        return super().downsample(*args, n_out=n_out, parallel=parallel, **kwargs)
