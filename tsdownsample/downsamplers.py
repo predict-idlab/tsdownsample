@@ -1,13 +1,12 @@
 import warnings
-import numpy as np
-
 from typing import Union
-from .downsampling_interface import AbstractDownsampler
+
+import numpy as np
 
 # ------------------ Rust Downsamplers ------------------
 from tsdownsample._rust import _tsdownsample_rs  # type: ignore[attr-defined]
 
-from .downsampling_interface import AbstractRustDownsampler
+from .downsampling_interface import AbstractDownsampler, AbstractRustDownsampler
 
 rust_dtypes = [
     "float16",
@@ -28,64 +27,68 @@ rust_dtypes = [
 #     "MinMaxLTTB", _tsdownsample_rs.minmaxlttb, rust_dtypes
 # )
 
-class MinMaxDownsampler(AbstractRustDownsampler):
 
+class MinMaxDownsampler(AbstractRustDownsampler):
     def __init__(self) -> None:
         super().__init__("MinMax", _tsdownsample_rs.minmax, rust_dtypes)
 
     def _downsample(self, x: Union[np.ndarray, None], *args, **kwargs):
         if x is not None:
             warnings.warn(
-                f"x is passed to downsample method of {self.name}, but is not taken "/
+                f"x is passed to downsample method of {self.name}, but is not taken "
                 f"into account by the current implementation of  {self.name} algorithm."
             )
-        return super()._downsample(x, *args, **kwargs)
+        return super()._downsample(None, *args, **kwargs)
+
 
 class M4Downsampler(AbstractRustDownsampler):
-
     def __init__(self):
         super().__init__("M4", _tsdownsample_rs.m4, rust_dtypes)
 
     def _downsample(self, x: Union[np.ndarray, None], *args, **kwargs):
         if x is not None:
             warnings.warn(
-                f"x is passed to downsample method of {self.name}, but is not taken "/
-                f"into account by the current implementation of  {self.name} algorithm."
+                f"x is passed to downsample method of {self.name}, but is not taken "
+                / f"into account by the current implementation of  {self.name} algorithm."
             )
-        return super()._downsample(x, *args, **kwargs)
+        return super()._downsample(None, *args, **kwargs)
+
 
 class LTTBDownsampler(AbstractRustDownsampler):
-
     def __init__(self):
         super().__init__("LTTB", _tsdownsample_rs.lttb, rust_dtypes)
 
-class MinMaxLTTBDownsampler(AbstractRustDownsampler):
 
+class MinMaxLTTBDownsampler(AbstractRustDownsampler):
     def __init__(self):
         super().__init__("MinMaxLTTB", _tsdownsample_rs.minmaxlttb, rust_dtypes)
 
-    def downsample(self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False):
+    def downsample(
+        self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False
+    ):
         assert minmax_ratio > 0, "minmax_ratio must be greater than 0"
-        return super().downsample(*args, n_out=n_out, parallel=parallel, ratio=minmax_ratio)
+        return super().downsample(
+            *args, n_out=n_out, parallel=parallel, ratio=minmax_ratio
+        )
 
 
 # ------------------ EveryNth Downsampler ------------------
 import math
+
 
 class EveryNthDownsampler(AbstractDownsampler):
     def __init__(self) -> None:
         super().__init__("EveryNth")
 
     def _downsample(
-        self,
-        _: Union[np.ndarray, None],  # x is not used
-        y: np.ndarray,
-        n_out: int,
+        self, _: Union[np.ndarray, None], y: np.ndarray, n_out: int  # x is not used
     ) -> np.ndarray:
         step = max(1, math.ceil(len(y) / n_out))
         return np.arange(0, len(y), step)
 
+
 # ------------------ Function Downsampler ------------------
+
 
 class FuncDownsampler(AbstractDownsampler):
 

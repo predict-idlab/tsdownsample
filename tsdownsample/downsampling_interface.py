@@ -2,11 +2,11 @@
 
 __author__ = "Jeroen Van Der Donckt"
 
-import warnings
 import re
+import warnings
 from abc import ABC, abstractmethod
-from typing import Callable, List, Union, Tuple
 from types import ModuleType
+from typing import Callable, List, Tuple, Union
 
 import numpy as np
 
@@ -33,7 +33,9 @@ class AbstractDownsampler(ABC):
         )
 
     @staticmethod
-    def _check_valid_downsample_args(*args) -> Tuple[Union[np.ndarray, None], np.ndarray]:
+    def _check_valid_downsample_args(
+        *args,
+    ) -> Tuple[Union[np.ndarray, None], np.ndarray]:
         if len(args) == 2:
             x, y = args
         elif len(args) == 1:
@@ -71,12 +73,7 @@ class AbstractDownsampler(ABC):
         """
         raise NotImplementedError
 
-    def downsample(
-        self,
-        *args, # x and y are optional
-        n_out: int,
-        **kwargs,
-    ):
+    def downsample(self, *args, n_out: int, **kwargs):  # x and y are optional
         """Downsample y (and x).
 
         Call signatures::
@@ -94,7 +91,7 @@ class AbstractDownsampler(ABC):
             The number of points to keep.
         **kwargs
             Additional keyword arguments are passed to the downsampler.
-        
+
         Returns
         -------
         np.ndarray
@@ -232,7 +229,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         elif hasattr(self.rust_mod, "scalar_parallel"):
             # use scalar implementation if available (when no SIMD available)
             self.mod_multi_core = self.rust_mod.scalar_parallel
-        
+
     def _downsample(
         self,
         x: Union[np.ndarray, None],
@@ -246,8 +243,8 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         if parallel:
             if self.mod_multi_core is None:
                 warnings.warn(
-                    f"No parallel implementation available for {self.name}. "/
-                    "Falling back to single-core implementation."
+                    f"No parallel implementation available for {self.name}. "
+                    / "Falling back to single-core implementation."
                 )
         if x is None:
             downsample_f = _switch_mod_with_y(y.dtype, mod)
@@ -257,7 +254,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
 
     def downsample(
         self,
-        *args, # x and y are optional
+        *args,  # x and y are optional
         n_out: int,
         parallel: bool = False,
         **kwargs,

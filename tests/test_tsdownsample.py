@@ -5,8 +5,8 @@ from tsdownsample import (
     EveryNthDownsampler,
     LTTBDownsampler,
     M4Downsampler,
-    MeanDownsampler,
-    MedianDownsampler,
+    # MeanDownsampler,
+    # MedianDownsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
 )
@@ -24,7 +24,7 @@ def test_m4_downsampler():
     """Test M4 downsampler."""
     arr = np.array(np.arange(10_000))
     s = pd.Series(arr)
-    s_downsampled = M4Downsampler.downsample(s, 100)
+    s_downsampled = M4Downsampler().downsample(s, 100)
     assert s_downsampled.values[0] == 0
     assert s_downsampled.values[-1] == len(arr) - 1
 
@@ -33,7 +33,7 @@ def test_minmax_downsampler():
     """Test MinMax downsampler."""
     arr = np.array(np.arange(10_000))
     s = pd.Series(arr)
-    s_downsampled = MinMaxDownsampler.downsample(s, 100)
+    s_downsampled = MinMaxDownsampler().downsample(s, 100)
     assert s_downsampled.values[0] == 0
     assert s_downsampled.values[-1] == len(arr) - 1
 
@@ -42,7 +42,7 @@ def test_lttb_downsampler():
     """Test LTTB downsampler."""
     arr = np.array(np.arange(10_000))
     s = pd.Series(arr)
-    s_downsampled = LTTBDownsampler.downsample(s, 100)
+    s_downsampled = LTTBDownsampler().downsample(s, 100)
     assert s_downsampled.values[0] == 0
     assert s_downsampled.values[-1] == len(arr) - 1
 
@@ -51,34 +51,34 @@ def test_minmaxlttb_downsampler():
     """Test MinMaxLTTB downsampler."""
     arr = np.array(np.arange(10_000))
     s = pd.Series(arr)
-    s_downsampled = MinMaxLTTBDownsampler.downsample(s, 100, 30)
+    s_downsampled = MinMaxLTTBDownsampler().downsample(s, 100, 30)
     assert s_downsampled.values[0] == 0
     assert s_downsampled.values[-1] == len(arr) - 1
 
 
-def test_mean_downsampler():
-    """Test Mean downsampler."""
-    arr = np.array(np.arange(10_000))
-    s = pd.Series(arr)
-    s_downsampled = MeanDownsampler.downsample(s, 100)
-    assert s_downsampled.values[0] == 49.5
-    assert s_downsampled.values[-1] == 9_949.5
+# def test_mean_downsampler():
+#     """Test Mean downsampler."""
+#     arr = np.array(np.arange(10_000))
+#     s = pd.Series(arr)
+#     s_downsampled = MeanDownsampler().downsample(s, 100)
+#     assert s_downsampled.values[0] == 49.5
+#     assert s_downsampled.values[-1] == 9_949.5
 
 
-def test_median_downsampler():
-    """Test Median downsampler."""
-    arr = np.array(np.arange(10_000))
-    s = pd.Series(arr)
-    s_downsampled = MedianDownsampler.downsample(s, 100)
-    assert s_downsampled.values[0] == 49.5
-    assert s_downsampled.values[-1] == 9_949.5
+# def test_median_downsampler():
+#     """Test Median downsampler."""
+#     arr = np.array(np.arange(10_000))
+#     s = pd.Series(arr)
+#     s_downsampled = MedianDownsampler().downsample(s, 100)
+#     assert s_downsampled.values[0] == 49.5
+#     assert s_downsampled.values[-1] == 9_949.5
 
 
 def test_everynth_downsampler():
     """Test EveryNth downsampler."""
     arr = np.array(np.arange(10_000))
     s = pd.Series(arr)
-    s_downsampled = EveryNthDownsampler.downsample(s, 100)
+    s_downsampled = EveryNthDownsampler().downsample(s, 100)
     assert s_downsampled.values[0] == 0
     assert s_downsampled.values[-1] == 9_900
 
@@ -86,10 +86,10 @@ def test_everynth_downsampler():
 ## Parallel downsampling
 
 rust_downsamplers = [
-    MinMaxDownsampler,
-    M4Downsampler,
-    LTTBDownsampler,
-    MinMaxLTTBDownsampler,
+    MinMaxDownsampler(),
+    M4Downsampler(),
+    LTTBDownsampler(),
+    MinMaxLTTBDownsampler(),
 ]
 
 
