@@ -1,3 +1,4 @@
+.vscode/*
 venv/
 TODO.md
 main.rs

@@ -1,54 +1,74 @@
-import warnings
+"""AbstractDownsampler interface-class, subclassed by concrete downsamplers."""
+
+__author__ = "Jeroen Van Der Donckt"
+
+import re
 from abc import ABC, abstractmethod
-from types import ModuleType
-from typing import Callable
+from typing import Callable, List, ModuleType, Union
 
 import numpy as np
-import pandas as pd
 
 
-class DownsampleInterface(ABC):
-    def __init__(self, name: str) -> None:
+class AbstractDownsampler(ABC):
+    """AbstractDownsampler interface-class, subclassed by concrete downsamplers."""
+
+    def __init__(self, name: str, dtype_regex_list: List[str] = None):
+        """Initialize the downsampler with a list of regexes to match the data-types to downsample."""
         self.name = name
+        self.dtype_regex_list = dtype_regex_list
+
+    def _supports_dtype(self, arr: np.array):
+        # base case
+        if self.dtype_regex_list is None:
+            return
+
+        for dtype_regex_str in self.dtype_regex_list:
+            m = re.compile(dtype_regex_str).match(str(arr.dtype))
+            if m is not None:  # a match is found
+                return
+        raise ValueError(
+            f"{arr.dtype} doesn't match with any regex in {self.dtype_regex_list}"
+        )
 
     @staticmethod
-    def _construct_output_series(s: pd.Series, idxs: np.ndarray) -> pd.Series:
-        return s.iloc[idxs]
-
-    # def _supports_dtype(self, s: pd.Series):
-    #     # base case
-    #     if self.dtype_regex_list is None:
-    #         return
-
-    #     for dtype_regex_str in self.dtype_regex_list:
-    #         m = re.compile(dtype_regex_str).match(str(s.dtype))
-    #         if m is not None:  # a match is found
-    #             return
-    #     raise ValueError(
-    #         f"{s.dtype} doesn't match with any regex in {self.dtype_regex_list}"
-    #     )
+    def _check_valid_downsample_args(x, y, n_out):
+        if y is None:
+            raise ValueError("y cannot be None")
+        if x is not None and x.shape[0] != y.shape[0]:
+            raise ValueError("x and y must have the same length")
+        if n_out is None:
+            raise ValueError("n_out cannot be None")
 
     @abstractmethod
-    def downsample(
-        self, s: pd.Series, n_out: int, *args, parallel: bool = False
-    ) -> pd.Series:
-        """Downsample a pandas series to n_out samples.
-
-        Parameters
-        ----------
-        s : pd.Series
-            The series to downsample.
-        n_out : int
-            The number of samples to downsample to.
-        parallel : bool, optional
-            Whether to use parallel processing (if available), by default False.
+    def _downsample(
+        self,
+        x: Union[np.ndarray, None] = None,
+        y: Union[np.ndarray, None] = None,
+        n_out: int = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Downsample the data in x and y.
 
         Returns
         -------
-        pd.Series
-            The downsampled series.
+        np.ndarray
+            The selected indices.
         """
         raise NotImplementedError
+
+    def downsample(
+        self,
+        x: Union[np.ndarray, None] = None,
+        y: Union[np.ndarray, None] = None,
+        n_out: int = None,
+        **kwargs,
+    ):
+        """Downsample the data in x and y."""
+        self._check_valid_downsample_args(x, y, n_out)
+        if x is not None:
+            self._supports_dtype(x)
+        self._supports_dtype(y)
+        return self._downsample(x, y, n_out, **kwargs)
 
     def __repr__(self) -> str:
         return f"{self.name}"
@@ -152,9 +172,14 @@ def _switch_mod_with_x_and_y(
     raise ValueError(f"Unsupported data type (for x): {x_dtype}")
 
 
-class RustDownsamplingInterface(DownsampleInterface):
-    def __init__(self, name: str, resampling_mod: ModuleType) -> None:
-        super().__init__(name + " [tsdownsample_rs]")
+class RustDownsampler(AbstractDownsampler):
+    """RustDownsampler interface-class, subclassed by concrete downsamplers."""
+
+    def __init__(
+        self, name: str, resampling_mod: ModuleType, dtype_regex_list: List[str]
+    ):
+        """Initialize the downsampler with a list of regexes to match the data-types to downsample."""
+        super().__init__(name, dtype_regex_list)
         self.rust_mod = resampling_mod
 
         # Store the single core sub module
@@ -172,103 +197,34 @@ class RustDownsamplingInterface(DownsampleInterface):
             # use scalar implementation if available (when no SIMD available)
             self.mod_multi_core = self.rust_mod.scalar_parallel
 
-    def _downsample_without_x(self, s: pd.Series, n_out: int, *args) -> pd.Series:
-        downsample_method = _switch_mod_with_y(s.dtype, self.mod_single_core)
-        idxs = downsample_method(s.values, n_out, *args)
-        return self._construct_output_series(s, idxs)
-
-    def _downsample_with_x(self, s: pd.Series, n_out: int, *args) -> pd.Series:
-        downsample_method = _switch_mod_with_x_and_y(
-            s.index.dtype, s.dtype, self.mod_single_core
-        )
-        idxs = downsample_method(s.index.values, s.values, n_out, *args)
-        return self._construct_output_series(s, idxs)
-
-    def _downsample_without_x_parallel(
-        self, s: pd.Series, n_out: int, *args
-    ) -> pd.Series:
-        if self.mod_multi_core is not None:
-            downsample_method = _switch_mod_with_y(s.dtype, self.mod_multi_core)
-        else:
-            warnings.warn(
-                "No multi-core implementation available. "
-                "Falling back to single core implementation."
-            )
-            downsample_method = _switch_mod_with_y(s.dtype, self.mod_single_core)
-        idxs = downsample_method(s.values, n_out, *args)
-        return self._construct_output_series(s, idxs)
-
-    def _downsample_with_x_parallel(self, s: pd.Series, n_out: int, *args) -> pd.Series:
-        if self.mod_multi_core is not None:
-            downsample_method = _switch_mod_with_x_and_y(
-                s.index.dtype, s.dtype, self.mod_multi_core
-            )
-        else:
-            warnings.warn(
-                "No multi-core implementation available. "
-                "Falling back to single core implementation."
-            )
-            downsample_method = _switch_mod_with_x_and_y(
-                s.index.dtype, s.dtype, self.mod_single_core
-            )
-        idxs = downsample_method(s.index.values, s.values, n_out, *args)
-        return self._construct_output_series(s, idxs)
+    @abstractmethod
+    def _downsample(
+        self,
+        x: Union[np.ndarray, None] = None,
+        y: Union[np.ndarray, None] = None,
+        n_out: int = None,
+        parallel: bool = False,
+        **kwargs,
+    ) -> np.ndarray:
+        """Downsample the data in x and y."""
+        mod = self.mod_single_core if not parallel else self.mod_multi_core
+        if x is None:
+            downsample_f = _switch_mod_with_y(y.dtype, mod)
+            return downsample_f(y, n_out)
+        downsample_f = _switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
+        return downsample_f(x, y, n_out)
 
     def downsample(
-        self, s: pd.Series, n_out: int, *args, parallel: bool = False
-    ) -> pd.Series:
-        fixed_sr = False
-        if isinstance(s.index, pd.RangeIndex) or s.index.freq is not None:
-            fixed_sr = True
-        if fixed_sr:  # TODO: or the other way around??
-            if parallel:
-                return self._downsample_without_x_parallel(s, n_out, *args)
-            else:
-                return self._downsample_without_x(s, n_out, *args)
-        else:
-            if parallel:
-                return self._downsample_with_x_parallel(s, n_out, *args)
-            else:
-                return self._downsample_with_x(s, n_out, *args)
-
-
-# ------------------ Numpy Downsample Interface ------------------
-
-
-class FuncDownsamplingInterface(DownsampleInterface):
-    def __init__(self, name: str, downsample_func: Callable) -> None:
-        super().__init__("[Func]_" + name)
-        self.downsample_func = downsample_func
-
-    def downsample(
-        self, s: pd.Series, n_out: int, *args, parallel: bool = False
-    ) -> pd.Series:
-        if isinstance(s.index, pd.DatetimeIndex):
-            t_start, t_end = s.index[:: len(s) - 1]
-            rate = (t_end - t_start) / n_out
-            return s.resample(rate).apply(self.downsample_func).dropna()
-
-        # no time index -> use the every nth heuristic
-        group_size = max(1, np.ceil(len(s) / n_out))
-        s_out = (
-            s.groupby(
-                # create an array of [0, 0, 0, ...., n_out, n_out]
-                # where each value is repeated based $len(s)/n_out$ times
-                by=np.repeat(np.arange(n_out), group_size)[: len(s)]
-            )
-            .agg(self.downsample_func)
-            .dropna()
-        )
-        # Create an index-estimation for real-time data
-        # Add one to the index so it's pointed at the end of the window
-        # Note: this can be adjusted to .5 to center the data
-        # Multiply it with the group size to get the real index-position
-        # TODO: add option to select start / middle / end as index
-        idx_locs = (np.arange(len(s_out)) + 1) * group_size
-        idx_locs[-1] = len(s) - 1
-        return pd.Series(
-            index=s.iloc[idx_locs.astype(s.index.dtype)].index.astype(s.index.dtype),
-            data=s_out.values,
-            name=str(s.name),
-            copy=False,
-        )
+        self,
+        x: Union[np.ndarray, None] = None,
+        y: Union[np.ndarray, None] = None,
+        n_out: int = None,
+        parallel: bool = False,
+        **kwargs,
+    ):
+        """Downsample the data in x and y."""
+        self._check_valid_downsample_args(x, y, n_out)
+        self._supports_dtype(y)
+        if x is not None:
+            self._supports_dtype(x)
+        return self._downsample(x, y, n_out, parallel=parallel, **kwargs)
