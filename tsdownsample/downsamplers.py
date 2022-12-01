@@ -81,8 +81,13 @@ class EveryNthDownsampler(AbstractDownsampler):
         super().__init__("EveryNth")
 
     def _downsample(
-        self, _: Union[np.ndarray, None], y: np.ndarray, n_out: int  # x is not used
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int,  **kwargs
     ) -> np.ndarray:
+        if x is not None:
+            warnings.warn(
+                f"x is passed to downsample method of {self.name}, but is not taken "
+                f"into account by the current implementation of  {self.name} algorithm."
+            )
         step = max(1, math.ceil(len(y) / n_out))
         return np.arange(0, len(y), step)
 

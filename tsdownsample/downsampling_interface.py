@@ -14,11 +14,11 @@ import numpy as np
 class AbstractDownsampler(ABC):
     """AbstractDownsampler interface-class, subclassed by concrete downsamplers."""
 
-    def __init__(self, name: str, dtype_regex_list: List[str] = None):
+    def __init__(self, name: str, dtype_regex_list: Union[List[str], None] = None):
         self.name = name
         self.dtype_regex_list = dtype_regex_list
 
-    def _supports_dtype(self, arr: np.array):
+    def _supports_dtype(self, arr: np.ndarray):
         # base case
         if self.dtype_regex_list is None:
             return
@@ -58,9 +58,9 @@ class AbstractDownsampler(ABC):
     @abstractmethod
     def _downsample(
         self,
-        x: Union[np.ndarray, None] = None,
-        y: Union[np.ndarray, None] = None,
-        n_out: int = None,
+        x: Union[np.ndarray, None],
+        y: np.ndarray,
+        n_out: int,
         **kwargs,
     ) -> np.ndarray:
         """Downsample the data in x and y.
@@ -231,8 +231,8 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
     def _downsample(
         self,
         x: Union[np.ndarray, None],
-        y: Union[np.ndarray, None],
-        n_out: int = None,
+        y: np.ndarray,
+        n_out: int,
         parallel: bool = False,
         **kwargs,
     ) -> np.ndarray:
