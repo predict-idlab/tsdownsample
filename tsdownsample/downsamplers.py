@@ -64,7 +64,7 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
         super().__init__("MinMaxLTTB", _tsdownsample_rs.minmaxlttb, rust_dtypes)
 
     def downsample(
-        self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False
+        self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False, **_
     ):
         assert minmax_ratio > 0, "minmax_ratio must be greater than 0"
         return super().downsample(
@@ -81,7 +81,7 @@ class EveryNthDownsampler(AbstractDownsampler):
         super().__init__("EveryNth")
 
     def _downsample(
-        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int,  **kwargs
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **_
     ) -> np.ndarray:
         if x is not None:
             warnings.warn(

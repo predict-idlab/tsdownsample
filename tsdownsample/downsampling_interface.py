@@ -57,11 +57,7 @@ class AbstractDownsampler(ABC):
 
     @abstractmethod
     def _downsample(
-        self,
-        x: Union[np.ndarray, None],
-        y: np.ndarray,
-        n_out: int,
-        **kwargs,
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
     ) -> np.ndarray:
         """Downsample the data in x and y.
 
