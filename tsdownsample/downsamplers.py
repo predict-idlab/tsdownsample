@@ -20,13 +20,6 @@ rust_dtypes = [
     "int64",
 ]
 
-# MinMaxDownsampler = RustDownsampler("MinMax", _tsdownsample_rs.minmax, rust_dtypes)
-# M4Downsampler = RustDownsampler("M4", _tsdownsample_rs.m4, rust_dtypes)
-# LTTBDownsampler = RustDownsampler("LTTB", _tsdownsample_rs.lttb, rust_dtypes)
-# MinMaxLTTBDownsampler = RustDownsampler(
-#     "MinMaxLTTB", _tsdownsample_rs.minmaxlttb, rust_dtypes
-# )
-
 
 class MinMaxDownsampler(AbstractRustDownsampler):
     def __init__(self) -> None:

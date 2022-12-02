@@ -6,7 +6,7 @@ import re
 import warnings
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import Callable, List, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -14,7 +14,7 @@ import numpy as np
 class AbstractDownsampler(ABC):
     """AbstractDownsampler interface-class, subclassed by concrete downsamplers."""
 
-    def __init__(self, name: str, dtype_regex_list: Union[List[str], None] = None):
+    def __init__(self, name: str, dtype_regex_list: Optional[List[str]] = None):
         self.name = name
         self.dtype_regex_list = dtype_regex_list
 
