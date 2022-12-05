@@ -240,6 +240,8 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                     f"No parallel implementation available for {self.name}. "
                     "Falling back to single-core implementation."
                 )
+            else:
+                mod = self.mod_multi_core
         if x is None:
             downsample_f = _switch_mod_with_y(y.dtype, mod)
             return downsample_f(y, n_out, **kwargs)
