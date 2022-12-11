@@ -14,21 +14,27 @@ import numpy as np
 class AbstractDownsampler(ABC):
     """AbstractDownsampler interface-class, subclassed by concrete downsamplers."""
 
-    def __init__(self, name: str, dtype_regex_list: Optional[List[str]] = None):
-        self.name = name
-        self.dtype_regex_list = dtype_regex_list
+    def __init__(
+        self,
+        x_dtype_regex_list: Optional[List[str]] = None,
+        y_dtype_regex_list: Optional[List[str]] = None,
+    ):
+        self.x_dtype_regex_list = x_dtype_regex_list
+        self.y_dtype_regex_list = y_dtype_regex_list
 
-    def _supports_dtype(self, arr: np.ndarray):
+    def _supports_dtype(self, arr: np.ndarray, y: bool = True):
+        dtype_regex_list = self.y_dtype_regex_list if y else self.x_dtype_regex_list
         # base case
-        if self.dtype_regex_list is None:
+        if dtype_regex_list is None:
             return
 
-        for dtype_regex_str in self.dtype_regex_list:
+        for dtype_regex_str in dtype_regex_list:
             m = re.compile(dtype_regex_str).match(str(arr.dtype))
             if m is not None:  # a match is found
                 return
         raise ValueError(
-            f"{arr.dtype} doesn't match with any regex in {self.dtype_regex_list}"
+            f"{arr.dtype} doesn't match with any regex in {dtype_regex_list} "
+            f"for the {'y' if y else 'x'}-data"
         )
 
     @staticmethod
@@ -93,13 +99,10 @@ class AbstractDownsampler(ABC):
             The selected indices.
         """
         x, y = self._check_valid_downsample_args(*args)
-        self._supports_dtype(y)
+        self._supports_dtype(y, y=True)
         if x is not None:
-            self._supports_dtype(x)
+            self._supports_dtype(x, y=False)
         return self._downsample(x, y, n_out, **kwargs)
-
-    def __repr__(self) -> str:
-        return f"{self.name}"
 
 
 # ------------------- Rust Downsample Interface -------------------
@@ -203,10 +206,8 @@ def _switch_mod_with_x_and_y(
 class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
-    def __init__(
-        self, name: str, resampling_mod: ModuleType, dtype_regex_list: List[str]
-    ):
-        super().__init__(name, dtype_regex_list)
+    def __init__(self, resampling_mod: ModuleType, dtype_regex_list: List[str]):
+        super().__init__(dtype_regex_list, dtype_regex_list)  # same for x and y
         self.rust_mod = resampling_mod
 
         # Store the single core sub module
@@ -236,8 +237,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         mod = self.mod_single_core
         if parallel:
             if self.mod_multi_core is None:
+                name = self.__class__.__name__
                 warnings.warn(
-                    f"No parallel implementation available for {self.name}. "
+                    f"No parallel implementation available for {name}. "
                     "Falling back to single-core implementation."
                 )
             else:

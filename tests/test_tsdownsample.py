@@ -97,12 +97,14 @@ def test_parallel_downsampling():
 
 ## Using x
 
+all_downsamplers = rust_downsamplers + [EveryNthDownsampler()]
+
 
 def test_downsampling_with_x():
     """Test downsampling with x."""
     arr = np.random.randn(10_000).astype(np.float32)
     idx = np.arange(len(arr))
-    for downsampler in rust_downsamplers:
+    for downsampler in all_downsamplers:
         s_downsampled = downsampler.downsample(arr, n_out=100)
         s_downsampled_x = downsampler.downsample(idx, arr, n_out=100)
         assert np.all(s_downsampled == s_downsampled_x)
