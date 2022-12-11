@@ -109,100 +109,6 @@ class AbstractDownsampler(ABC):
 DOWNSAMPLE_F = "downsample"
 
 
-def _switch_mod_with_y(
-    y_dtype: np.dtype, mod: ModuleType, downsample_func: str = DOWNSAMPLE_F
-) -> Callable:
-    """The x-data is not considered in the downsampling
-
-    Assumes equal binning.
-
-    Parameters
-    ----------
-    y_dtype : np.dtype
-        The dtype of the y-data
-    mod : ModuleType
-        The module to select the appropriate function from
-    downsample_func : str, optional
-        The name of the function to use, by default DOWNSAMPLE_FUNC.
-    """
-    # FLOATS
-    if np.issubdtype(y_dtype, np.floating):
-        if y_dtype == np.float16:
-            return getattr(mod, downsample_func + "_f16")
-        elif y_dtype == np.float32:
-            return getattr(mod, downsample_func + "_f32")
-        elif y_dtype == np.float64:
-            return getattr(mod, downsample_func + "_f64")
-    # UINTS
-    elif np.issubdtype(y_dtype, np.unsignedinteger):
-        if y_dtype == np.uint16:
-            return getattr(mod, downsample_func + "_u16")
-        elif y_dtype == np.uint32:
-            return getattr(mod, downsample_func + "_u32")
-        elif y_dtype == np.uint64:
-            return getattr(mod, downsample_func + "_u64")
-    # INTS (need to be last because uint is subdtype of int)
-    elif np.issubdtype(y_dtype, np.integer):
-        if y_dtype == np.int16:
-            return getattr(mod, downsample_func + "_i16")
-        elif y_dtype == np.int32:
-            return getattr(mod, downsample_func + "_i32")
-        elif y_dtype == np.int64:
-            return getattr(mod, downsample_func + "_i64")
-    # BOOLS
-    # TODO: support bools
-    # elif data_dtype == np.bool:
-    # return mod.downsample_bool
-    raise ValueError(f"Unsupported data type (for y): {y_dtype}")
-
-
-def _switch_mod_with_x_and_y(
-    x_dtype: np.dtype, y_dtype: np.dtype, mod: ModuleType
-) -> Callable:
-    """The x-data is considered in the downsampling
-
-    Assumes equal binning.
-
-    Parameters
-    ----------
-    x_dtype : np.dtype
-        The dtype of the x-data
-    y_dtype : np.dtype
-        The dtype of the y-data
-    mod : ModuleType
-        The module to select the appropriate function from
-    """
-    # FLOATS
-    if np.issubdtype(x_dtype, np.floating):
-        if x_dtype == np.float16:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_f16")
-        elif x_dtype == np.float32:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_f32")
-        elif x_dtype == np.float64:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_f64")
-    # UINTS
-    elif np.issubdtype(x_dtype, np.unsignedinteger):
-        if x_dtype == np.uint16:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_u16")
-        elif x_dtype == np.uint32:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_u32")
-        elif x_dtype == np.uint64:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_u64")
-    # INTS (need to be last because uint is subdtype of int)
-    elif np.issubdtype(x_dtype, np.integer):
-        if x_dtype == np.int16:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i16")
-        elif x_dtype == np.int32:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i32")
-        elif x_dtype == np.int64:
-            return _switch_mod_with_y(y_dtype, mod, f"{DOWNSAMPLE_F}_i64")
-    # BOOLS
-    # TODO: support bools
-    # elif data_dtype == np.bool:
-    # return mod.downsample_bool
-    raise ValueError(f"Unsupported data type (for x): {x_dtype}")
-
-
 class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
@@ -225,6 +131,118 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             # use scalar implementation if available (when no SIMD available)
             self.mod_multi_core = self.rust_mod.scalar_parallel
 
+    @staticmethod
+    def _switch_mod_with_y(
+        y_dtype: np.dtype, mod: ModuleType, downsample_func: str = DOWNSAMPLE_F
+    ) -> Callable:
+        """The x-data is not considered in the downsampling
+
+        Assumes equal binning.
+
+        Parameters
+        ----------
+        y_dtype : np.dtype
+            The dtype of the y-data
+        mod : ModuleType
+            The module to select the appropriate function from
+        downsample_func : str, optional
+            The name of the function to use, by default DOWNSAMPLE_FUNC.
+        """
+        # FLOATS
+        if np.issubdtype(y_dtype, np.floating):
+            if y_dtype == np.float16:
+                return getattr(mod, downsample_func + "_f16")
+            elif y_dtype == np.float32:
+                return getattr(mod, downsample_func + "_f32")
+            elif y_dtype == np.float64:
+                return getattr(mod, downsample_func + "_f64")
+        # UINTS
+        elif np.issubdtype(y_dtype, np.unsignedinteger):
+            if y_dtype == np.uint16:
+                return getattr(mod, downsample_func + "_u16")
+            elif y_dtype == np.uint32:
+                return getattr(mod, downsample_func + "_u32")
+            elif y_dtype == np.uint64:
+                return getattr(mod, downsample_func + "_u64")
+        # INTS (need to be last because uint is subdtype of int)
+        elif np.issubdtype(y_dtype, np.integer):
+            if y_dtype == np.int16:
+                return getattr(mod, downsample_func + "_i16")
+            elif y_dtype == np.int32:
+                return getattr(mod, downsample_func + "_i32")
+            elif y_dtype == np.int64:
+                return getattr(mod, downsample_func + "_i64")
+        # BOOLS
+        # TODO: support bools
+        # elif data_dtype == np.bool:
+        # return mod.downsample_bool
+        raise ValueError(f"Unsupported data type (for y): {y_dtype}")
+
+    @staticmethod
+    def _switch_mod_with_x_and_y(
+        x_dtype: np.dtype, y_dtype: np.dtype, mod: ModuleType
+    ) -> Callable:
+        """The x-data is considered in the downsampling
+
+        Assumes equal binning.
+
+        Parameters
+        ----------
+        x_dtype : np.dtype
+            The dtype of the x-data
+        y_dtype : np.dtype
+            The dtype of the y-data
+        mod : ModuleType
+            The module to select the appropriate function from
+        """
+        # FLOATS
+        if np.issubdtype(x_dtype, np.floating):
+            if x_dtype == np.float16:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_f16"
+                )
+            elif x_dtype == np.float32:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_f32"
+                )
+            elif x_dtype == np.float64:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_f64"
+                )
+        # UINTS
+        elif np.issubdtype(x_dtype, np.unsignedinteger):
+            if x_dtype == np.uint16:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_u16"
+                )
+            elif x_dtype == np.uint32:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_u32"
+                )
+            elif x_dtype == np.uint64:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_u64"
+                )
+        # INTS (need to be last because uint is subdtype of int)
+        elif np.issubdtype(x_dtype, np.integer):
+            if x_dtype == np.int16:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_i16"
+                )
+            elif x_dtype == np.int32:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_i32"
+                )
+            elif x_dtype == np.int64:
+                return AbstractRustDownsampler._switch_mod_with_y(
+                    y_dtype, mod, f"{DOWNSAMPLE_F}_i64"
+                )
+        # BOOLS
+        # TODO: support bools
+        # elif data_dtype == np.bool:
+        # return mod.downsample_bool
+        raise ValueError(f"Unsupported data type (for x): {x_dtype}")
+
     def _downsample(
         self,
         x: Union[np.ndarray, None],
@@ -245,9 +263,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             else:
                 mod = self.mod_multi_core
         if x is None:
-            downsample_f = _switch_mod_with_y(y.dtype, mod)
+            downsample_f = self._switch_mod_with_y(y.dtype, mod)
             return downsample_f(y, n_out, **kwargs)
-        downsample_f = _switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
+        downsample_f = self._switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
         return downsample_f(x, y, n_out, **kwargs)
 
     def downsample(
