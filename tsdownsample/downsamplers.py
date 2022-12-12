@@ -83,4 +83,3 @@ class EveryNthDownsampler(AbstractDownsampler):
             )
         step = max(1, math.ceil(len(y) / n_out))
         return np.arange(0, len(y), step)
-
