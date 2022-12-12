@@ -113,7 +113,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
     def __init__(self, resampling_mod: ModuleType, dtype_regex_list: List[str]):
-        super().__init__(dtype_regex_list, dtype_regex_list)  # same for x and y
+        super().__init__(
+            dtype_regex_list + ["datetime64"], dtype_regex_list
+        )  # same for x and y
         self.rust_mod = resampling_mod
 
         # Store the single core sub module
@@ -195,8 +197,14 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         mod : ModuleType
             The module to select the appropriate function from
         """
+        # DATETIME
+        if np.issubdtype(x_dtype, np.datetime64):
+            # datetime64[ns] is viewed as int64
+            return AbstractRustDownsampler._switch_mod_with_y(
+                y_dtype, mod, f"{DOWNSAMPLE_F}_i64"
+            )
         # FLOATS
-        if np.issubdtype(x_dtype, np.floating):
+        elif np.issubdtype(x_dtype, np.floating):
             if x_dtype == np.float16:
                 return AbstractRustDownsampler._switch_mod_with_y(
                     y_dtype, mod, f"{DOWNSAMPLE_F}_f16"
@@ -265,6 +273,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         if x is None:
             downsample_f = self._switch_mod_with_y(y.dtype, mod)
             return downsample_f(y, n_out, **kwargs)
+        elif np.issubdtype(x.dtype, np.datetime64):
+            # datetime64[ns] is viewed as int64
+            x = x.view(dtype=np.int64)
         downsample_f = self._switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
         return downsample_f(x, y, n_out, **kwargs)
 

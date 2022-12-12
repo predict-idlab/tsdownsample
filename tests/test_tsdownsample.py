@@ -50,24 +50,6 @@ def test_minmaxlttb_downsampler():
     assert s_downsampled[-1] == len(arr) - 1
 
 
-# def test_mean_downsampler():
-#     """Test Mean downsampler."""
-#     arr = np.array(np.arange(10_000))
-#     s = pd.Series(arr)
-#     s_downsampled = MeanDownsampler().downsample(s, 100)
-#     assert s_downsampled.values[0] == 49.5
-#     assert s_downsampled.values[-1] == 9_949.5
-
-
-# def test_median_downsampler():
-#     """Test Median downsampler."""
-#     arr = np.array(np.arange(10_000))
-#     s = pd.Series(arr)
-#     s_downsampled = MedianDownsampler().downsample(s, 100)
-#     assert s_downsampled.values[0] == 49.5
-#     assert s_downsampled.values[-1] == 9_949.5
-
-
 def test_everynth_downsampler():
     """Test EveryNth downsampler."""
     arr = np.array(np.arange(10_000))
@@ -137,11 +119,14 @@ def test_downsampling_different_dtypes():
         assert np.all(res[0] == res[i])
 
 
+supported_dtypes_x = supported_dtypes + [np.datetime64]
+
+
 def test_downsampling_different_dtypes_with_x():
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     idx_orig = np.arange(len(arr_orig))
-    for dtype_x in supported_dtypes:
+    for dtype_x in supported_dtypes_x:
         res = []
         idx = idx_orig.astype(dtype_x)
         for dtype_y in supported_dtypes:
