@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from test_config import supported_dtypes_x, supported_dtypes_y
 
 from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     EveryNthDownsampler,
@@ -93,21 +94,6 @@ def test_downsampling_with_x():
 
 
 ## Data types
-
-core_supported_dtypes = [
-    np.float16,
-    np.float32,
-    np.float64,
-    np.int16,
-    np.int32,
-    np.int64,
-    np.uint16,
-    np.uint32,
-    np.uint64,
-]
-
-supported_dtypes_x = core_supported_dtypes + [np.datetime64]
-supported_dtypes_y = core_supported_dtypes + [np.int8, np.uint8, np.bool8]
 
 
 def test_downsampling_different_dtypes():

@@ -1,6 +1,6 @@
-import tsdownsample._rust._tsdownsample_rs as tsds_rs
+from test_config import rust_primitive_types_x, rust_primitive_types_y
 
-DTYPES = ["f16", "f32", "f64", "i16", "i32", "i64", "u16", "u32", "u64"]
+import tsdownsample._rust._tsdownsample_rs as tsds_rs
 
 
 def _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
@@ -8,7 +8,7 @@ def _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
     for sub_mod in sub_mods:
         assert hasattr(mod, sub_mod)
         m = getattr(mod, sub_mod)
-        for ty in DTYPES:
+        for ty in rust_primitive_types_y:
             assert hasattr(m, f"downsample_{ty}")
     # With x
     if not has_x_impl:
@@ -16,8 +16,8 @@ def _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
     for sub_mod in sub_mods:
         assert hasattr(mod, sub_mod)
         m = getattr(mod, sub_mod)
-        for tx in DTYPES:
-            for ty in DTYPES:
+        for tx in rust_primitive_types_x:
+            for ty in rust_primitive_types_y:
                 assert hasattr(m, f"downsample_{tx}_{ty}")
 
 
