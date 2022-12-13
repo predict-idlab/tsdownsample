@@ -9,22 +9,10 @@ from tsdownsample._rust import _tsdownsample_rs  # type: ignore[attr-defined]
 
 from .downsampling_interface import AbstractDownsampler, AbstractRustDownsampler
 
-rust_dtypes = [
-    "float16",
-    "float32",
-    "float64",
-    "uint16",
-    "uint32",
-    "uint64",
-    "int16",
-    "int32",
-    "int64",
-]
-
 
 class MinMaxDownsampler(AbstractRustDownsampler):
     def __init__(self) -> None:
-        super().__init__(_tsdownsample_rs.minmax, rust_dtypes)
+        super().__init__(_tsdownsample_rs.minmax)
 
     def _downsample(self, x: Union[np.ndarray, None], *args, **kwargs):
         if x is not None:
@@ -38,7 +26,7 @@ class MinMaxDownsampler(AbstractRustDownsampler):
 
 class M4Downsampler(AbstractRustDownsampler):
     def __init__(self):
-        super().__init__(_tsdownsample_rs.m4, rust_dtypes)
+        super().__init__(_tsdownsample_rs.m4)
 
     def _downsample(self, x: Union[np.ndarray, None], *args, **kwargs):
         if x is not None:
@@ -52,12 +40,12 @@ class M4Downsampler(AbstractRustDownsampler):
 
 class LTTBDownsampler(AbstractRustDownsampler):
     def __init__(self):
-        super().__init__(_tsdownsample_rs.lttb, rust_dtypes)
+        super().__init__(_tsdownsample_rs.lttb)
 
 
 class MinMaxLTTBDownsampler(AbstractRustDownsampler):
     def __init__(self):
-        super().__init__(_tsdownsample_rs.minmaxlttb, rust_dtypes)
+        super().__init__(_tsdownsample_rs.minmaxlttb)
 
     def downsample(
         self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False, **_

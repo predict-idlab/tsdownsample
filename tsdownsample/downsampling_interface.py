@@ -109,13 +109,30 @@ class AbstractDownsampler(ABC):
 DOWNSAMPLE_F = "downsample"
 
 
+# the following dtypes are supported by the rust downsamplers (x and y)
+_rust_dtypes = [
+    "float16",
+    "float32",
+    "float64",
+    "uint16",
+    "uint32",
+    "uint64",
+    "int16",
+    "int32",
+    "int64",
+]
+# datetime64 is only supported for x-dtypes
+_x_rust_dtypes = _rust_dtypes + ["datetime64"]
+# <= 8-bit x-dtypes are not supported as the range of the values is too small to require
+# downsampling
+_y_rust_dtypes = _rust_dtypes + ["int8", "uint8", "bool"]
+
+
 class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
-    def __init__(self, resampling_mod: ModuleType, dtype_regex_list: List[str]):
-        super().__init__(
-            dtype_regex_list + ["datetime64"], dtype_regex_list
-        )  # same for x and y
+    def __init__(self, resampling_mod: ModuleType):
+        super().__init__(_x_rust_dtypes, _y_rust_dtypes)  # same for x and y
         self.rust_mod = resampling_mod
 
         # Store the single core sub module
@@ -160,7 +177,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                 return getattr(mod, downsample_func + "_f64")
         # UINTS
         elif np.issubdtype(y_dtype, np.unsignedinteger):
-            if y_dtype == np.uint16:
+            if y_dtype == np.uint8:
+                return getattr(mod, downsample_func + "_u8")
+            elif y_dtype == np.uint16:
                 return getattr(mod, downsample_func + "_u16")
             elif y_dtype == np.uint32:
                 return getattr(mod, downsample_func + "_u32")
@@ -168,16 +187,15 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                 return getattr(mod, downsample_func + "_u64")
         # INTS (need to be last because uint is subdtype of int)
         elif np.issubdtype(y_dtype, np.integer):
-            if y_dtype == np.int16:
+            if y_dtype == np.int8:
+                return getattr(mod, downsample_func + "_i8")
+            elif y_dtype == np.int16:
                 return getattr(mod, downsample_func + "_i16")
             elif y_dtype == np.int32:
                 return getattr(mod, downsample_func + "_i32")
             elif y_dtype == np.int64:
                 return getattr(mod, downsample_func + "_i64")
-        # BOOLS
-        # TODO: support bools
-        # elif data_dtype == np.bool:
-        # return mod.downsample_bool
+        # BOOLS -> int8 (bool is viewed as int8)
         raise ValueError(f"Unsupported data type (for y): {y_dtype}")
 
     @staticmethod
@@ -245,10 +263,6 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                 return AbstractRustDownsampler._switch_mod_with_y(
                     y_dtype, mod, f"{DOWNSAMPLE_F}_i64"
                 )
-        # BOOLS
-        # TODO: support bools
-        # elif data_dtype == np.bool:
-        # return mod.downsample_bool
         raise ValueError(f"Unsupported data type (for x): {x_dtype}")
 
     def _downsample(
@@ -270,6 +284,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                 )
             else:
                 mod = self.mod_multi_core
+        if y.dtype == "bool":
+            # bool is viewed as int8
+            y = y.view(dtype=np.int8)
         if x is None:
             downsample_f = self._switch_mod_with_y(y.dtype, mod)
             return downsample_f(y, n_out, **kwargs)

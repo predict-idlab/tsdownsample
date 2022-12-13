@@ -114,10 +114,15 @@ macro_rules! _create_pyfunc_with_x_with_ratio {
 }
 
 macro_rules! _create_pyfuncs_with_x_generic {
-    ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
-        // The macro will implement the function for all combinations of $t (for type x and y).
-        // (duplicate the list of types to iterate over all combinations)
-        _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
+    // ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
+    //     // The macro will implement the function for all combinations of $t (for type x and y).
+    //     // (duplicate the list of types to iterate over all combinations)
+    //     _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
+    // };
+
+    ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+, $($ty:ty)+) => {
+        // The macro will implement the function for all combinations of $tx and $ty (for respectively type x and y).
+        _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($tx)+; $($ty),+);
     };
 
     // Base case: there is only one type (for y) left
@@ -142,25 +147,25 @@ macro_rules! _create_pyfuncs_with_x_generic {
 
 macro_rules! create_pyfuncs_without_x {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_without_x_generic!(_create_pyfunc_without_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+        _create_pyfuncs_without_x_generic!(_create_pyfunc_without_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 
 macro_rules! create_pyfuncs_without_x_with_ratio {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_without_x_generic!(_create_pyfunc_without_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+        _create_pyfuncs_without_x_generic!(_create_pyfunc_without_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 
 macro_rules! create_pyfuncs_with_x {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 
 macro_rules! create_pyfuncs_with_x_with_ratio {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64);
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 

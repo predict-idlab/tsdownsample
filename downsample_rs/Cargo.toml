@@ -8,7 +8,7 @@ license = "MIT"
 
 [dependencies]
 ndarray = {version = "0.15.6", default-features = false, features = ["rayon"] }
-argminmax = { version = "0.2.1" , features = ["half"] }
+argminmax = { version = "0.3" , features = ["half"] }
 half = { version = "2.1", default-features = false , optional = true}
 
 [dev-dependencies]

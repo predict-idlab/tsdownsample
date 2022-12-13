@@ -94,7 +94,7 @@ def test_downsampling_with_x():
 
 ## Data types
 
-supported_dtypes = [
+core_supported_dtypes = [
     np.float16,
     np.float32,
     np.float64,
@@ -106,20 +106,21 @@ supported_dtypes = [
     np.uint64,
 ]
 
+supported_dtypes_x = core_supported_dtypes + [np.datetime64]
+supported_dtypes_y = core_supported_dtypes + [np.int8, np.uint8, np.bool8]
+
 
 def test_downsampling_different_dtypes():
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     res = []
-    for dtype in supported_dtypes:
+    for dtype in supported_dtypes_y:
         arr = arr_orig.astype(dtype)
         s_downsampled = MinMaxDownsampler().downsample(arr, n_out=100)
-        res += [s_downsampled]
+        if dtype is not np.bool8:
+            res += [s_downsampled]
     for i in range(1, len(res)):
         assert np.all(res[0] == res[i])
-
-
-supported_dtypes_x = supported_dtypes + [np.datetime64]
 
 
 def test_downsampling_different_dtypes_with_x():
@@ -129,10 +130,11 @@ def test_downsampling_different_dtypes_with_x():
     for dtype_x in supported_dtypes_x:
         res = []
         idx = idx_orig.astype(dtype_x)
-        for dtype_y in supported_dtypes:
+        for dtype_y in supported_dtypes_y:
             arr = arr_orig.astype(dtype_y)
             s_downsampled = MinMaxLTTBDownsampler().downsample(idx, arr, n_out=100)
-            res += [s_downsampled]
+            if dtype_y is not np.bool8:
+                res += [s_downsampled]
         for i in range(1, len(res)):
             assert np.all(res[0] == res[i])
 
@@ -143,7 +145,7 @@ def test_downsampling_different_dtypes_with_x():
 def test_error_unsupported_dtype():
     """Test unsupported dtype."""
     arr = np.random.randint(0, 100, size=10_000)
-    arr = arr.astype(np.bool)
+    arr = arr.astype("object")
     with pytest.raises(ValueError):
         MinMaxDownsampler().downsample(arr, n_out=100)
 
