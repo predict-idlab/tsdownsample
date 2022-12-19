@@ -41,7 +41,7 @@
 
 ## Install
 
-<!-- > ❗🚨❗ This package is currently under development - API is not yet fixed ❗🚨❗ -->
+> ❗🚨❗ This package is currently under development - correct installation is not yet guaranteed ❗🚨❗
 
 ```bash
 pip install tsdownsample
@@ -55,10 +55,20 @@ import numpy as np
 
 # Create a time series
 y = np.random.randn(10_000_000)
+x = np.arange(len(y))
 
-# Downsample to 1000 points
+# Downsample to 1000 points (assuming constant sampling rate)
 s_ds = MinMaxLTTBDownsampler().downsample(y, n_out=1000)
+
+# Downsample to 1000 points using the (possible irregularly spaced) x-data
+s_ds = MinMaxLTTBDownsampler().downsample(x, y, n_out=1000)
 ```
+
+## Limitations
+
+Assumes;
+(i) x-data monotinically increasing (i.e., sorted)
+(ii) no NaNs in the data
 
 ---
 
