@@ -23,21 +23,24 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        let mut avg_x: Tx = Tx::default();
-        let mut avg_y: Ty = Ty::default();
+        // let mut avg_x: Tx = Tx::default();
+        // let mut avg_y: Ty = Ty::default();
+        // TODO: check the impact of using f64 (is necessary to avoid overflow)
+        let mut avg_x: f64 = 0.0;
+        let mut avg_y: f64 = 0.0;
 
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, x.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_x = avg_x + x[i];
-            avg_y = avg_y + y[i];
+            avg_x = avg_x + x[i].to_f64();
+            avg_y = avg_y + y[i].to_f64();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
         // let avg_y: Ty = y.slice(s![avg_range_start..avg_range_end]).sum();
-        let avg_x: f64 = avg_x.to_f64() / (avg_range_end - avg_range_start) as f64;
-        let avg_y: f64 = avg_y.to_f64() / (avg_range_end - avg_range_start) as f64;
+        let avg_x: f64 = avg_x / (avg_range_end - avg_range_start) as f64;
+        let avg_y: f64 = avg_y / (avg_range_end - avg_range_start) as f64;
 
         // Get the range for this bucket
         let range_offs = (every * i as f64) as usize + 1;
@@ -93,17 +96,19 @@ pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        let mut avg_y: Ty = Ty::default();
+        // let mut avg_y: Ty = Ty::default();
+        // TODO: check impact of using f64 (is necessary to avoid overflow)
+        let mut avg_y: f64 = 0.0;
 
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, y.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_y = avg_y + y[i];
+            avg_y = avg_y + y[i].to_f64();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
-        let avg_y: f64 = avg_y.to_f64() / (avg_range_end - avg_range_start) as f64;
+        let avg_y: f64 = avg_y / (avg_range_end - avg_range_start) as f64;
         let avg_x: f64 = (avg_range_start + avg_range_end - 1) as f64 / 2.0;
 
         // Get the range for this bucket

@@ -3,7 +3,9 @@
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsdownsample.svg)](https://pypi.org/project/tsdownsample/)
 [![support-version](https://img.shields.io/pypi/pyversions/tsdownsample)](https://img.shields.io/pypi/pyversions/tsdownsample)
 [![Downloads](https://pepy.tech/badge/tsdownsample)](https://pepy.tech/project/tsdownsample)
-<!-- [![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml) -->
+[![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml)
+[![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml)
+<!-- TODO: codecov -->
 
 **📈 Time series downsampling** algorithms for visualization
 
@@ -25,11 +27,13 @@
   - works on views of the data (no copies)
   - no intermediate data structures are created
 * **Flexible**: works on any type of data
-    - supported datatypes are `f16`, `f32`, `f64`, `i16`, `i32`, `i64`, `u16`, `u32`, `u64`
+    - supported datatypes are 
+      - for `x`: `f16`, `f32`, `f64`, `i16`, `i32`, `i64`, `u16`, `u32`, `u64`, `datetime64`
+      - for `y`: `f16`, `f32`, `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `bool`
     <details>
       <summary><i>!! 🚀 <code>f16</code> <a href="https://github.com/jvdd/argminmax">argminmax</a> is 200-300x faster than numpy</i></summary>
       In contrast with all other data types above, <code>f16</code> is *not* hardware supported (i.e., no instructions for f16) by most modern CPUs!! <br>
-      🐌 Programming languages facilitate support for this datatype by either (i) upcasting to `f32` or (ii) using a software implementation. <br>
+      🐌 Programming languages facilitate support for this datatype by either (i) upcasting to <u>f32</u> or (ii) using a software implementation. <br>
       💡 As for argminmax, only comparisons are needed - and thus no arithmetic operations - creating a <u>symmetrical ordinal mapping from <code>f16</code> to <code>i16</code></u> is sufficient. This mapping allows to use the hardware supported scalar and SIMD <code>i16</code> instructions - while not producing any memory overhead 🎉 <br>
       <i>More details are described in <a href="https://github.com/jvdd/argminmax/pull/1">argminmax PR #1</a>.</i>
     </details>
@@ -37,8 +41,7 @@
 
 ## Install
 
-> ❗🚨❗ This package is currently under development - no stable release yet ❗🚨❗
-
+> ❗🚨❗ This package is currently under development - correct installation is not yet guaranteed ❗🚨❗
 
 ```bash
 pip install tsdownsample
@@ -48,15 +51,24 @@ pip install tsdownsample
 
 ```python
 from tsdownsample import MinMaxLTTBDownsampler
-import pandas as pd; import numpy as np
+import numpy as np
 
 # Create a time series
 y = np.random.randn(10_000_000)
-s = pd.Series(y)
+x = np.arange(len(y))
 
-# Downsample to 1000 points
-s_ds = MinMaxLTTBDownsampler.downsample(s, n_out=1000)
+# Downsample to 1000 points (assuming constant sampling rate)
+s_ds = MinMaxLTTBDownsampler().downsample(y, n_out=1000)
+
+# Downsample to 1000 points using the (possible irregularly spaced) x-data
+s_ds = MinMaxLTTBDownsampler().downsample(x, y, n_out=1000)
 ```
+
+## Limitations
+
+Assumes;
+(i) x-data monotinically increasing (i.e., sorted)
+(ii) no NaNs in the data
 
 ---
 

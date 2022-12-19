@@ -5,6 +5,11 @@ black = black tsdownsample tests
 install:
 	pip install -e .
 
+.PHONY: install-dev-requirements
+install-dev-requirements:
+	pip install -r tests/requirements.txt
+	pip install -r tests/requirements-linting.txt
+
 .PHONY: format
 format:
 	$(isort)
