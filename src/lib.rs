@@ -2,8 +2,6 @@ extern crate downsample_rs;
 extern crate paste;
 
 // TODO
-// - support bool
-//      => issue: does not have to_primitive (necessary for lttb)
 // - m4 & minmax should determine bin size on x-range!
 //      code now assumes equal bin size
 
