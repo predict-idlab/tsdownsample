@@ -121,10 +121,11 @@ _rust_dtypes = [
     "int32",
     "int64",
     "datetime64",
+    "timedelta64",
 ]
 # <= 8-bit x-dtypes are not supported as the range of the values is too small to require
 # downsampling
-_y_rust_dtypes = _rust_dtypes + ["timedelta64", "int8", "uint8", "bool"]
+_y_rust_dtypes = _rust_dtypes + ["int8", "uint8", "bool"]
 
 
 class AbstractRustDownsampler(AbstractDownsampler, ABC):
@@ -259,6 +260,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                     y_dtype, mod, f"{DOWNSAMPLE_F}_i64"
                 )
         # DATETIME -> i64 (datetime64 is viewed as int64)
+        # TIMEDELTA -> i64 (timedelta64 is viewed as int64)
         raise ValueError(f"Unsupported data type (for x): {x_dtype}")
 
     def _downsample(
@@ -296,6 +298,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             return downsample_f(y, n_out, **kwargs)
         elif np.issubdtype(x.dtype, np.datetime64):
             # datetime64 is viewed as int64
+            x = x.view(dtype=np.int64)
+        elif np.issubdtype(x.dtype, np.timedelta64):
+            # timedelta64 is viewed as int64
             x = x.view(dtype=np.int64)
         ## Getting the appropriate downsample function
         downsample_f = self._switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
