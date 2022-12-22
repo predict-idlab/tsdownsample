@@ -1,5 +1,6 @@
 use ndarray::{Array1, ArrayView1};
 
+use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 use std::ops::{Add, Div, Mul, Sub};
 
@@ -21,6 +22,8 @@ macro_rules! impl_from_usize {
 }
 
 impl_from_usize!(f32, f64, i8, i16, i32, i64, u8, u16, u32, u64, usize);
+
+// ---------------------- Binary search ----------------------
 
 #[inline(always)]
 fn binary_search<T: PartialOrd>(arr: ArrayView1<T>, value: T, left: usize, right: usize) -> usize {
@@ -65,35 +68,11 @@ fn binary_search_with_mid<T: PartialOrd>(
     left
 }
 
-// pub fn get_equidistant_bin_idxs<T>(arr: ArrayView1<T>, nb_bins: usize) -> Array1<usize>
-// where
-//     T: PartialOrd
-//         + Copy
-//         + Sub<Output = T>
-//         + Add<Output = T>
-//         + Div<Output = T>
-//         + FromUsize,
-// {
-//     assert!(nb_bins >= 2);
-//     let mut bin_idxs: Array1<usize> = Array1::zeros(nb_bins - 1);
-//     // Divide by nb_bins to avoid overflow!
-//     let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins)) - (arr[0] / FromUsize::from_usize(nb_bins));
-//     let idx_step: usize = arr.len() / nb_bins;
-//     let mut value = arr[0];
-//     let mut idx = 0;
-//     for i in 0..nb_bins-1 {
-//         value = value + val_step;
-//         let mid = idx + idx_step;
-//         let mid = if mid < arr.len() { mid } else { arr.len() - 1 };
-//         // Implementation WITHOUT pre-guessing mid is slower!!
-//         // idx = binary_search(arr, value, idx, arr.len()-1);
-//         idx = binary_search_with_mid(arr, value, idx, arr.len() - 1, mid);
-//         bin_idxs[i] = idx;
-//     }
-//     bin_idxs
-// }
+// ------------------- Equidistant binning --------------------
 
-pub fn get_equidistant_bin_idx_iterator<T>(
+// --- Sequential version
+
+pub(crate) fn get_equidistant_bin_idx_iterator<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
 ) -> impl Iterator<Item = (usize, usize)> + '_
@@ -114,15 +93,16 @@ where
         let mid = if mid < arr.len() - 1 {
             mid
         } else {
-            arr.len() - 2
+            arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
         };
-        // println!("mid: {}", mid);
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, value, idx, arr.len()-1);
         idx = binary_search_with_mid(arr, value, idx, arr.len() - 1, mid); // End index of the bin
         (start_idx, idx)
     })
 }
+
+// --- Parallel version
 
 #[inline(always)]
 fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromUsize>(
@@ -131,7 +111,7 @@ fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromUsize>(
     mul: usize,
 ) -> T {
     // a + x*b will sometimes overflow when x*b is larger than the largest positive
-    // number in the datatype.
+    // number in the datatype. (a is start_val, x is mul, b is add_val)
     // This code should not fail when: (T::MAX - a) < (x*b).
     let mul_2: usize = mul / 2;
     start_val
@@ -139,37 +119,7 @@ fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromUsize>(
         + add_val * FromUsize::from_usize(mul - mul_2)
 }
 
-// pub fn get_equidistant_bin_idxs_parallel<T>(arr: ArrayView1<T>, nb_bins: usize) -> Array1<usize>
-// where
-//     T: PartialOrd
-//         + Copy
-//         + Sub<Output = T>
-//         + Add<Output = T>
-//         + Div<Output = T>
-//         + Mul<Output = T>
-//         + Send
-//         + Sync
-//         + FromUsize,
-// {
-//     assert!(nb_bins >= 2);
-//     let mut bin_idxs: Array1<usize> = Array1::from((1..nb_bins).collect::<Vec<usize>>());
-//     // Divide by nb_bins to avoid overflow!
-//     let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins)) - (arr[0] / FromUsize::from_usize(nb_bins));
-//     // let idx_step: usize = arr.len() / nb_bins;
-//     bin_idxs.par_iter_mut().for_each(|i| {
-//         let value = sequential_add_mul(arr[0], val_step, *i);
-//         *i = binary_search(arr, value, 0, arr.len() - 1);
-//         // Implementation WITH pre-guessing mid is slower!!
-//         // *i = binary_search_with_mid(arr, value, 0, arr.len() - 1, *i * idx_step);
-//     });
-//     bin_idxs
-// }
-
-use rayon::iter::IndexedParallelIterator;
-use rayon::iter::ParallelIterator;
-
-// Create iterator that returns a tuple with the start and end index of the bin.
-pub fn get_equidistant_bin_idx_iterator_parallel<T>(
+pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
 ) -> impl IndexedParallelIterator<Item = (usize, usize)> + '_
@@ -188,27 +138,11 @@ where
     // Divide by nb_bins to avoid overflow!
     let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins))
         - (arr[0] / FromUsize::from_usize(nb_bins));
-    // let start_cmp = arr[0] / FromUsize::from_usize(nb_bins);
-    // let end_cmp = arr[arr.len() - 1] / FromUsize::from_usize(nb_bins);
-    // (0..nb_bins).into_par_iter().map(move |i| {
-    //     let start_value = sequential_add_mul(arr[0], val_step, i);
-    //     let end_value = start_value + val_step;
-    //     // TODO: double check if this is the smartest way to do this.
-    //     if (end_value / FromUsize::from_usize(nb_bins)) - start_cmp < end_cmp - (start_value / FromUsize::from_usize(nb_bins)) {
-    //         let end_idx = binary_search(arr, end_value, 0, arr.len() - 1);
-    //         (binary_search(arr, start_value, 0, end_idx), end_idx)
-
-    //     } else {
-    //         let start_idx = binary_search(arr, start_value, 0, arr.len() - 1);
-    //         (start_idx, binary_search(arr, end_value, start_idx, arr.len() - 1))
-    //     }
-    // })
     (0..nb_bins).into_par_iter().map(move |i| {
         let start_value = sequential_add_mul(arr[0], val_step, i);
         let end_value = start_value + val_step;
-        // TODO: double check if this is the smartest way to do this.
+        // TODO: double check if this heuristic is the smartest way to do this
         if i < nb_bins / 2 {
-            // A heuristic
             let end_idx = binary_search(arr, end_value, 0, arr.len() - 1);
             (binary_search(arr, start_value, 0, end_idx), end_idx)
         } else {

@@ -2,9 +2,14 @@ extern crate argminmax;
 
 use argminmax::{ScalarArgMinMax, SCALAR};
 
-use ndarray::{Array1, ArrayView1};
+use ndarray::{s, Array1, ArrayView1};
+use std::ops::{Add, Div, Mul, Sub};
 
+use super::super::utils::{
+    get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel, FromUsize,
+};
 use super::generic::{min_max_generic, min_max_generic_parallel};
+use super::generic::{min_max_generic_with_x, min_max_generic_with_x_parallel};
 
 // ------------------ WITHOUT X
 
@@ -27,12 +32,6 @@ where
 
 // ------------------ WITH X
 
-use super::super::utils::{get_equidistant_bin_idx_iterator, FromUsize};
-use super::generic::min_max_generic_with_x;
-use ndarray::s;
-
-use std::ops::{Add, Div, Mul, Sub};
-
 pub fn min_max_scalar_with_x<Tx, Ty>(
     x: ArrayView1<Tx>,
     arr: ArrayView1<Ty>,
@@ -48,9 +47,6 @@ where
     let bin_idx_iterator = get_equidistant_bin_idx_iterator(x.slice(s![1..x.len()]), n_out / 2 - 1);
     min_max_generic_with_x(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
-
-use super::super::utils::get_equidistant_bin_idx_iterator_parallel;
-use super::generic::min_max_generic_with_x_parallel;
 
 pub fn min_max_scalar_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,

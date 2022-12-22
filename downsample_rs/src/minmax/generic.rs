@@ -2,6 +2,12 @@
 use ndarray::Zip;
 use ndarray::{s, Array1, ArrayView1};
 
+use rayon::iter::IndexedParallelIterator;
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
+
+// --------------------- WITHOUT X
+
 #[inline(always)]
 pub(crate) fn min_max_generic<T: Copy>(
     arr: ArrayView1<T>,
@@ -137,12 +143,6 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
 
     sampled_indices
 }
-
-use rayon::iter::IndexedParallelIterator;
-use rayon::iter::ParallelIterator;
-use rayon::prelude::*;
-
-use std::sync::{Arc, Mutex};
 
 pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
     arr: ArrayView1<T>,
