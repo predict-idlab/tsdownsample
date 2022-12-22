@@ -96,3 +96,93 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 
     sampled_indices
 }
+
+// --------------------- WITH X
+
+pub(crate) fn min_max_generic_with_x<T: Copy>(
+    arr: ArrayView1<T>,
+    bin_idx_iterator: impl Iterator<Item = (usize, usize)>,
+    n_out: usize,
+    f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
+) -> Array1<usize> {
+    // Non-parallel implementation
+    if n_out >= arr.len() {
+        return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+    }
+
+    let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
+    // Always add the first point
+    sampled_indices[0] = 0;
+
+    // let mut prev_end:usize = 0;
+    let offset: usize = 1;
+    bin_idx_iterator.enumerate().for_each(|(i, (start, end))| {
+        let start = start + offset;
+        let end = end + offset;
+        let (min_index, max_index) = f_argminmax(arr.slice(s![start..end]));
+
+        // Add the indexes in sorted order
+        if min_index < max_index {
+            sampled_indices[2 * i + 1] = min_index + start;
+            sampled_indices[2 * i + 2] = max_index + start;
+        } else {
+            sampled_indices[2 * i + 1] = max_index + start;
+            sampled_indices[2 * i + 2] = min_index + start;
+        }
+        // prev_end = end
+    });
+
+    // Always add the last point
+    sampled_indices[n_out - 1] = arr.len() - 1;
+
+    sampled_indices
+}
+
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::ParallelIterator;
+use rayon::prelude::*;
+
+use std::sync::{Arc, Mutex};
+
+pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
+    arr: ArrayView1<T>,
+    bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,
+    n_out: usize,
+    f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
+) -> Array1<usize> {
+    // Non-parallel implementation
+    if n_out >= arr.len() {
+        return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+    }
+
+    // Create a mutex to store the sampled indices
+    let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
+
+    // Always add the first point
+    sampled_indices.lock().unwrap()[0] = 0;
+
+    // iterate over the bins
+    bin_idx_iterator.enumerate().for_each(|(i, (start, end))| {
+        let start = start + 1;
+        let end = end + 1;
+        let (min_index, max_index) = f_argminmax(arr.slice(s![start..end]));
+
+        // Add the indexes in sorted order
+        if min_index < max_index {
+            sampled_indices.lock().unwrap()[2 * i + 1] = min_index + start;
+            sampled_indices.lock().unwrap()[2 * i + 2] = max_index + start;
+        } else {
+            sampled_indices.lock().unwrap()[2 * i + 1] = max_index + start;
+            sampled_indices.lock().unwrap()[2 * i + 2] = min_index + start;
+        }
+    });
+
+    // Always add the last point
+    sampled_indices.lock().unwrap()[n_out - 1] = arr.len() - 1;
+
+    // Remove the mutex and return the sampled indices
+    Arc::try_unwrap(sampled_indices)
+        .unwrap()
+        .into_inner()
+        .unwrap()
+}

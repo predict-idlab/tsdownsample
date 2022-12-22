@@ -6,3 +6,5 @@ pub mod minmaxlttb;
 pub use minmaxlttb::*;
 pub mod m4;
 pub use m4::*;
+pub(crate) mod utils;
+pub(crate) use utils::*;
