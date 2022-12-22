@@ -17,7 +17,7 @@ _core_supported_dtypes = [
 ]
 
 supported_dtypes_x = _core_supported_dtypes
-supported_dtypes_y = _core_supported_dtypes + [np.int8, np.uint8, np.bool8]
+supported_dtypes_y = _core_supported_dtypes + [np.int8, np.uint8, np.bool_]
 
 _core_rust_primitive_types = [
     "f16",

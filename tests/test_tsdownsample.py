@@ -103,7 +103,7 @@ def test_downsampling_different_dtypes():
     for dtype in supported_dtypes_y:
         arr = arr_orig.astype(dtype)
         s_downsampled = MinMaxDownsampler().downsample(arr, n_out=100)
-        if dtype is not np.bool8:
+        if dtype is not np.bool_:
             res += [s_downsampled]
     for i in range(1, len(res)):
         assert np.all(res[0] == res[i])
@@ -119,7 +119,7 @@ def test_downsampling_different_dtypes_with_x():
         for dtype_y in supported_dtypes_y:
             arr = arr_orig.astype(dtype_y)
             s_downsampled = MinMaxLTTBDownsampler().downsample(idx, arr, n_out=100)
-            if dtype_y is not np.bool8:
+            if dtype_y is not np.bool_:
                 res += [s_downsampled]
         for i in range(1, len(res)):
             assert np.all(res[0] == res[i])
