@@ -7,7 +7,7 @@ use std::cmp;
 // ----------- WITH X
 
 #[inline] // TODO inline or not?
-pub fn lttb<Tx: Num + ToF64, Ty: Num + ToF64>(
+pub fn lttb_with_x<Tx: Num + ToF64, Ty: Num + ToF64>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -41,8 +41,8 @@ pub fn lttb<Tx: Num + ToF64, Ty: Num + ToF64>(
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, x.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_x = avg_x + x[i].to_f64();
-            avg_y = avg_y + y[i].to_f64();
+            avg_x += x[i].to_f64();
+            avg_y += y[i].to_f64();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
@@ -114,7 +114,7 @@ pub fn lttb_without_x<Ty: Num + ToF64>(y: ArrayView1<Ty>, n_out: usize) -> Array
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, y.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_y = avg_y + y[i].to_f64();
+            avg_y += y[i].to_f64();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
@@ -164,14 +164,14 @@ mod tests {
 
     use dev_utils::utils;
 
-    use super::{lttb, lttb_without_x};
+    use super::{lttb_with_x, lttb_without_x};
     use ndarray::{array, s, Array1};
 
     #[test]
-    fn test_lttb() {
+    fn test_lttb_with_x() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = lttb(x.view(), y.view(), 4);
+        let sampled_indices = lttb_with_x(x.view(), y.view(), 4);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
@@ -188,7 +188,7 @@ mod tests {
             let n = 5_000;
             let x: Array1<i32> = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
             let y = utils::get_random_array(n, f32::MIN, f32::MAX);
-            let sampled_indices1 = lttb(x.view(), y.view(), 200);
+            let sampled_indices1 = lttb_with_x(x.view(), y.view(), 200);
             let sampled_indices2 = lttb_without_x(y.view(), 200);
             assert_eq!(sampled_indices1, sampled_indices2);
         }

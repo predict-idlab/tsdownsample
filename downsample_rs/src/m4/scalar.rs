@@ -13,16 +13,6 @@ use super::generic::{m4_generic_with_x, m4_generic_with_x_parallel};
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
-// ----------- WITHOUT X
-
-pub fn m4_scalar<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> Array1<usize>
-where
-    SCALAR: ScalarArgMinMax<T>,
-{
-    assert_eq!(n_out % 4, 0);
-    m4_generic(arr, n_out, SCALAR::argminmax)
-}
-
 // ----------- WITH X
 
 pub fn m4_scalar_with_x<Tx, Ty>(
@@ -40,20 +30,17 @@ where
     m4_generic_with_x(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
 
-// ------------------------------------- PARALLEL --------------------------------------
-
 // ----------- WITHOUT X
 
-pub fn m4_scalar_parallel<T: Copy + PartialOrd + Send + Sync>(
-    arr: ArrayView1<T>,
-    n_out: usize,
-) -> Array1<usize>
+pub fn m4_scalar_without_x<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<T>,
 {
     assert_eq!(n_out % 4, 0);
-    m4_generic_parallel(arr, n_out, SCALAR::argminmax)
+    m4_generic(arr, n_out, SCALAR::argminmax)
 }
+
+// ------------------------------------- PARALLEL --------------------------------------
 
 // ----------- WITH X
 
@@ -72,11 +59,27 @@ where
     m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
 
+// ----------- WITHOUT X
+
+pub fn m4_scalar_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
+    arr: ArrayView1<T>,
+    n_out: usize,
+) -> Array1<usize>
+where
+    SCALAR: ScalarArgMinMax<T>,
+{
+    assert_eq!(n_out % 4, 0);
+    m4_generic_parallel(arr, n_out, SCALAR::argminmax)
+}
+
 // --------------------------------------- TESTS ---------------------------------------
 
 #[cfg(test)]
 mod tests {
-    use super::{m4_scalar, m4_scalar_parallel, m4_scalar_with_x, m4_scalar_with_x_parallel};
+    use super::{
+        m4_scalar_with_x, m4_scalar_with_x_parallel, m4_scalar_without_x,
+        m4_scalar_without_x_parallel,
+    };
     use ndarray::Array1;
 
     extern crate dev_utils;
@@ -87,11 +90,11 @@ mod tests {
     }
 
     #[test]
-    fn test_m4_scalar_correct() {
+    fn test_m4_scalar_without_x_correct() {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = m4_scalar(arr.view(), 12);
+        let sampled_indices = m4_scalar_without_x(arr.view(), 12);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
         let expected_indices = vec![0, 0, 32, 32, 33, 33, 65, 65, 66, 66, 98, 98];
@@ -105,11 +108,11 @@ mod tests {
     }
 
     #[test]
-    fn test_m4_scalar_parallel_correct() {
+    fn test_m4_scalar_without_x_parallel_correct() {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = m4_scalar_parallel(arr.view(), 12);
+        let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
         let expected_indices = vec![0, 0, 32, 32, 33, 33, 65, 65, 66, 66, 98, 98];
@@ -169,8 +172,8 @@ mod tests {
         let x = Array1::from(x);
         for _ in 0..100 {
             let arr = get_array_f32(n);
-            let idxs1 = m4_scalar(arr.view(), 100);
-            let idxs2 = m4_scalar_parallel(arr.view(), 100);
+            let idxs1 = m4_scalar_without_x(arr.view(), 100);
+            let idxs2 = m4_scalar_without_x_parallel(arr.view(), 100);
             let idxs3 = m4_scalar_with_x(x.view(), arr.view(), 100);
             let idxs4 = m4_scalar_with_x_parallel(x.view(), arr.view(), 100);
             assert_eq!(idxs1, idxs2);

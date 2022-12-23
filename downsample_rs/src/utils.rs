@@ -1,10 +1,10 @@
-use ndarray::{Array1, ArrayView1};
+use ndarray::ArrayView1;
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
 use super::types::{FromUsize, Num};
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Mul};
 
 // ---------------------- Binary search ----------------------
 

@@ -11,10 +11,10 @@ fn m4_f32_random_array_long_single_core(c: &mut Criterion) {
     let n = config::ARRAY_LENGTH_LONG;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
     c.bench_function("m4_scal_f32", |b| {
-        b.iter(|| m4_mod::m4_scalar(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_scalar_without_x(black_box(data.view()), black_box(2_000)))
     });
     c.bench_function("m4_simd_f32", |b| {
-        b.iter(|| m4_mod::m4_simd(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_simd_without_x(black_box(data.view()), black_box(2_000)))
     });
 }
 
@@ -22,10 +22,10 @@ fn m4_f32_random_array_long_multi_core(c: &mut Criterion) {
     let n = config::ARRAY_LENGTH_LONG;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
     c.bench_function("m4_scal_p_f32", |b| {
-        b.iter(|| m4_mod::m4_scalar_parallel(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_scalar_without_x_parallel(black_box(data.view()), black_box(2_000)))
     });
     c.bench_function("m4_simd_p_f32", |b| {
-        b.iter(|| m4_mod::m4_simd_parallel(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_simd_without_x_parallel(black_box(data.view()), black_box(2_000)))
     });
 }
 
@@ -33,10 +33,10 @@ fn m4_f32_random_array_50M_single_core(c: &mut Criterion) {
     let n = 50_000_000;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
     c.bench_function("m4_scal_50M_f32", |b| {
-        b.iter(|| m4_mod::m4_scalar(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_scalar_without_x(black_box(data.view()), black_box(2_000)))
     });
     c.bench_function("m4_simd_50M_f32", |b| {
-        b.iter(|| m4_mod::m4_simd(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_simd_without_x(black_box(data.view()), black_box(2_000)))
     });
 }
 
@@ -44,10 +44,10 @@ fn m4_f32_random_array_50M_multi_core(c: &mut Criterion) {
     let n = 50_000_000;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
     c.bench_function("m4_scal_p_50M_f32", |b| {
-        b.iter(|| m4_mod::m4_scalar_parallel(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_scalar_without_x_parallel(black_box(data.view()), black_box(2_000)))
     });
     c.bench_function("m4_simd_p_50M_f32", |b| {
-        b.iter(|| m4_mod::m4_simd_parallel(black_box(data.view()), black_box(2_000)))
+        b.iter(|| m4_mod::m4_simd_without_x_parallel(black_box(data.view()), black_box(2_000)))
     });
 }
 

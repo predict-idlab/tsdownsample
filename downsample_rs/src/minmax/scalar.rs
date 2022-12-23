@@ -3,7 +3,6 @@ extern crate argminmax;
 use argminmax::{ScalarArgMinMax, SCALAR};
 
 use ndarray::{Array1, ArrayView1};
-use std::ops::{Add, Div, Mul, Sub};
 
 use super::super::types::{FromUsize, Num};
 use super::super::utils::{
@@ -13,16 +12,6 @@ use super::generic::{min_max_generic, min_max_generic_parallel};
 use super::generic::{min_max_generic_with_x, min_max_generic_with_x_parallel};
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
-
-// ----------- WITHOUT X
-
-pub fn min_max_scalar<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> Array1<usize>
-where
-    SCALAR: ScalarArgMinMax<T>,
-{
-    assert_eq!(n_out % 2, 0);
-    min_max_generic(arr, n_out, SCALAR::argminmax)
-}
 
 // ----------- WITH X
 
@@ -41,11 +30,9 @@ where
     min_max_generic_with_x(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
 
-// ------------------------------------- PARALLEL --------------------------------------
-
 // ----------- WITHOUT X
 
-pub fn min_max_scalar_parallel<T: Copy + PartialOrd + Send + Sync>(
+pub fn min_max_scalar_without_x<T: Copy + PartialOrd>(
     arr: ArrayView1<T>,
     n_out: usize,
 ) -> Array1<usize>
@@ -53,8 +40,10 @@ where
     SCALAR: ScalarArgMinMax<T>,
 {
     assert_eq!(n_out % 2, 0);
-    min_max_generic_parallel(arr, n_out, SCALAR::argminmax)
+    min_max_generic(arr, n_out, SCALAR::argminmax)
 }
+
+// ------------------------------------- PARALLEL --------------------------------------
 
 // ----------- WITH X
 
@@ -73,13 +62,26 @@ where
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
 
+// ----------- WITHOUT X
+
+pub fn min_max_scalar_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
+    arr: ArrayView1<T>,
+    n_out: usize,
+) -> Array1<usize>
+where
+    SCALAR: ScalarArgMinMax<T>,
+{
+    assert_eq!(n_out % 2, 0);
+    min_max_generic_parallel(arr, n_out, SCALAR::argminmax)
+}
+
 // --------------------------------------- TESTS ---------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::{
-        min_max_scalar, min_max_scalar_parallel, min_max_scalar_with_x,
-        min_max_scalar_with_x_parallel,
+        min_max_scalar_with_x, min_max_scalar_with_x_parallel, min_max_scalar_without_x,
+        min_max_scalar_without_x_parallel,
     };
     use ndarray::Array1;
 
@@ -91,11 +93,11 @@ mod tests {
     }
 
     #[test]
-    fn test_min_max_scalar_correct() {
+    fn test_min_max_scalar_without_x_correct() {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_scalar(arr.view(), 10);
+        let sampled_indices = min_max_scalar_without_x(arr.view(), 10);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
         let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
@@ -109,11 +111,11 @@ mod tests {
     }
 
     #[test]
-    fn test_min_max_scalar_parallel_correct() {
+    fn test_min_max_scalar_without_x_parallel_correct() {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_scalar_parallel(arr.view(), 10);
+        let sampled_indices = min_max_scalar_without_x_parallel(arr.view(), 10);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
         let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
@@ -174,8 +176,8 @@ mod tests {
         let x = Array1::from(x);
         for _ in 0..100 {
             let arr = get_array_f32(n);
-            let idxs1 = min_max_scalar(arr.view(), n_out);
-            let idxs2 = min_max_scalar_parallel(arr.view(), n_out);
+            let idxs1 = min_max_scalar_without_x(arr.view(), n_out);
+            let idxs2 = min_max_scalar_without_x_parallel(arr.view(), n_out);
             let idxs3 = min_max_scalar_with_x(x.view(), arr.view(), n_out);
             let idxs4 = min_max_scalar_with_x_parallel(x.view(), arr.view(), n_out);
             assert_eq!(idxs1, idxs2);

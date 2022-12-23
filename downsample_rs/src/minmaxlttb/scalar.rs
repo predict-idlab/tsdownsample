@@ -8,7 +8,9 @@ use argminmax::{ScalarArgMinMax, SCALAR};
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
-pub fn minmaxlttb_scalar<Tx: Num + FromUsize + ToF64, Ty: Num + ToF64>(
+// ----------- WITH X
+
+pub fn minmaxlttb_scalar_with_x<Tx: Num + FromUsize + ToF64, Ty: Num + ToF64>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -20,6 +22,8 @@ where
     minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_scalar_with_x)
 }
 
+// ----------- WITHOUT X
+
 pub fn minmaxlttb_scalar_without_x<Ty: Num + ToF64>(
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -28,12 +32,14 @@ pub fn minmaxlttb_scalar_without_x<Ty: Num + ToF64>(
 where
     SCALAR: ScalarArgMinMax<Ty>,
 {
-    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_scalar)
+    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_scalar_without_x)
 }
 
 // ------------------------------------- PARALLEL --------------------------------------
 
-pub fn minmaxlttb_scalar_parallel<
+// ----------- WITH X
+
+pub fn minmaxlttb_scalar_with_x_parallel<
     Tx: Num + FromUsize + ToF64 + Send + Sync,
     Ty: Num + ToF64 + Send + Sync,
 >(
@@ -54,6 +60,8 @@ where
     )
 }
 
+// ----------- WITHOUT X
+
 pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + ToF64 + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -62,15 +70,20 @@ pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + ToF64 + Send + Sync>(
 where
     SCALAR: ScalarArgMinMax<Ty>,
 {
-    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_scalar_parallel)
+    minmaxlttb_generic_without_x(
+        y,
+        n_out,
+        minmax_ratio,
+        minmax::min_max_scalar_without_x_parallel,
+    )
 }
 
 // --------------------------------------- TESTS ---------------------------------------
 
 #[cfg(test)]
 mod tests {
-    use super::{minmaxlttb_scalar, minmaxlttb_scalar_without_x};
-    use super::{minmaxlttb_scalar_parallel, minmaxlttb_scalar_without_x_parallel};
+    use super::{minmaxlttb_scalar_with_x, minmaxlttb_scalar_without_x};
+    use super::{minmaxlttb_scalar_with_x_parallel, minmaxlttb_scalar_without_x_parallel};
     use ndarray::{array, s, Array1};
 
     extern crate dev_utils;
@@ -81,10 +94,10 @@ mod tests {
     }
 
     #[test]
-    fn test_minmaxlttb() {
+    fn test_minmaxlttb_with_x() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = minmaxlttb_scalar(x.view(), y.view(), 4, 2);
+        let sampled_indices = minmaxlttb_scalar_with_x(x.view(), y.view(), 4, 2);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
@@ -96,10 +109,10 @@ mod tests {
     }
 
     #[test]
-    fn test_minmaxlttb_parallel() {
+    fn test_minmaxlttb_with_x_parallel() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = minmaxlttb_scalar_parallel(x.view(), y.view(), 4, 2);
+        let sampled_indices = minmaxlttb_scalar_with_x_parallel(x.view(), y.view(), 4, 2);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
