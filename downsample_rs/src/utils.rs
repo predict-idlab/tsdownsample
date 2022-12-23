@@ -48,6 +48,7 @@ fn binary_search_with_mid<T: PartialOrd>(
         let size = right - left;
         mid = left + size / 2;
     }
+    // if arr[left] == value { left + 1 } else { left }
     left
 }
 
@@ -64,10 +65,10 @@ where
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins))
-        - (arr[0] / FromUsize::from_usize(nb_bins));
+    let val_step: f64 =
+        (arr[arr.len() - 1].to_f64() / nb_bins as f64) - (arr[0].to_f64() / nb_bins as f64);
     let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
-    let mut value = arr[0]; // Search value
+    let mut value: f64 = arr[0].to_f64(); // Search value
     let mut idx = 0; // Index of the search value
     (0..nb_bins).map(move |_| {
         let start_idx = idx; // Start index of the bin (previous end index)
@@ -80,13 +81,14 @@ where
         };
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, value, idx, arr.len()-1);
-        idx = binary_search_with_mid(arr, value, idx, arr.len() - 1, mid); // End index of the bin
+        idx = binary_search_with_mid(arr, T::from_f64(value), idx, arr.len() - 1, mid); // End index of the bin
         (start_idx, idx)
     })
 }
 
 // --- Parallel version
 
+// TODO: tailor for f64
 #[inline(always)]
 fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromUsize>(
     start_val: T,
@@ -107,23 +109,18 @@ pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     nb_bins: usize,
 ) -> impl IndexedParallelIterator<Item = (usize, usize)> + '_
 where
-    T: PartialOrd
-        + Copy
-        + Sub<Output = T>
-        + Add<Output = T>
-        + Div<Output = T>
-        + Mul<Output = T>
-        + Send
-        + Sync
-        + FromUsize,
+    T: Num + FromUsize + Sync + Send,
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins))
-        - (arr[0] / FromUsize::from_usize(nb_bins));
+    let val_step: f64 =
+        (arr[arr.len() - 1].to_f64() / nb_bins as f64) - (arr[0].to_f64() / nb_bins as f64);
+    let arr_0 = arr[0].to_f64();
     (0..nb_bins).into_par_iter().map(move |i| {
-        let start_value = sequential_add_mul(arr[0], val_step, i);
+        let start_value = sequential_add_mul(arr_0, val_step, i);
         let end_value = start_value + val_step;
+        let start_value = T::from_f64(start_value);
+        let end_value = T::from_f64(end_value);
         // TODO: double check if this heuristic is the smartest way to do this
         if i < nb_bins / 2 {
             let end_idx = binary_search(arr, end_value, 0, arr.len() - 1);

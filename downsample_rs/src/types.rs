@@ -72,6 +72,7 @@ pub trait Num:
     + Mul<Output = Self>
     + Div<Output = Self>
     + ToF64
+    + FromF64
 {
 }
 // pub trait NumFull: Num + FromUsize + FromF64 + ToF64 {}
@@ -85,6 +86,7 @@ impl<T> Num for T where
         + Mul<Output = T>
         + Div<Output = T>
         + ToF64
+        + FromF64
 {
 }
 // impl<T> NumFull for T where T: Num + FromUsize + FromF64 + ToF64 {}
