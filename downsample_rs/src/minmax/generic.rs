@@ -23,7 +23,8 @@ pub(crate) fn min_max_generic<T: Copy>(
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
-    arr.exact_chunks(block_size)
+    arr.slice(s![..block_size*n_out/2])
+        .exact_chunks(block_size)
         .into_iter()
         .enumerate()
         .for_each(|(i, step)| {
@@ -64,7 +65,7 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let idxs = Array1::from((0..n_out / 2).collect::<Vec<usize>>());
 
     // Iterate over the sample_index pointers and the array chunks
-    Zip::from(arr.exact_chunks(block_size))
+    Zip::from(arr.slice(s![..block_size*n_out/2]).exact_chunks(block_size))
         .and(sampled_indices.exact_chunks_mut(2))
         .and(idxs.view())
         .par_for_each(|step, mut sampled_index, i| {
