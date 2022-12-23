@@ -23,10 +23,10 @@ pub(crate) fn min_max_generic<T: Copy>(
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
-    arr.slice(s![..block_size*n_out/2])
-        .exact_chunks(block_size)
+    arr.exact_chunks(block_size)
         .into_iter()
         .enumerate()
+        .take(n_out / 2)
         .for_each(|(i, step)| {
             // TODO over sampled_indexes itereren voor efficiente mut pointers door te geven
             let (min_index, max_index) = f_argminmax(step);

@@ -67,7 +67,7 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 
     // Iterate over the sample_index pointers and the array chunks
     Zip::from(arr.exact_chunks(block_size))
-        .and(sampled_indices.slice_mut(s![..n_out]).exact_chunks_mut(4))
+        .and(sampled_indices.exact_chunks_mut(4))
         .and(idxs.view())
         .par_for_each(|step, mut sampled_index, i| {
             let (min_index, max_index) = f_argminmax(step);
