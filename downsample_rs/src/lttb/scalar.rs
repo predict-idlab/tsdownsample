@@ -146,6 +146,8 @@ pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
     sampled_indices
 }
 
+// --------------------------------------- TESTS ---------------------------------------
+
 #[cfg(test)]
 mod tests {
     extern crate dev_utils;

@@ -75,6 +75,8 @@ where
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
+// --------------------------------------- TESTS ---------------------------------------
+
 #[cfg(test)]
 mod tests {
     use super::{

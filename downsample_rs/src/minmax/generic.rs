@@ -1,4 +1,3 @@
-// use ndarray::parallel::prelude::*;
 use ndarray::Zip;
 use ndarray::{s, Array1, ArrayView1};
 
@@ -105,6 +104,7 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 
 // --------------------- WITH X
 
+#[inline(always)]
 pub(crate) fn min_max_generic_with_x<T: Copy>(
     arr: ArrayView1<T>,
     bin_idx_iterator: impl Iterator<Item = (usize, usize)>,
@@ -120,7 +120,6 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
     // Always add the first point
     sampled_indices[0] = 0;
 
-    // let mut prev_end:usize = 0;
     let offset: usize = 1;
     bin_idx_iterator.enumerate().for_each(|(i, (start, end))| {
         let start = start + offset;
@@ -135,7 +134,6 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
             sampled_indices[2 * i + 1] = max_index + start;
             sampled_indices[2 * i + 2] = min_index + start;
         }
-        // prev_end = end
     });
 
     // Always add the last point
@@ -144,6 +142,7 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
     sampled_indices
 }
 
+#[inline(always)]
 pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
     arr: ArrayView1<T>,
     bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,

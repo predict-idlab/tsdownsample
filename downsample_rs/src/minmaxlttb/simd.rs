@@ -66,7 +66,7 @@ where
     minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_simd_parallel)
 }
 
-// ---- TEST
+// --------------------------------------- TESTS ---------------------------------------
 
 #[cfg(test)]
 mod tests {
