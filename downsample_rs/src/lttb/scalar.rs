@@ -1,4 +1,4 @@
-use super::super::types::Num;
+use super::super::types::{Num, ToF64};
 use ndarray::{Array1, ArrayView1};
 use std::cmp;
 
@@ -7,7 +7,11 @@ use std::cmp;
 // ----------- WITH X
 
 #[inline] // TODO inline or not?
-pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {
+pub fn lttb<Tx: Num + ToF64, Ty: Num + ToF64>(
+    x: ArrayView1<Tx>,
+    y: ArrayView1<Ty>,
+    n_out: usize,
+) -> Array1<usize> {
     assert_eq!(x.len(), y.len());
     if n_out >= x.len() || n_out == 0 {
         return Array1::from((0..x.len()).collect::<Vec<usize>>());
@@ -84,7 +88,7 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
 // ----------- WITHOUT X
 
 #[inline]
-pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {
+pub fn lttb_without_x<Ty: Num + ToF64>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {
     if n_out >= y.len() || n_out == 0 {
         return Array1::from((0..y.len()).collect::<Vec<usize>>());
     }

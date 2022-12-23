@@ -65,22 +65,25 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let idxs = Array1::from((0..n_out / 2).collect::<Vec<usize>>());
 
     // Iterate over the sample_index pointers and the array chunks
-    Zip::from(arr.slice(s![..block_size*n_out/2]).exact_chunks(block_size))
-        .and(sampled_indices.exact_chunks_mut(2))
-        .and(idxs.view())
-        .par_for_each(|step, mut sampled_index, i| {
-            let (min_index, max_index) = f_argminmax(step);
-            let offset = block_size * i;
+    Zip::from(
+        arr.slice(s![..block_size * n_out / 2])
+            .exact_chunks(block_size),
+    )
+    .and(sampled_indices.exact_chunks_mut(2))
+    .and(idxs.view())
+    .par_for_each(|step, mut sampled_index, i| {
+        let (min_index, max_index) = f_argminmax(step);
+        let offset = block_size * i;
 
-            // Add the indexes in sorted order
-            if min_index < max_index {
-                sampled_index[0] = min_index + offset;
-                sampled_index[1] = max_index + offset;
-            } else {
-                sampled_index[0] = max_index + offset;
-                sampled_index[1] = min_index + offset
-            }
-        });
+        // Add the indexes in sorted order
+        if min_index < max_index {
+            sampled_index[0] = min_index + offset;
+            sampled_index[1] = max_index + offset;
+        } else {
+            sampled_index[0] = max_index + offset;
+            sampled_index[1] = min_index + offset
+        }
+    });
 
     sampled_indices
 }

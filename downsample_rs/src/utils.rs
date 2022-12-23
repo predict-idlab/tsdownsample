@@ -65,10 +65,10 @@ where
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: f64 =
-        (arr[arr.len() - 1].to_f64() / nb_bins as f64) - (arr[0].to_f64() / nb_bins as f64);
+    let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins))
+        - (arr[0] / FromUsize::from_usize(nb_bins));
     let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
-    let mut value: f64 = arr[0].to_f64(); // Search value
+    let mut value = arr[0]; // Search value
     let mut idx = 0; // Index of the search value
     (0..nb_bins).map(move |_| {
         let start_idx = idx; // Start index of the bin (previous end index)
@@ -81,9 +81,31 @@ where
         };
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, value, idx, arr.len()-1);
-        idx = binary_search_with_mid(arr, T::from_f64(value), idx, arr.len() - 1, mid); // End index of the bin
+        idx = binary_search_with_mid(arr, value, idx, arr.len() - 1, mid); // End index of the bin
         (start_idx, idx)
     })
+
+    // assert!(nb_bins >= 2);
+    // // Divide by nb_bins to avoid overflow!
+    // let val_step: f64 =
+    //     (arr[arr.len() - 1].to_f64() / nb_bins as f64) - (arr[0].to_f64() / nb_bins as f64);
+    // let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
+    // let mut value: f64 = arr[0].to_f64(); // Search value
+    // let mut idx = 0; // Index of the search value
+    // (0..nb_bins).map(move |_| {
+    //     let start_idx = idx; // Start index of the bin (previous end index)
+    //     value = value + val_step;
+    //     let mid = idx + idx_step;
+    //     let mid = if mid < arr.len() - 1 {
+    //         mid
+    //     } else {
+    //         arr.len() - 1 // TODO: arr.len() - 1 gives error I thought...
+    //     };
+    //     // Implementation WITHOUT pre-guessing mid is slower!!
+    //     // idx = binary_search(arr, value, idx, arr.len()-1);
+    //     idx = binary_search_with_mid(arr, T::from_f64(value), idx, arr.len() - 1, mid); // End index of the bin
+    //     (start_idx, idx)
+    // })
 }
 
 // --- Parallel version
@@ -113,14 +135,11 @@ where
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: f64 =
-        (arr[arr.len() - 1].to_f64() / nb_bins as f64) - (arr[0].to_f64() / nb_bins as f64);
-    let arr_0 = arr[0].to_f64();
+    let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins))
+        - (arr[0] / FromUsize::from_usize(nb_bins));
     (0..nb_bins).into_par_iter().map(move |i| {
-        let start_value = sequential_add_mul(arr_0, val_step, i);
+        let start_value = sequential_add_mul(arr[0], val_step, i);
         let end_value = start_value + val_step;
-        let start_value = T::from_f64(start_value);
-        let end_value = T::from_f64(end_value);
         // TODO: double check if this heuristic is the smartest way to do this
         if i < nb_bins / 2 {
             let end_idx = binary_search(arr, end_value, 0, arr.len() - 1);
@@ -133,6 +152,29 @@ where
             )
         }
     })
+
+    // assert!(nb_bins >= 2);
+    // // Divide by nb_bins to avoid overflow!
+    // let val_step: f64 =
+    //     (arr[arr.len() - 1].to_f64() / nb_bins as f64) - (arr[0].to_f64() / nb_bins as f64);
+    // let arr_0 = arr[0].to_f64();
+    // (0..nb_bins).into_par_iter().map(move |i| {
+    //     let start_value = sequential_add_mul(arr_0, val_step, i);
+    //     let end_value = start_value + val_step;
+    //     let start_value = T::from_f64(start_value);
+    //     let end_value = T::from_f64(end_value);
+    //     // TODO: double check if this heuristic is the smartest way to do this
+    //     if i < nb_bins / 2 {
+    //         let end_idx = binary_search(arr, end_value, 0, arr.len() - 1);
+    //         (binary_search(arr, start_value, 0, end_idx), end_idx)
+    //     } else {
+    //         let start_idx = binary_search(arr, start_value, 0, arr.len() - 1);
+    //         (
+    //             start_idx,
+    //             binary_search(arr, end_value, start_idx, arr.len() - 1),
+    //         )
+    //     }
+    // })
 }
 
 // --------------------------------------- TESTS ---------------------------------------

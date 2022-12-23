@@ -1,5 +1,5 @@
 use super::super::minmax;
-use super::super::types::{FromUsize, Num};
+use super::super::types::{FromUsize, Num, ToF64};
 use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 use ndarray::{Array1, ArrayView1};
 
@@ -8,7 +8,7 @@ use argminmax::{ScalarArgMinMax, SCALAR};
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
-pub fn minmaxlttb_scalar<Tx: Num + FromUsize, Ty: Num>(
+pub fn minmaxlttb_scalar<Tx: Num + FromUsize + ToF64, Ty: Num + ToF64>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -20,7 +20,7 @@ where
     minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_scalar_with_x)
 }
 
-pub fn minmaxlttb_scalar_without_x<Ty: Num>(
+pub fn minmaxlttb_scalar_without_x<Ty: Num + ToF64>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
@@ -33,7 +33,10 @@ where
 
 // ------------------------------------- PARALLEL --------------------------------------
 
-pub fn minmaxlttb_scalar_parallel<Tx: Num + Send + Sync + FromUsize, Ty: Num + Send + Sync>(
+pub fn minmaxlttb_scalar_parallel<
+    Tx: Num + FromUsize + ToF64 + Send + Sync,
+    Ty: Num + ToF64 + Send + Sync,
+>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -51,7 +54,7 @@ where
     )
 }
 
-pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + Send + Sync>(
+pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + ToF64 + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,

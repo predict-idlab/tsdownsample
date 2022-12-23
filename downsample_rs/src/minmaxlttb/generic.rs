@@ -1,13 +1,10 @@
 use ndarray::{Array1, ArrayView1};
 
 use super::super::lttb::{lttb, lttb_without_x};
-use super::super::types::Num;
+use super::super::types::{Num, ToF64};
 
 #[inline(always)]
-pub(crate) fn minmaxlttb_generic<
-    Tx: Num,
-    Ty: Num + PartialOrd, // TODO: check if partialord is needed
->(
+pub(crate) fn minmaxlttb_generic<Tx: Num + ToF64, Ty: Num + ToF64>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -29,7 +26,7 @@ pub(crate) fn minmaxlttb_generic<
 }
 
 #[inline(always)]
-pub(crate) fn minmaxlttb_generic_without_x<Ty: Num>(
+pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + ToF64>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
