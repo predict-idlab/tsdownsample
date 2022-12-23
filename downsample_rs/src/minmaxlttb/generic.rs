@@ -15,9 +15,26 @@ pub(crate) fn minmaxlttb_generic<Tx: Num + ToF64, Ty: Num + ToF64>(
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
-        let index = f_minmax(x, y, n_out * minmax_ratio);
-        let x = index.mapv(|i| x[i]);
-        let y = index.mapv(|i| y[i]);
+        let mut index = f_minmax(x, y, n_out * minmax_ratio).into_raw_vec();
+        // Prepend first and last point if not already in index
+        if index[0] != 0 {
+            index.insert(0, 0);
+        }
+        if index[index.len() - 1] != x.len() - 1 {
+            index.push(x.len() - 1);
+        }
+        let x = Array1::from_shape_vec(
+            (index.len(),),
+            index.iter().map(|i| x[*i]).collect::<Vec<_>>(),
+        )
+        .unwrap();
+        let y = Array1::from_shape_vec(
+            (index.len(),),
+            index.iter().map(|i| y[*i]).collect::<Vec<_>>(),
+        )
+        .unwrap();
+        // let x = index.mapv(|i| x[i]);
+        // let y = index.mapv(|i| y[i]);
         let index_points_selected = lttb(x.view(), y.view(), n_out);
         return index_points_selected.mapv(|i| index[i]);
     }
