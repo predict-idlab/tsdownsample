@@ -5,8 +5,9 @@ use argminmax::ArgMinMax;
 use ndarray::{Array1, ArrayView1};
 use std::ops::{Add, Div, Mul, Sub};
 
+use super::super::types::FromUsize;
 use super::super::utils::{
-    get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel, FromUsize,
+    get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
 use super::generic::{m4_generic, m4_generic_parallel};
 use super::generic::{m4_generic_with_x, m4_generic_with_x_parallel};

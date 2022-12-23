@@ -2,11 +2,12 @@ extern crate argminmax;
 
 use argminmax::ArgMinMax;
 
-use ndarray::{s, Array1, ArrayView1};
+use ndarray::{Array1, ArrayView1};
 use std::ops::{Add, Div, Mul, Sub};
 
+use super::super::types::FromUsize;
 use super::super::utils::{
-    get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel, FromUsize,
+    get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
 use super::generic::{min_max_generic, min_max_generic_parallel};
 use super::generic::{min_max_generic_with_x, min_max_generic_with_x_parallel};
@@ -20,6 +21,7 @@ pub fn min_max_simd<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> A
 where
     for<'a> ArrayView1<'a, T>: ArgMinMax,
 {
+    assert_eq!(n_out % 2, 0);
     min_max_generic(arr, n_out, |arr| arr.argminmax())
 }
 
@@ -35,9 +37,8 @@ where
     Tx: Copy + PartialOrd + FromUsize + Sub<Output = Tx> + Add<Output = Tx> + Div<Output = Tx>,
     Ty: Copy + PartialOrd,
 {
-    // Get the indices iterator of the equidistant (in x-data range) bins
-    // -> slice x fron 1 to x.len() because we perform left searchsorted
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x.slice(s![1..x.len()]), n_out / 2 - 1);
+    assert_eq!(n_out % 2, 0);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 2);
     min_max_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
@@ -53,6 +54,7 @@ pub fn min_max_simd_parallel<T: Copy + PartialOrd + Send + Sync>(
 where
     for<'a> ArrayView1<'a, T>: ArgMinMax,
 {
+    assert_eq!(n_out % 2, 0);
     min_max_generic_parallel(arr, n_out, |arr| arr.argminmax())
 }
 
@@ -76,10 +78,8 @@ where
         + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
-    // Get the indices iterator of the equidistant (in x-data range) bins
-    // -> slice x fron 1 to x.len() because we perform left searchsorted
-    let bin_idx_iterator =
-        get_equidistant_bin_idx_iterator_parallel(x.slice(s![1..x.len()]), n_out / 2 - 1);
+    assert_eq!(n_out % 2, 0);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
@@ -104,10 +104,10 @@ mod tests {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_simd(arr.view(), 16);
+        let sampled_indices = min_max_simd(arr.view(), 10);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 1, 14, 15, 28, 29, 42, 43, 56, 57, 70, 71, 84, 85, 98, 99];
+        let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
@@ -122,10 +122,10 @@ mod tests {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_simd_parallel(arr.view(), 16);
+        let sampled_indices = min_max_simd_parallel(arr.view(), 10);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 1, 14, 15, 28, 29, 42, 43, 56, 57, 70, 71, 84, 85, 98, 99];
+        let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
@@ -137,15 +137,16 @@ mod tests {
 
     #[test]
     fn test_min_max_simd_with_x_correct() {
-        let x = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
+        // 101 bc arr ... TODO
+        let x = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
         let x = Array1::from(x);
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_simd_with_x(x.view(), arr.view(), 16);
+        let sampled_indices = min_max_simd_with_x(x.view(), arr.view(), 10);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 1, 14, 15, 28, 29, 42, 43, 56, 57, 70, 71, 84, 85, 98, 99];
+        let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
@@ -157,15 +158,15 @@ mod tests {
 
     #[test]
     fn test_min_max_simd_with_x_parallel_correct() {
-        let x = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
+        let x = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
         let x = Array1::from(x);
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_simd_with_x_parallel(x.view(), arr.view(), 16);
+        let sampled_indices = min_max_simd_with_x_parallel(x.view(), arr.view(), 10);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 1, 14, 15, 28, 29, 42, 43, 56, 57, 70, 71, 84, 85, 98, 99];
+        let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)

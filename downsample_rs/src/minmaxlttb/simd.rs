@@ -2,7 +2,7 @@ use super::super::minmax;
 use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 
 // use num_traits::{Num, ToPrimitive};
-use super::super::lttb::utils::Num;
+use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
 
 extern crate argminmax;

@@ -103,9 +103,6 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
-    let block_size = arr.len() as f64 / (n_out as f64) * 4.0;
-    let block_size = block_size.floor() as usize;
-
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
     bin_idx_iterator
@@ -140,9 +137,6 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     if n_out >= arr.len() {
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
-
-    let block_size = arr.len() as f64 / (n_out as f64) * 4.0;
-    let block_size = block_size.floor() as usize;
 
     let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
 

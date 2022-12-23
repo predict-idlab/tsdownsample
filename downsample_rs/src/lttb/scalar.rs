@@ -1,4 +1,4 @@
-use super::utils::Num;
+use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
 use std::cmp;
 

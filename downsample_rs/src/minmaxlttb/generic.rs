@@ -1,7 +1,7 @@
 use ndarray::{Array1, ArrayView1};
 
-use super::super::lttb::utils::Num;
 use super::super::lttb::{lttb, lttb_without_x};
+use super::super::types::Num;
 
 #[inline(always)]
 pub(crate) fn minmaxlttb_generic<

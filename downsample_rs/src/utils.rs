@@ -2,26 +2,9 @@ use ndarray::{Array1, ArrayView1};
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
+
+use super::types::FromUsize;
 use std::ops::{Add, Div, Mul, Sub};
-
-pub trait FromUsize {
-    fn from_usize(value: usize) -> Self;
-}
-
-macro_rules! impl_from_usize {
-    ($($t:ty),*) => {
-        $(
-            impl FromUsize for $t {
-                #[inline]
-                fn from_usize(value: usize) -> Self {
-                    value as Self
-                }
-            }
-        )*
-    };
-}
-
-impl_from_usize!(f32, f64, i8, i16, i32, i64, u8, u16, u32, u64, usize);
 
 // ---------------------- Binary search ----------------------
 
@@ -93,7 +76,7 @@ where
         let mid = if mid < arr.len() - 1 {
             mid
         } else {
-            arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
+            arr.len() - 1 // TODO: arr.len() - 1 gives error I thought...
         };
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, value, idx, arr.len()-1);
