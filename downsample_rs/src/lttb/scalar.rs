@@ -2,6 +2,10 @@ use super::utils::Num;
 use ndarray::{Array1, ArrayView1};
 use std::cmp;
 
+// ----------------------------------- NON-PARALLEL ------------------------------------
+
+// ----------- WITH X
+
 #[inline] // TODO inline or not?
 pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {
     assert_eq!(x.len(), y.len());
@@ -76,6 +80,8 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
 
     sampled_indices
 }
+
+// ----------- WITHOUT X
 
 #[inline]
 pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {

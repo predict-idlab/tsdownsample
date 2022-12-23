@@ -11,7 +11,9 @@ use super::super::utils::{
 use super::generic::{min_max_generic, min_max_generic_parallel};
 use super::generic::{min_max_generic_with_x, min_max_generic_with_x_parallel};
 
-// ------------------ WITHOUT X
+// ----------------------------------- NON-PARALLEL ------------------------------------
+
+// ----------- WITHOUT X
 
 #[inline]
 pub fn min_max_simd<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> Array1<usize>
@@ -21,18 +23,7 @@ where
     min_max_generic(arr, n_out, |arr| arr.argminmax())
 }
 
-#[inline]
-pub fn min_max_simd_parallel<T: Copy + PartialOrd + Send + Sync>(
-    arr: ArrayView1<T>,
-    n_out: usize,
-) -> Array1<usize>
-where
-    for<'a> ArrayView1<'a, T>: ArgMinMax,
-{
-    min_max_generic_parallel(arr, n_out, |arr| arr.argminmax())
-}
-
-// ------------------ WITH X
+// ----------- WITH X
 
 pub fn min_max_simd_with_x<Tx, Ty>(
     x: ArrayView1<Tx>,
@@ -49,6 +40,23 @@ where
     let bin_idx_iterator = get_equidistant_bin_idx_iterator(x.slice(s![1..x.len()]), n_out / 2 - 1);
     min_max_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
+
+// ------------------------------------- PARALLEL --------------------------------------
+
+// ----------- WITHOUT X
+
+#[inline]
+pub fn min_max_simd_parallel<T: Copy + PartialOrd + Send + Sync>(
+    arr: ArrayView1<T>,
+    n_out: usize,
+) -> Array1<usize>
+where
+    for<'a> ArrayView1<'a, T>: ArgMinMax,
+{
+    min_max_generic_parallel(arr, n_out, |arr| arr.argminmax())
+}
+
+// ----------- WITH X
 
 pub fn min_max_simd_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,

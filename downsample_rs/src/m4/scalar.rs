@@ -11,7 +11,9 @@ use super::super::utils::{
 use super::generic::{m4_generic, m4_generic_parallel};
 use super::generic::{m4_generic_with_x, m4_generic_with_x_parallel};
 
-// ------------------ WITHOUT X
+// ----------------------------------- NON-PARALLEL ------------------------------------
+
+// ----------- WITHOUT X
 
 pub fn m4_scalar<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> Array1<usize>
 where
@@ -21,18 +23,7 @@ where
     m4_generic(arr, n_out, SCALAR::argminmax)
 }
 
-pub fn m4_scalar_parallel<T: Copy + PartialOrd + Send + Sync>(
-    arr: ArrayView1<T>,
-    n_out: usize,
-) -> Array1<usize>
-where
-    SCALAR: ScalarArgMinMax<T>,
-{
-    assert_eq!(n_out % 4, 0);
-    m4_generic_parallel(arr, n_out, SCALAR::argminmax)
-}
-
-// ------------------ WITH X
+// ----------- WITH X
 
 pub fn m4_scalar_with_x<Tx, Ty>(
     x: ArrayView1<Tx>,
@@ -48,6 +39,23 @@ where
     let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 4);
     m4_generic_with_x(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
+
+// ------------------------------------- PARALLEL --------------------------------------
+
+// ----------- WITHOUT X
+
+pub fn m4_scalar_parallel<T: Copy + PartialOrd + Send + Sync>(
+    arr: ArrayView1<T>,
+    n_out: usize,
+) -> Array1<usize>
+where
+    SCALAR: ScalarArgMinMax<T>,
+{
+    assert_eq!(n_out % 4, 0);
+    m4_generic_parallel(arr, n_out, SCALAR::argminmax)
+}
+
+// ----------- WITH X
 
 pub fn m4_scalar_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,

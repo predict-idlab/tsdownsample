@@ -11,7 +11,9 @@ use super::super::utils::{
 use super::generic::{m4_generic, m4_generic_parallel};
 use super::generic::{m4_generic_with_x, m4_generic_with_x_parallel};
 
-// ------------------ WITHOUT X
+// ----------------------------------- NON-PARALLEL ------------------------------------
+
+// ----------- WITHOUT X
 
 pub fn m4_simd<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> Array1<usize>
 where
@@ -20,6 +22,23 @@ where
     assert_eq!(n_out % 4, 0);
     m4_generic(arr, n_out, |arr| arr.argminmax())
 }
+
+// ----------- WITH X
+
+pub fn m4_simd_with_x<Tx, Ty>(x: ArrayView1<Tx>, arr: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
+where
+    for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    Tx: Copy + PartialOrd + FromUsize + Sub<Output = Tx> + Add<Output = Tx> + Div<Output = Tx>,
+    Ty: Copy + PartialOrd,
+{
+    assert_eq!(n_out % 4, 0);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 4);
+    m4_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
+}
+
+// ------------------------------------- PARALLEL --------------------------------------
+
+// ----------- WITHOUT X
 
 pub fn m4_simd_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: ArrayView1<T>,
@@ -32,18 +51,7 @@ where
     m4_generic_parallel(arr, n_out, |arr| arr.argminmax())
 }
 
-// ------------------ WITH X
-
-pub fn m4_simd_with_x<Tx, Ty>(x: ArrayView1<Tx>, arr: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
-where
-    for<'a> ArrayView1<'a, Ty>: ArgMinMax,
-    Tx: Copy + PartialOrd + FromUsize + Sub<Output = Tx> + Add<Output = Tx> + Div<Output = Tx>,
-    Ty: Copy + PartialOrd,
-{
-    assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 4);
-    m4_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
-}
+// ----------- WITH X
 
 pub fn m4_simd_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,
