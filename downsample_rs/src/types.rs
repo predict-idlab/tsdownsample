@@ -66,7 +66,7 @@ impl ToF64 for f16 {
 
 pub trait Num:
     Copy
-    + Default
+    + PartialOrd
     + Add<Output = Self>
     + Sub<Output = Self>
     + Mul<Output = Self>
@@ -74,11 +74,12 @@ pub trait Num:
     + ToF64
 {
 }
+// pub trait NumFull: Num + FromUsize + FromF64 + ToF64 {}
 
-// implement the trait
+// implement the traits
 impl<T> Num for T where
     T: Copy
-        + Default
+        + PartialOrd
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
@@ -86,6 +87,7 @@ impl<T> Num for T where
         + ToF64
 {
 }
+// impl<T> NumFull for T where T: Num + FromUsize + FromF64 + ToF64 {}
 
 // pub trait NumParrallel:
 //     Num + ToF64 + Send + Sync

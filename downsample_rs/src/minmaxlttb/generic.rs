@@ -12,13 +12,13 @@ pub(crate) fn minmaxlttb_generic<
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
-    f_minmax: fn(ArrayView1<Ty>, usize) -> Array1<usize>,
+    f_minmax: fn(ArrayView1<Tx>, ArrayView1<Ty>, usize) -> Array1<usize>,
 ) -> Array1<usize> {
     assert_eq!(x.len(), y.len());
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
-        let index = f_minmax(y, n_out * minmax_ratio);
+        let index = f_minmax(x, y, n_out * minmax_ratio);
         let x = index.mapv(|i| x[i]);
         let y = index.mapv(|i| y[i]);
         let index_points_selected = lttb(x.view(), y.view(), n_out);

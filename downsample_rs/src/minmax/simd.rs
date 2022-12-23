@@ -5,7 +5,7 @@ use argminmax::ArgMinMax;
 use ndarray::{Array1, ArrayView1};
 use std::ops::{Add, Div, Mul, Sub};
 
-use super::super::types::FromUsize;
+use super::super::types::{FromUsize, Num};
 use super::super::utils::{
     get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
@@ -34,7 +34,7 @@ pub fn min_max_simd_with_x<Tx, Ty>(
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
-    Tx: Copy + PartialOrd + FromUsize + Sub<Output = Tx> + Add<Output = Tx> + Div<Output = Tx>,
+    Tx: Num + FromUsize,
     Ty: Copy + PartialOrd,
 {
     assert_eq!(n_out % 2, 0);
@@ -67,15 +67,7 @@ pub fn min_max_simd_with_x_parallel<Tx, Ty>(
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
-    Tx: Copy
-        + PartialOrd
-        + FromUsize
-        + Sub<Output = Tx>
-        + Add<Output = Tx>
-        + Div<Output = Tx>
-        + Mul<Output = Tx>
-        + Send
-        + Sync,
+    Tx: Num + FromUsize + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 2, 0);

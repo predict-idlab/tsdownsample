@@ -3,7 +3,7 @@ use ndarray::{Array1, ArrayView1};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
-use super::types::FromUsize;
+use super::types::{FromUsize, Num};
 use std::ops::{Add, Div, Mul, Sub};
 
 // ---------------------- Binary search ----------------------
@@ -60,7 +60,7 @@ pub(crate) fn get_equidistant_bin_idx_iterator<T>(
     nb_bins: usize,
 ) -> impl Iterator<Item = (usize, usize)> + '_
 where
-    T: PartialOrd + Copy + Sub<Output = T> + Add<Output = T> + Div<Output = T> + FromUsize,
+    T: Num + FromUsize,
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
