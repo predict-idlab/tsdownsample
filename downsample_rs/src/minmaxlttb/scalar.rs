@@ -1,5 +1,5 @@
 use super::super::minmax;
-use super::super::types::{FromUsize, Num, ToF64};
+use super::super::types::Num;
 use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 use ndarray::{Array1, ArrayView1};
 use num_traits::cast::{AsPrimitive, FromPrimitive};

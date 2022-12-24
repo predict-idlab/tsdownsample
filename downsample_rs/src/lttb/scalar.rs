@@ -1,4 +1,4 @@
-use super::super::types::{Num, ToF64};
+use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
 use num_traits::cast::AsPrimitive;
 use std::cmp;

@@ -3,7 +3,7 @@ use ndarray::ArrayView1;
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
-use super::types::{FromUsize, Num};
+use super::types::Num;
 use num_traits::cast::FromPrimitive;
 use std::ops::{Add, Mul};
 

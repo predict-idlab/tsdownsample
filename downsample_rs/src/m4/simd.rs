@@ -4,7 +4,7 @@ use argminmax::ArgMinMax;
 
 use ndarray::{Array1, ArrayView1};
 
-use super::super::types::{FromUsize, Num};
+use super::super::types::Num;
 use super::super::utils::{
     get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
