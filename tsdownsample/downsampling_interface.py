@@ -61,6 +61,11 @@ class AbstractDownsampler(ABC):
                 raise ValueError("x and y must have the same length")
         return x, y
 
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        if n_out <= 0:
+            raise ValueError("n_out must be greater than 0")
+
     @abstractmethod
     def _downsample(
         self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
@@ -98,6 +103,7 @@ class AbstractDownsampler(ABC):
         np.ndarray
             The selected indices.
         """
+        self._check_valid_n_out(n_out)
         x, y = self._check_valid_downsample_args(*args)
         self._supports_dtype(y, y=True)
         if x is not None:

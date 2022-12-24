@@ -14,10 +14,22 @@ class MinMaxDownsampler(AbstractRustDownsampler):
     def __init__(self) -> None:
         super().__init__(_tsdownsample_rs.minmax)
 
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        AbstractRustDownsampler._check_valid_n_out(n_out)
+        if n_out % 2 != 0:
+            raise ValueError("n_out must be even")
+
 
 class M4Downsampler(AbstractRustDownsampler):
     def __init__(self):
         super().__init__(_tsdownsample_rs.m4)
+
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        AbstractRustDownsampler._check_valid_n_out(n_out)
+        if n_out % 4 != 0:
+            raise ValueError("n_out must be a multiple of 4")
 
 
 class LTTBDownsampler(AbstractRustDownsampler):

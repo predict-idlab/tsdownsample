@@ -125,6 +125,22 @@ def test_downsampling_different_dtypes_with_x():
             assert np.all(res[0] == res[i])
 
 
+### Invalid n_out
+
+
+def test_invalid_nout():
+    """Test invalid n_out."""
+    arr = np.random.randint(0, 100, size=10_000)
+    with pytest.raises(ValueError):
+        LTTBDownsampler().downsample(arr, n_out=-1)
+    with pytest.raises(ValueError):
+        # Should be even
+        MinMaxDownsampler().downsample(arr, n_out=33)
+    with pytest.raises(ValueError):
+        # Should be multiple of 4
+        M4Downsampler().downsample(arr, n_out=34)
+
+
 ### Unsupported dtype
 
 
