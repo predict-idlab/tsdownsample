@@ -153,13 +153,13 @@ macro_rules! create_pyfuncs_without_x_with_ratio {
 
 macro_rules! create_pyfuncs_with_x {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod, f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 
 macro_rules! create_pyfuncs_with_x_with_ratio {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x_with_ratio, $resample_mod, $resample_fn, $mod, f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 
