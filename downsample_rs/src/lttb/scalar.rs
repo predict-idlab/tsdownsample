@@ -1,5 +1,6 @@
 use super::super::types::{Num, ToF64};
 use ndarray::{Array1, ArrayView1};
+use num_traits::cast::AsPrimitive;
 use std::cmp;
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
@@ -7,7 +8,7 @@ use std::cmp;
 // ----------- WITH X
 
 #[inline] // TODO inline or not?
-pub fn lttb_with_x<Tx: Num + ToF64, Ty: Num + ToF64>(
+pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -41,8 +42,8 @@ pub fn lttb_with_x<Tx: Num + ToF64, Ty: Num + ToF64>(
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, x.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_x += x[i].to_f64();
-            avg_y += y[i].to_f64();
+            avg_x += x[i].as_();
+            avg_y += y[i].as_();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
@@ -55,14 +56,14 @@ pub fn lttb_with_x<Tx: Num + ToF64, Ty: Num + ToF64>(
         let range_to = (every * (i + 1) as f64) as usize + 1;
 
         // Point a
-        let point_ax = x[a].to_f64();
-        let point_ay = y[a].to_f64();
+        let point_ax = x[a].as_();
+        let point_ay = y[a].as_();
 
         let mut max_area = -1.0;
         for i in range_offs..range_to {
             // Calculate triangle area over three buckets
-            let area = ((point_ax - avg_x) * (y[i].to_f64() - point_ay)
-                - (point_ax - x[i].to_f64()) * (avg_y - point_ay))
+            let area = ((point_ax - avg_x) * (y[i].as_() - point_ay)
+                - (point_ax - x[i].as_()) * (avg_y - point_ay))
                 .abs();
             if area > max_area {
                 max_area = area;
@@ -88,7 +89,10 @@ pub fn lttb_with_x<Tx: Num + ToF64, Ty: Num + ToF64>(
 // ----------- WITHOUT X
 
 #[inline]
-pub fn lttb_without_x<Ty: Num + ToF64>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {
+pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
+    y: ArrayView1<Ty>,
+    n_out: usize,
+) -> Array1<usize> {
     if n_out >= y.len() || n_out == 0 {
         return Array1::from((0..y.len()).collect::<Vec<usize>>());
     }
@@ -114,7 +118,7 @@ pub fn lttb_without_x<Ty: Num + ToF64>(y: ArrayView1<Ty>, n_out: usize) -> Array
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, y.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_y += y[i].to_f64();
+            avg_y += y[i].as_();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
@@ -126,13 +130,13 @@ pub fn lttb_without_x<Ty: Num + ToF64>(y: ArrayView1<Ty>, n_out: usize) -> Array
         let range_to = (every * (i + 1) as f64) as usize + 1;
 
         // Point a
-        let point_ay = y[a].to_f64();
+        let point_ay = y[a].as_();
         let point_ax = a as f64;
 
         let mut max_area = -1.0;
         for i in range_offs..range_to {
             // Calculate triangle area over three buckets
-            let area = ((point_ax - avg_x) * (y[i].to_f64() - point_ay)
+            let area = ((point_ax - avg_x) * (y[i].as_() - point_ay)
                 - (point_ax - i as f64) * (avg_y - point_ay))
                 .abs();
             if area > max_area {
@@ -165,7 +169,7 @@ mod tests {
     use dev_utils::utils;
 
     use super::{lttb_with_x, lttb_without_x};
-    use ndarray::{array, s, Array1};
+    use ndarray::{array, Array1};
 
     #[test]
     fn test_lttb_with_x() {

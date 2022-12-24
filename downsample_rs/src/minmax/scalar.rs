@@ -10,6 +10,7 @@ use super::super::utils::{
 };
 use super::generic::{min_max_generic, min_max_generic_parallel};
 use super::generic::{min_max_generic_with_x, min_max_generic_with_x_parallel};
+use num_traits::cast::FromPrimitive;
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
@@ -22,7 +23,7 @@ pub fn min_max_scalar_with_x<Tx, Ty>(
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
-    Tx: Num + FromUsize,
+    Tx: Num + FromPrimitive,
     Ty: Copy + PartialOrd,
 {
     assert_eq!(n_out % 2, 0);
@@ -54,7 +55,7 @@ pub fn min_max_scalar_with_x_parallel<Tx, Ty>(
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
-    Tx: Num + FromUsize + Send + Sync,
+    Tx: Num + FromPrimitive + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 2, 0);

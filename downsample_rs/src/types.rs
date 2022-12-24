@@ -42,11 +42,13 @@ macro_rules! impl_from_and_to_traits {
 
 impl_from_and_to_traits!(f32, f64, i8, i16, i32, i64, u8, u16, u32, u64, usize);
 
+use num_traits::cast::FromPrimitive;
+
 #[cfg(feature = "half")]
 impl FromUsize for f16 {
     #[inline]
     fn from_usize(value: usize) -> Self {
-        <f16>::from_usize(value)
+        <f16>::from_u64(value as u64).unwrap()
     }
 }
 // #[cfg(feature = "half")]

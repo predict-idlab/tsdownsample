@@ -2,6 +2,7 @@ use super::super::minmax;
 use super::super::types::{FromUsize, Num, ToF64};
 use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 use ndarray::{Array1, ArrayView1};
+use num_traits::cast::{AsPrimitive, FromPrimitive};
 
 extern crate argminmax;
 use argminmax::{ScalarArgMinMax, SCALAR};
@@ -10,7 +11,10 @@ use argminmax::{ScalarArgMinMax, SCALAR};
 
 // ----------- WITH X
 
-pub fn minmaxlttb_scalar_with_x<Tx: Num + FromUsize + ToF64, Ty: Num + ToF64>(
+pub fn minmaxlttb_scalar_with_x<
+    Tx: Num + FromPrimitive + AsPrimitive<f64>,
+    Ty: Num + AsPrimitive<f64>,
+>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -24,7 +28,7 @@ where
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_scalar_without_x<Ty: Num + ToF64>(
+pub fn minmaxlttb_scalar_without_x<Ty: Num + AsPrimitive<f64>>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
@@ -40,8 +44,8 @@ where
 // ----------- WITH X
 
 pub fn minmaxlttb_scalar_with_x_parallel<
-    Tx: Num + FromUsize + ToF64 + Send + Sync,
-    Ty: Num + ToF64 + Send + Sync,
+    Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+    Ty: Num + AsPrimitive<f64> + Send + Sync,
 >(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
@@ -62,7 +66,7 @@ where
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + ToF64 + Send + Sync>(
+pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
@@ -84,7 +88,7 @@ where
 mod tests {
     use super::{minmaxlttb_scalar_with_x, minmaxlttb_scalar_without_x};
     use super::{minmaxlttb_scalar_with_x_parallel, minmaxlttb_scalar_without_x_parallel};
-    use ndarray::{array, s, Array1};
+    use ndarray::{array, Array1};
 
     extern crate dev_utils;
     use dev_utils::utils;

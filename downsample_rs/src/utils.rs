@@ -4,6 +4,7 @@ use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
 use super::types::{FromUsize, Num};
+use num_traits::cast::FromPrimitive;
 use std::ops::{Add, Mul};
 
 // ---------------------- Binary search ----------------------
@@ -61,12 +62,12 @@ pub(crate) fn get_equidistant_bin_idx_iterator<T>(
     nb_bins: usize,
 ) -> impl Iterator<Item = (usize, usize)> + '_
 where
-    T: Num + FromUsize,
+    T: Num + FromPrimitive,
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins))
-        - (arr[0] / FromUsize::from_usize(nb_bins));
+    let val_step: T = (arr[arr.len() - 1] / T::from_usize(nb_bins).unwrap())
+        - (arr[0] / T::from_usize(nb_bins).unwrap());
     let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
     let mut value = arr[0]; // Search value
     let mut idx = 0; // Index of the search value
@@ -112,7 +113,7 @@ where
 
 // TODO: tailor for f64
 #[inline(always)]
-fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromUsize>(
+fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromPrimitive>(
     start_val: T,
     add_val: T,
     mul: usize,
@@ -122,8 +123,8 @@ fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromUsize>(
     // This code should not fail when: (T::MAX - a) < (x*b).
     let mul_2: usize = mul / 2;
     start_val
-        + add_val * FromUsize::from_usize(mul_2)
-        + add_val * FromUsize::from_usize(mul - mul_2)
+        + add_val * T::from_usize(mul_2).unwrap()
+        + add_val * T::from_usize(mul - mul_2).unwrap()
 }
 
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
@@ -131,12 +132,12 @@ pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     nb_bins: usize,
 ) -> impl IndexedParallelIterator<Item = (usize, usize)> + '_
 where
-    T: Num + FromUsize + Sync + Send,
+    T: Num + FromPrimitive + Sync + Send,
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: T = (arr[arr.len() - 1] / FromUsize::from_usize(nb_bins))
-        - (arr[0] / FromUsize::from_usize(nb_bins));
+    let val_step: T = (arr[arr.len() - 1] / T::from_usize(nb_bins).unwrap())
+        - (arr[0] / T::from_usize(nb_bins).unwrap());
     (0..nb_bins).into_par_iter().map(move |i| {
         let start_value = sequential_add_mul(arr[0], val_step, i);
         let end_value = start_value + val_step;
