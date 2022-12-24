@@ -117,7 +117,7 @@ fn minmaxlttb_f32_random_array_50M_multi_core(c: &mut Criterion) {
 fn minmaxlttb_without_x_f32_random_array_50M_single_core(c: &mut Criterion) {
     let n = 50_000_000;
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    c.bench_function("mlttbnox_scal_50M_f32", |b| {
+    c.bench_function("mlttb_scal_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_scalar_without_x(
                 black_box(y.view()),
@@ -126,7 +126,7 @@ fn minmaxlttb_without_x_f32_random_array_50M_single_core(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("mlttbnox_simd_50M_f32", |b| {
+    c.bench_function("mlttb_simd_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_simd_without_x(
                 black_box(y.view()),
@@ -140,7 +140,7 @@ fn minmaxlttb_without_x_f32_random_array_50M_single_core(c: &mut Criterion) {
 fn minmaxlttb_without_x_f32_random_array_50M_multi_core(c: &mut Criterion) {
     let n = 50_000_000;
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    c.bench_function("mlttbnox_scal_p_50M_f32", |b| {
+    c.bench_function("mlttb_scal_p_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_scalar_without_x_parallel(
                 black_box(y.view()),
@@ -149,7 +149,7 @@ fn minmaxlttb_without_x_f32_random_array_50M_multi_core(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("mlttbnox_simd_p_50M_f32", |b| {
+    c.bench_function("mlttb_simd_p_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_simd_without_x_parallel(
                 black_box(y.view()),
