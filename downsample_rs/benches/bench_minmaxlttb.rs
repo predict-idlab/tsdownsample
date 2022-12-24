@@ -14,7 +14,7 @@ fn minmaxlttb_f32_random_array_long_single_core(c: &mut Criterion) {
     let n = config::ARRAY_LENGTH_LONG;
     let x = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    c.bench_function("mmlttb_scal_f32", |b| {
+    c.bench_function("mmlttb_scalx_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_scalar_with_x(
                 black_box(x.view()),
@@ -24,7 +24,7 @@ fn minmaxlttb_f32_random_array_long_single_core(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("mlttb_simd_f32", |b| {
+    c.bench_function("mlttb_simdx_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_simd_with_x(
                 black_box(x.view()),
@@ -40,7 +40,7 @@ fn minmaxlttb_f32_random_array_long_multi_core(c: &mut Criterion) {
     let n = config::ARRAY_LENGTH_LONG;
     let x = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    c.bench_function("mmlttb_scal_p_f32", |b| {
+    c.bench_function("mmlttb_scalx_p_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_scalar_with_x_parallel(
                 black_box(x.view()),
@@ -50,7 +50,7 @@ fn minmaxlttb_f32_random_array_long_multi_core(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("mlttb_simd_p_f32", |b| {
+    c.bench_function("mlttb_simdx_p_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_simd_with_x_parallel(
                 black_box(x.view()),
@@ -66,7 +66,7 @@ fn minmaxlttb_f32_random_array_50M_single_core(c: &mut Criterion) {
     let n = 50_000_000;
     let x = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    c.bench_function("mmlttb_scal_50M_f32", |b| {
+    c.bench_function("mlttb_scalx_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_scalar_with_x(
                 black_box(x.view()),
@@ -76,7 +76,7 @@ fn minmaxlttb_f32_random_array_50M_single_core(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("mmlttb_simd_50M_f32", |b| {
+    c.bench_function("mlttb_simdx_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_simd_with_x(
                 black_box(x.view()),
@@ -92,7 +92,7 @@ fn minmaxlttb_f32_random_array_50M_multi_core(c: &mut Criterion) {
     let n = 50_000_000;
     let x = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    c.bench_function("mmlttb_scal_p_50M_f32", |b| {
+    c.bench_function("mlttb_scalx_p_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_scalar_with_x_parallel(
                 black_box(x.view()),
@@ -102,7 +102,7 @@ fn minmaxlttb_f32_random_array_50M_multi_core(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("mmlttb_simd_p_50M_f32", |b| {
+    c.bench_function("mlttb_simdx_p_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_simd_with_x_parallel(
                 black_box(x.view()),
@@ -117,7 +117,7 @@ fn minmaxlttb_f32_random_array_50M_multi_core(c: &mut Criterion) {
 fn minmaxlttb_without_x_f32_random_array_50M_single_core(c: &mut Criterion) {
     let n = 50_000_000;
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    c.bench_function("mmlttbnox_scal_50M_f32", |b| {
+    c.bench_function("mlttbnox_scal_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_scalar_without_x(
                 black_box(y.view()),
@@ -126,7 +126,7 @@ fn minmaxlttb_without_x_f32_random_array_50M_single_core(c: &mut Criterion) {
             )
         })
     });
-    c.bench_function("mmlttbnox_simd_50M_f32", |b| {
+    c.bench_function("mlttbnox_simd_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_simd_without_x(
                 black_box(y.view()),

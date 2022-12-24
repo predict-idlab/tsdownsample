@@ -7,6 +7,8 @@ use downsample_rs::m4 as m4_mod;
 use criterion::{black_box, Criterion};
 use dev_utils::{config, utils};
 
+use ndarray::Array1;
+
 fn m4_f32_random_array_long_single_core(c: &mut Criterion) {
     let n = config::ARRAY_LENGTH_LONG;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
@@ -32,22 +34,60 @@ fn m4_f32_random_array_long_multi_core(c: &mut Criterion) {
 fn m4_f32_random_array_50M_single_core(c: &mut Criterion) {
     let n = 50_000_000;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
+    let x = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
     c.bench_function("m4_scal_50M_f32", |b| {
         b.iter(|| m4_mod::m4_scalar_without_x(black_box(data.view()), black_box(2_000)))
     });
     c.bench_function("m4_simd_50M_f32", |b| {
         b.iter(|| m4_mod::m4_simd_without_x(black_box(data.view()), black_box(2_000)))
     });
+    c.bench_function("m4_scalx_50M_f32", |b| {
+        b.iter(|| {
+            m4_mod::m4_scalar_with_x(
+                black_box(x.view()),
+                black_box(data.view()),
+                black_box(2_000),
+            )
+        })
+    });
+    c.bench_function("m4_simdx_50M_f32", |b| {
+        b.iter(|| {
+            m4_mod::m4_simd_with_x(
+                black_box(x.view()),
+                black_box(data.view()),
+                black_box(2_000),
+            )
+        })
+    });
 }
 
 fn m4_f32_random_array_50M_multi_core(c: &mut Criterion) {
     let n = 50_000_000;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
+    let x = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
     c.bench_function("m4_scal_p_50M_f32", |b| {
         b.iter(|| m4_mod::m4_scalar_without_x_parallel(black_box(data.view()), black_box(2_000)))
     });
     c.bench_function("m4_simd_p_50M_f32", |b| {
         b.iter(|| m4_mod::m4_simd_without_x_parallel(black_box(data.view()), black_box(2_000)))
+    });
+    c.bench_function("m4_scalx_p_50M_f32", |b| {
+        b.iter(|| {
+            m4_mod::m4_scalar_with_x_parallel(
+                black_box(x.view()),
+                black_box(data.view()),
+                black_box(2_000),
+            )
+        })
+    });
+    c.bench_function("m4_simdx_p_50M_f32", |b| {
+        b.iter(|| {
+            m4_mod::m4_simd_with_x_parallel(
+                black_box(x.view()),
+                black_box(data.view()),
+                black_box(2_000),
+            )
+        })
     });
 }
 

@@ -85,7 +85,7 @@ all_downsamplers = rust_downsamplers + [EveryNthDownsampler()]
 
 def test_downsampling_with_x():
     """Test downsampling with x."""
-    arr = np.random.randn(10_000).astype(np.float32)
+    arr = np.random.randn(10_001).astype(np.float32)  # 10_001 to test edge case
     idx = np.arange(len(arr))
     for downsampler in all_downsamplers:
         s_downsampled = downsampler.downsample(arr, n_out=100)

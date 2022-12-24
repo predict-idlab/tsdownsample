@@ -190,12 +190,20 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmax_mod, min_max_scalar_without_x_parallel, scalar_parallel_mod);
+        create_pyfuncs_without_x!(
+            minmax_mod,
+            min_max_scalar_without_x_parallel,
+            scalar_parallel_mod
+        );
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(minmax_mod, min_max_scalar_with_x_parallel, scalar_parallel_mod);
+        create_pyfuncs_with_x!(
+            minmax_mod,
+            min_max_scalar_with_x_parallel,
+            scalar_parallel_mod
+        );
     }
 
     // ----------------- SIMD
@@ -218,7 +226,11 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmax_mod, min_max_simd_without_x_parallel, simd_parallel_mod);
+        create_pyfuncs_without_x!(
+            minmax_mod,
+            min_max_simd_without_x_parallel,
+            simd_parallel_mod
+        );
     }
 
     // ----- WITH X

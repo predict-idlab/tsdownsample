@@ -7,11 +7,11 @@ description = "Downsample time series data"
 license = "MIT"
 
 [dependencies]
-# TODO: perhaps use pola-rs?
+# TODO: perhaps use polars?
 ndarray = {version = "0.15.6", default-features = false, features = ["rayon"] }
 argminmax = { version = "0.3" , features = ["half"] }
-num-traits = { version = "0.2.15", default-features = false }
 half = { version = "2.1", default-features = false , features=["num-traits"], optional = true}
+num-traits = { version = "0.2.15", default-features = false }
 rayon = { version = "1.6.0", default-features = false }
 
 [dev-dependencies]
