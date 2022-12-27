@@ -111,7 +111,7 @@ where
 
 // --- Parallel version
 
-// TODO: tailor for f64
+// TODO: tailor for f64  --  DECIDE whether we want to use f64 or T
 #[inline(always)]
 fn sequential_add_mul<T: Copy + Add<Output = T> + Mul<Output = T> + FromPrimitive>(
     start_val: T,
