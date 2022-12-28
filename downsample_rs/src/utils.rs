@@ -78,7 +78,7 @@ where
         let mid = if mid < arr.len() - 1 {
             mid
         } else {
-            arr.len() - 1 // TODO: arr.len() - 1 gives error I thought...
+            arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
         };
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, value, idx, arr.len()-1);

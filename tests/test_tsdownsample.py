@@ -78,6 +78,16 @@ def test_parallel_downsampling():
         assert np.all(s_downsampled == s_downsampled_p)
 
 
+def test_parallel_downsampling_with_x():
+    """Test parallel downsampling with x."""
+    arr = np.random.randn(10_000).astype(np.float32)
+    idx = np.arange(len(arr))
+    for downsampler in rust_downsamplers:
+        s_downsampled = downsampler.downsample(idx, arr, n_out=100, parallel=False)
+        s_downsampled_p = downsampler.downsample(idx, arr, n_out=100, parallel=True)
+        assert np.all(s_downsampled == s_downsampled_p)
+
+
 ## Using x
 
 all_downsamplers = rust_downsamplers + [EveryNthDownsampler()]
@@ -99,30 +109,74 @@ def test_downsampling_with_x():
 def test_downsampling_different_dtypes():
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
-    res = []
-    for dtype in supported_dtypes_y:
-        arr = arr_orig.astype(dtype)
-        s_downsampled = MinMaxDownsampler().downsample(arr, n_out=100)
-        if dtype is not np.bool_:
-            res += [s_downsampled]
-    for i in range(1, len(res)):
-        assert np.all(res[0] == res[i])
+    for downsampler in rust_downsamplers:
+        res = []
+        for dtype in supported_dtypes_y:
+            arr = arr_orig.astype(dtype)
+            s_downsampled = downsampler.downsample(arr, n_out=100)
+            if dtype is not np.bool_:
+                res += [s_downsampled]
+        for i in range(1, len(res)):
+            assert np.all(res[0] == res[i])
 
 
 def test_downsampling_different_dtypes_with_x():
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     idx_orig = np.arange(len(arr_orig))
-    for dtype_x in supported_dtypes_x:
+    for downsampler in rust_downsamplers:
+        for dtype_x in supported_dtypes_x:
+            res = []
+            idx = idx_orig.astype(dtype_x)
+            for dtype_y in supported_dtypes_y:
+                arr = arr_orig.astype(dtype_y)
+                s_downsampled = downsampler.downsample(idx, arr, n_out=100)
+                if dtype_y is not np.bool_:
+                    res += [s_downsampled]
+            for i in range(1, len(res)):
+                assert np.all(res[0] == res[i])
+
+
+### Check no out of bounds indexing
+
+# TODO: make this a loop over the downsamplers just as above
+
+
+def test_downsampling_no_out_of_bounds_different_dtypes():
+    """Test no out of bounds issues when downsampling with different data types."""
+    arr_orig = np.random.randint(0, 100, size=100)
+    for downsampler in rust_downsamplers:
         res = []
-        idx = idx_orig.astype(dtype_x)
-        for dtype_y in supported_dtypes_y:
-            arr = arr_orig.astype(dtype_y)
-            s_downsampled = MinMaxLTTBDownsampler().downsample(idx, arr, n_out=100)
-            if dtype_y is not np.bool_:
+        for dtype in supported_dtypes_y:
+            arr = arr_orig.astype(dtype)
+            s_downsampled = downsampler.downsample(arr, n_out=76)
+            s_downsampled_p = downsampler.downsample(arr, n_out=76, parallel=True)
+            assert np.all(s_downsampled == s_downsampled_p)
+            if dtype is not np.bool_:
                 res += [s_downsampled]
         for i in range(1, len(res)):
             assert np.all(res[0] == res[i])
+
+
+def test_downsampling_no_out_of_bounds_different_dtypes_with_x():
+    """Test no out of bounds issues when downsampling with different data types."""
+    arr_orig = np.random.randint(0, 100, size=100)
+    idx_orig = np.arange(len(arr_orig))
+    for downsampler in rust_downsamplers:
+        for dtype_x in supported_dtypes_x:
+            res = []
+            idx = idx_orig.astype(dtype_x)
+            for dtype_y in supported_dtypes_y:
+                arr = arr_orig.astype(dtype_y)
+                s_downsampled = downsampler.downsample(idx, arr, n_out=76)
+                s_downsampled_p = downsampler.downsample(
+                    idx, arr, n_out=76, parallel=True
+                )
+                assert np.all(s_downsampled == s_downsampled_p)
+                if dtype_y is not np.bool_:
+                    res += [s_downsampled]
+            for i in range(1, len(res)):
+                assert np.all(res[0] == res[i])
 
 
 ### Invalid n_out

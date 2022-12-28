@@ -117,7 +117,6 @@ DOWNSAMPLE_F = "downsample"
 
 # the following dtypes are supported by the rust downsamplers (x and y)
 _rust_dtypes = [
-    "float16",
     "float32",
     "float64",
     "uint16",
@@ -131,7 +130,7 @@ _rust_dtypes = [
 ]
 # <= 8-bit x-dtypes are not supported as the range of the values is too small to require
 # downsampling
-_y_rust_dtypes = _rust_dtypes + ["int8", "uint8", "bool"]
+_y_rust_dtypes = _rust_dtypes + ["float16", "int8", "uint8", "bool"]
 
 
 class AbstractRustDownsampler(AbstractDownsampler, ABC):

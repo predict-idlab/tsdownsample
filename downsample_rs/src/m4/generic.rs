@@ -23,9 +23,11 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
-    arr.exact_chunks(block_size)
+    arr.slice(s![..block_size * n_out / 4])
+        .exact_chunks(block_size)
         .into_iter()
         .enumerate()
+        // .take(n_out / 4)
         .for_each(|(i, step)| {
             let (min_index, max_index) = f_argminmax(step);
 
@@ -66,7 +68,10 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let idxs = Array1::from((0..n_out / 4).collect::<Vec<usize>>());
 
     // Iterate over the sample_index pointers and the array chunks
-    Zip::from(arr.exact_chunks(block_size))
+    Zip::from(
+        arr.slice(s![..block_size * n_out / 4])
+            .exact_chunks(block_size)
+        )
         .and(sampled_indices.exact_chunks_mut(4))
         .and(idxs.view())
         .par_for_each(|step, mut sampled_index, i| {
