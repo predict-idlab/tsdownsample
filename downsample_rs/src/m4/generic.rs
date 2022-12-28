@@ -70,26 +70,26 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     // Iterate over the sample_index pointers and the array chunks
     Zip::from(
         arr.slice(s![..block_size * n_out / 4])
-            .exact_chunks(block_size)
-        )
-        .and(sampled_indices.exact_chunks_mut(4))
-        .and(idxs.view())
-        .par_for_each(|step, mut sampled_index, i| {
-            let (min_index, max_index) = f_argminmax(step);
+            .exact_chunks(block_size),
+    )
+    .and(sampled_indices.exact_chunks_mut(4))
+    .and(idxs.view())
+    .par_for_each(|step, mut sampled_index, i| {
+        let (min_index, max_index) = f_argminmax(step);
 
-            let start_idx = block_size * i;
-            sampled_index[0] = start_idx;
+        let start_idx = block_size * i;
+        sampled_index[0] = start_idx;
 
-            // Add the indexes in sorted order
-            if min_index < max_index {
-                sampled_index[1] = min_index + start_idx;
-                sampled_index[2] = max_index + start_idx;
-            } else {
-                sampled_index[1] = max_index + start_idx;
-                sampled_index[2] = min_index + start_idx;
-            }
-            sampled_index[3] = start_idx + block_size - 1;
-        });
+        // Add the indexes in sorted order
+        if min_index < max_index {
+            sampled_index[1] = min_index + start_idx;
+            sampled_index[2] = max_index + start_idx;
+        } else {
+            sampled_index[1] = max_index + start_idx;
+            sampled_index[2] = min_index + start_idx;
+        }
+        sampled_index[3] = start_idx + block_size - 1;
+    });
 
     sampled_indices
 }

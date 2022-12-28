@@ -4,7 +4,7 @@ use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
 use super::types::Num;
-use num_traits::cast::FromPrimitive;
+use num_traits::{AsPrimitive, FromPrimitive};
 use std::ops::{Add, Mul};
 
 // ---------------------- Binary search ----------------------
@@ -62,18 +62,18 @@ pub(crate) fn get_equidistant_bin_idx_iterator<T>(
     nb_bins: usize,
 ) -> impl Iterator<Item = (usize, usize)> + '_
 where
-    T: Num + FromPrimitive,
+    T: Num + FromPrimitive + AsPrimitive<f64>,
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: T = (arr[arr.len() - 1] / T::from_usize(nb_bins).unwrap())
-        - (arr[0] / T::from_usize(nb_bins).unwrap());
+    let val_step: f64 =
+        (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
-    let mut value = arr[0]; // Search value
+    let mut value: f64 = arr[0].as_(); // Search value
     let mut idx = 0; // Index of the search value
     (0..nb_bins).map(move |_| {
         let start_idx = idx; // Start index of the bin (previous end index)
-        value = value + val_step;
+        value += val_step;
         let mid = idx + idx_step;
         let mid = if mid < arr.len() - 1 {
             mid
@@ -82,7 +82,8 @@ where
         };
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, value, idx, arr.len()-1);
-        idx = binary_search_with_mid(arr, value, idx, arr.len() - 1, mid); // End index of the bin
+        let search_value = T::from_f64(value).unwrap();
+        idx = binary_search_with_mid(arr, search_value, idx, arr.len() - 1, mid); // End index of the bin
         (start_idx, idx)
     })
 
@@ -132,15 +133,18 @@ pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     nb_bins: usize,
 ) -> impl IndexedParallelIterator<Item = (usize, usize)> + '_
 where
-    T: Num + FromPrimitive + Sync + Send,
+    T: Num + FromPrimitive + AsPrimitive<f64> + Sync + Send,
 {
     assert!(nb_bins >= 2);
     // Divide by nb_bins to avoid overflow!
-    let val_step: T = (arr[arr.len() - 1] / T::from_usize(nb_bins).unwrap())
-        - (arr[0] / T::from_usize(nb_bins).unwrap());
+    let val_step: f64 =
+        (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
+    let arr0: f64 = arr[0].as_();
     (0..nb_bins).into_par_iter().map(move |i| {
-        let start_value = sequential_add_mul(arr[0], val_step, i);
+        let start_value = sequential_add_mul(arr0, val_step, i);
         let end_value = start_value + val_step;
+        let start_value = T::from_f64(start_value).unwrap();
+        let end_value = T::from_f64(end_value).unwrap();
         // TODO: double check if this heuristic is the smartest way to do this
         if i < nb_bins / 2 {
             let end_idx = binary_search(arr, end_value, 0, arr.len() - 1);

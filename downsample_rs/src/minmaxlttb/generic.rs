@@ -2,7 +2,7 @@ use ndarray::{s, Array1, ArrayView1};
 
 use super::super::lttb::{lttb_with_x, lttb_without_x};
 use super::super::types::Num;
-use num_traits::cast::AsPrimitive;
+use num_traits::AsPrimitive;
 
 #[inline(always)]
 pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(

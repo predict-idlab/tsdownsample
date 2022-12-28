@@ -1,6 +1,6 @@
 use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
-use num_traits::cast::AsPrimitive;
+use num_traits::AsPrimitive;
 use std::cmp;
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
