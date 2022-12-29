@@ -7,7 +7,6 @@ use std::cmp;
 
 // ----------- WITH X
 
-#[inline] // TODO inline or not?
 pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
@@ -24,7 +23,6 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     // Initially a is the first point in the triangle.
     let mut a = 0;
 
-    // TODO: fix bug in this implementation
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
     // Always add the first point
@@ -32,9 +30,6 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        // let mut avg_x: Tx = Tx::default();
-        // let mut avg_y: Ty = Ty::default();
-        // TODO: check the impact of using f64 (is necessary to avoid overflow)
         let mut avg_x: f64 = 0.0;
         let mut avg_y: f64 = 0.0;
 
@@ -88,7 +83,6 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
 
 // ----------- WITHOUT X
 
-#[inline]
 pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
     // TODO: why is this slower than the one with x?
     y: ArrayView1<Ty>,
@@ -111,8 +105,6 @@ pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        // let mut avg_y: Ty = Ty::default();
-        // TODO: check impact of using f64 (is necessary to avoid overflow)
         let mut avg_y: f64 = 0.0;
 
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;

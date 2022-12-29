@@ -33,7 +33,6 @@ where
 
 // ----------- WITHOUT X
 
-#[inline]
 pub fn min_max_simd_without_x<T: Copy + PartialOrd>(
     arr: ArrayView1<T>,
     n_out: usize,
@@ -66,7 +65,6 @@ where
 
 // ----------- WITHOUT X
 
-#[inline]
 pub fn min_max_simd_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: ArrayView1<T>,
     n_out: usize,
@@ -133,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_min_max_simd_with_x_correct() {
-        // 101 bc arr ... TODO
+        // 101 elements to avoid rounding errors in the binning
         let x = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
         let x = Array1::from(x);
         let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();

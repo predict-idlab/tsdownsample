@@ -10,9 +10,7 @@ from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     MinMaxLTTBDownsampler,
 )
 
-# Very basic & poor tests
 # TODO: Improve tests
-#   - test with and without x
 #   - compare implementations with existing plotly_resampler implementations
 
 
@@ -135,8 +133,6 @@ def test_downsampling_different_dtypes_with_x():
 
 
 ### Check no out of bounds indexing
-
-# TODO: make this a loop over the downsamplers just as above
 
 
 def test_downsampling_no_out_of_bounds_different_dtypes():

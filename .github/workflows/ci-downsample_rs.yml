@@ -42,7 +42,6 @@ jobs:
         run: cargo check --verbose --all-features
       - name: formatting check
         run: cargo fmt --all -- --check
-      # TODO: enable clippy once I write docs for all public items
       # - name: check with clippy
       #   run: cargo clippy --all --all-targets --all-features -- -D warnings
 

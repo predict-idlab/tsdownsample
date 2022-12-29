@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_min_max_scalar_with_x_correct() {
-        let x = (0..101).map(|x| x as i32).collect::<Vec<i32>>();
+        let x = (0..101).collect::<Vec<i32>>();
         let x = Array1::from(x);
         let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_min_max_scalar_with_x_parallel_correct() {
-        let x = (0..101).map(|x| x as i32).collect::<Vec<i32>>();
+        let x = (0..101).collect::<Vec<i32>>();
         let x = Array1::from(x);
         let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
@@ -171,9 +171,9 @@ mod tests {
 
     #[test]
     fn test_many_random_runs_same_output() {
-        let n = 20_001;
+        let n: usize = 20_001;
         let n_out = 200;
-        let x = (0..n).map(|x| x as i32).collect::<Vec<i32>>();
+        let x = (0..n as i32).collect::<Vec<i32>>();
         let x = Array1::from(x);
         for _ in 0..100 {
             let arr = get_array_f32(n);

@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_m4_simd_with_x_correct() {
-        let x = (0..100).map(|x| x as i32).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
         let x = Array1::from(x);
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_m4_simd_with_x_parallel_correct() {
-        let x = (0..100).map(|x| x as i32).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
         let x = Array1::from(x);
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
