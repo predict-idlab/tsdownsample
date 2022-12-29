@@ -1,9 +1,9 @@
 use super::super::minmax;
 use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 
-// use num_traits::{Num, ToPrimitive};
-use super::super::lttb::utils::Num;
+use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
+use num_traits::{AsPrimitive, FromPrimitive};
 
 extern crate argminmax;
 use argminmax::ArgMinMax;
@@ -12,7 +12,10 @@ use argminmax::ArgMinMax;
 
 // ----------- WITH X
 
-pub fn minmaxlttb_simd<Tx: Num, Ty: Num + PartialOrd>(
+pub fn minmaxlttb_simd_with_x<
+    Tx: Num + FromPrimitive + AsPrimitive<f64>,
+    Ty: Num + AsPrimitive<f64>,
+>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -21,12 +24,12 @@ pub fn minmaxlttb_simd<Tx: Num, Ty: Num + PartialOrd>(
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
 {
-    minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_simd)
+    minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_simd_with_x)
 }
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_simd_without_x<Ty: Num + PartialOrd>(
+pub fn minmaxlttb_simd_without_x<Ty: Num + AsPrimitive<f64>>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
@@ -34,14 +37,14 @@ pub fn minmaxlttb_simd_without_x<Ty: Num + PartialOrd>(
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
 {
-    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_simd)
+    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_simd_without_x)
 }
 
 // ------------------------------------- PARALLEL --------------------------------------
 
 // ----------- WITH X
 
-pub fn minmaxlttb_simd_parallel<Tx: Num, Ty: Num + PartialOrd + Send + Sync>(
+pub fn minmaxlttb_simd_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -49,13 +52,21 @@ pub fn minmaxlttb_simd_parallel<Tx: Num, Ty: Num + PartialOrd + Send + Sync>(
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+    Ty: Num + AsPrimitive<f64> + Send + Sync,
 {
-    minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_simd_parallel)
+    minmaxlttb_generic(
+        x,
+        y,
+        n_out,
+        minmax_ratio,
+        minmax::min_max_simd_with_x_parallel,
+    )
 }
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_simd_without_x_parallel<Ty: Num + PartialOrd + Send + Sync>(
+pub fn minmaxlttb_simd_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
@@ -63,16 +74,21 @@ pub fn minmaxlttb_simd_without_x_parallel<Ty: Num + PartialOrd + Send + Sync>(
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
 {
-    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_simd_parallel)
+    minmaxlttb_generic_without_x(
+        y,
+        n_out,
+        minmax_ratio,
+        minmax::min_max_simd_without_x_parallel,
+    )
 }
 
-// ---- TEST
+// --------------------------------------- TESTS ---------------------------------------
 
 #[cfg(test)]
 mod tests {
-    use super::{minmaxlttb_simd, minmaxlttb_simd_without_x};
-    use super::{minmaxlttb_simd_parallel, minmaxlttb_simd_without_x_parallel};
-    use ndarray::{array, s, Array1};
+    use super::{minmaxlttb_simd_with_x, minmaxlttb_simd_without_x};
+    use super::{minmaxlttb_simd_with_x_parallel, minmaxlttb_simd_without_x_parallel};
+    use ndarray::{array, Array1};
 
     extern crate dev_utils;
     use dev_utils::utils;
@@ -82,10 +98,10 @@ mod tests {
     }
 
     #[test]
-    fn test_minmaxlttb() {
+    fn test_minmaxlttb_with_x() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = minmaxlttb_simd(x.view(), y.view(), 4, 2);
+        let sampled_indices = minmaxlttb_simd_with_x(x.view(), y.view(), 4, 2);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
@@ -97,10 +113,10 @@ mod tests {
     }
 
     #[test]
-    fn test_minmaxlttb_parallel() {
+    fn test_minmaxlttb_with_x_parallel() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = minmaxlttb_simd_parallel(x.view(), y.view(), 4, 2);
+        let sampled_indices = minmaxlttb_simd_with_x_parallel(x.view(), y.view(), 4, 2);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 

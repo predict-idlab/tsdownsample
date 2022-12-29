@@ -1,9 +1,17 @@
-use super::utils::Num;
+use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
+use num_traits::AsPrimitive;
 use std::cmp;
 
-#[inline] // TODO inline or not?
-pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {
+// ----------------------------------- NON-PARALLEL ------------------------------------
+
+// ----------- WITH X
+
+pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
+    x: ArrayView1<Tx>,
+    y: ArrayView1<Ty>,
+    n_out: usize,
+) -> Array1<usize> {
     assert_eq!(x.len(), y.len());
     if n_out >= x.len() || n_out == 0 {
         return Array1::from((0..x.len()).collect::<Vec<usize>>());
@@ -15,7 +23,6 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
     // Initially a is the first point in the triangle.
     let mut a = 0;
 
-    // TODO: fix bug in this implementation
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
     // Always add the first point
@@ -23,9 +30,6 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        // let mut avg_x: Tx = Tx::default();
-        // let mut avg_y: Ty = Ty::default();
-        // TODO: check the impact of using f64 (is necessary to avoid overflow)
         let mut avg_x: f64 = 0.0;
         let mut avg_y: f64 = 0.0;
 
@@ -33,8 +37,8 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, x.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_x = avg_x + x[i].to_f64();
-            avg_y = avg_y + y[i].to_f64();
+            avg_x += x[i].as_();
+            avg_y += y[i].as_();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
@@ -47,14 +51,14 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
         let range_to = (every * (i + 1) as f64) as usize + 1;
 
         // Point a
-        let point_ax = x[a].to_f64();
-        let point_ay = y[a].to_f64();
+        let point_ax = x[a].as_();
+        let point_ay = y[a].as_();
 
         let mut max_area = -1.0;
         for i in range_offs..range_to {
             // Calculate triangle area over three buckets
-            let area = ((point_ax - avg_x) * (y[i].to_f64() - point_ay)
-                - (point_ax - x[i].to_f64()) * (avg_y - point_ay))
+            let area = ((point_ax - avg_x) * (y[i].as_() - point_ay)
+                - (point_ax - x[i].as_()) * (avg_y - point_ay))
                 .abs();
             if area > max_area {
                 max_area = area;
@@ -77,8 +81,13 @@ pub fn lttb<Tx: Num, Ty: Num>(x: ArrayView1<Tx>, y: ArrayView1<Ty>, n_out: usize
     sampled_indices
 }
 
-#[inline]
-pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize> {
+// ----------- WITHOUT X
+
+pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
+    // TODO: why is this slower than the one with x?
+    y: ArrayView1<Ty>,
+    n_out: usize,
+) -> Array1<usize> {
     if n_out >= y.len() || n_out == 0 {
         return Array1::from((0..y.len()).collect::<Vec<usize>>());
     }
@@ -96,15 +105,13 @@ pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        // let mut avg_y: Ty = Ty::default();
-        // TODO: check impact of using f64 (is necessary to avoid overflow)
         let mut avg_y: f64 = 0.0;
 
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, y.len());
 
         for i in avg_range_start..avg_range_end {
-            avg_y = avg_y + y[i].to_f64();
+            avg_y += y[i].as_();
         }
         // Slicing seems to be a lot slower
         // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
@@ -116,13 +123,13 @@ pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
         let range_to = (every * (i + 1) as f64) as usize + 1;
 
         // Point a
-        let point_ay = y[a].to_f64();
+        let point_ay = y[a].as_();
         let point_ax = a as f64;
 
         let mut max_area = -1.0;
         for i in range_offs..range_to {
             // Calculate triangle area over three buckets
-            let area = ((point_ax - avg_x) * (y[i].to_f64() - point_ay)
+            let area = ((point_ax - avg_x) * (y[i].as_() - point_ay)
                 - (point_ax - i as f64) * (avg_y - point_ay))
                 .abs();
             if area > max_area {
@@ -146,20 +153,22 @@ pub fn lttb_without_x<Ty: Num>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
     sampled_indices
 }
 
+// --------------------------------------- TESTS ---------------------------------------
+
 #[cfg(test)]
 mod tests {
     extern crate dev_utils;
 
     use dev_utils::utils;
 
-    use super::{lttb, lttb_without_x};
-    use ndarray::{array, s, Array1};
+    use super::{lttb_with_x, lttb_without_x};
+    use ndarray::{array, Array1};
 
     #[test]
-    fn test_lttb() {
+    fn test_lttb_with_x() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = lttb(x.view(), y.view(), 4);
+        let sampled_indices = lttb_with_x(x.view(), y.view(), 4);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
@@ -176,7 +185,7 @@ mod tests {
             let n = 5_000;
             let x: Array1<i32> = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
             let y = utils::get_random_array(n, f32::MIN, f32::MAX);
-            let sampled_indices1 = lttb(x.view(), y.view(), 200);
+            let sampled_indices1 = lttb_with_x(x.view(), y.view(), 200);
             let sampled_indices2 = lttb_without_x(y.view(), 200);
             assert_eq!(sampled_indices1, sampled_indices2);
         }

@@ -1,10 +1,6 @@
 extern crate downsample_rs;
 extern crate paste;
 
-// TODO
-// - m4 & minmax should determine bin size on x-range!
-//      code now assumes equal bin size
-
 use half::f16;
 
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1};
@@ -157,13 +153,13 @@ macro_rules! create_pyfuncs_without_x_with_ratio {
 
 macro_rules! create_pyfuncs_with_x {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod, f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 
 macro_rules! create_pyfuncs_with_x_with_ratio {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x_with_ratio, $resample_mod, $resample_fn, $mod, f16 f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
+        _create_pyfuncs_with_x_generic!(_create_pyfunc_with_x_with_ratio, $resample_mod, $resample_fn, $mod, f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
 }
 
@@ -177,29 +173,69 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // ----------------- SCALAR
 
     let scalar_mod = PyModule::new(_py, "scalar")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmax_mod, min_max_scalar, scalar_mod);
+        create_pyfuncs_without_x!(minmax_mod, min_max_scalar_without_x, scalar_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(minmax_mod, min_max_scalar_with_x, scalar_mod);
     }
 
     // ----------------- SCALAR PARALLEL
 
     let scalar_parallel_mod = PyModule::new(_py, "scalar_parallel")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmax_mod, min_max_scalar_parallel, scalar_parallel_mod);
+        create_pyfuncs_without_x!(
+            minmax_mod,
+            min_max_scalar_without_x_parallel,
+            scalar_parallel_mod
+        );
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(
+            minmax_mod,
+            min_max_scalar_with_x_parallel,
+            scalar_parallel_mod
+        );
     }
 
     // ----------------- SIMD
 
     let simd_mod = PyModule::new(_py, "simd")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmax_mod, min_max_simd, simd_mod);
+        create_pyfuncs_without_x!(minmax_mod, min_max_simd_without_x, simd_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(minmax_mod, min_max_simd_with_x, simd_mod);
     }
 
     // ----------------- SIMD PARALLEL
 
     let simd_parallel_mod = PyModule::new(_py, "simd_parallel")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmax_mod, min_max_simd_parallel, simd_parallel_mod);
+        create_pyfuncs_without_x!(
+            minmax_mod,
+            min_max_simd_without_x_parallel,
+            simd_parallel_mod
+        );
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(minmax_mod, min_max_simd_with_x_parallel, simd_parallel_mod);
     }
 
     // Add the sub modules to the module
@@ -221,29 +257,57 @@ fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
     // ----------------- SCALAR
 
     let scalar_mod = PyModule::new(_py, "scalar")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(m4_mod, m4_scalar, scalar_mod);
+        create_pyfuncs_without_x!(m4_mod, m4_scalar_without_x, scalar_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(m4_mod, m4_scalar_with_x, scalar_mod);
     }
 
     // ----------------- SCALAR PARALLEL
 
     let scalar_parallel_mod = PyModule::new(_py, "scalar_parallel")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(m4_mod, m4_scalar_parallel, scalar_parallel_mod);
+        create_pyfuncs_without_x!(m4_mod, m4_scalar_without_x_parallel, scalar_parallel_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(m4_mod, m4_scalar_with_x_parallel, scalar_parallel_mod);
     }
 
     // ----------------- SIMD
 
     let simd_mod = PyModule::new(_py, "simd")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(m4_mod, m4_simd, simd_mod);
+        create_pyfuncs_without_x!(m4_mod, m4_simd_without_x, simd_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(m4_mod, m4_simd_with_x, simd_mod);
     }
 
     // ----------------- SIMD PARALLEL
 
     let simd_parallel_mod = PyModule::new(_py, "simd_parallel")?;
+
+    // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(m4_mod, m4_simd_parallel, simd_parallel_mod);
+        create_pyfuncs_without_x!(m4_mod, m4_simd_without_x_parallel, simd_parallel_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(m4_mod, m4_simd_with_x_parallel, simd_parallel_mod);
     }
 
     // Add the sub modules to the module
@@ -272,9 +336,9 @@ fn lttb(_py: Python, m: &PyModule) -> PyResult<()> {
         create_pyfuncs_without_x!(lttb_mod, lttb_without_x, scalar_mod);
     }
 
-    // ----- WITH X TODO
+    // ----- WITH X
     {
-        create_pyfuncs_with_x!(lttb_mod, lttb, scalar_mod);
+        create_pyfuncs_with_x!(lttb_mod, lttb_with_x, scalar_mod);
     }
 
     // Add the sub modules to the module
@@ -305,7 +369,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_scalar, scalar_mod);
+        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_scalar_with_x, scalar_mod);
     }
 
     // ----------------- SCALAR PARALLEL
@@ -325,7 +389,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
     {
         create_pyfuncs_with_x_with_ratio!(
             minmaxlttb_mod,
-            minmaxlttb_scalar_parallel,
+            minmaxlttb_scalar_with_x_parallel,
             scalar_parallel_mod
         );
     }
@@ -341,7 +405,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_simd, simd_mod);
+        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_simd_with_x, simd_mod);
     }
 
     // ----------------- SIMD PARALLEL
@@ -361,7 +425,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
     {
         create_pyfuncs_with_x_with_ratio!(
             minmaxlttb_mod,
-            minmaxlttb_simd_parallel,
+            minmaxlttb_simd_with_x_parallel,
             simd_parallel_mod
         );
     }
