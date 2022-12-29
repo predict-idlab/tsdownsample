@@ -17,8 +17,9 @@ pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimiti
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
-        let mut index =
-            f_minmax(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio).into_raw_vec();
+        let mut index = f_minmax(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio)
+            .map(|i| i + 1)
+            .into_raw_vec();
         // Prepend first and last point
         index.insert(0, 0);
         index.push(x.len() - 1);
@@ -46,7 +47,9 @@ pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {
         // Get index of min max points
-        let mut index = f_minmax(y.slice(s![1..-1]), n_out * minmax_ratio).into_raw_vec();
+        let mut index = f_minmax(y.slice(s![1..-1]), n_out * minmax_ratio)
+            .map(|i| i + 1)
+            .into_raw_vec();
         // Prepend first and last point
         index.insert(0, 0);
         index.push(y.len() - 1);

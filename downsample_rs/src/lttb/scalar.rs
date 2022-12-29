@@ -90,6 +90,7 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
 
 #[inline]
 pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
+    // TODO: why is this slower than the one with x?
     y: ArrayView1<Ty>,
     n_out: usize,
 ) -> Array1<usize> {

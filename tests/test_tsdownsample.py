@@ -13,9 +13,6 @@ from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
 # Very basic & poor tests
 # TODO: Improve tests
 #   - test with and without x
-#   - test with and without parallel
-#   - test with different data types
-#   - test with different downsamplers
 #   - compare implementations with existing plotly_resampler implementations
 
 
@@ -95,7 +92,7 @@ all_downsamplers = rust_downsamplers + [EveryNthDownsampler()]
 
 def test_downsampling_with_x():
     """Test downsampling with x."""
-    arr = np.random.randn(10_001).astype(np.float32)  # 10_001 to test edge case
+    arr = np.random.randn(2001).astype(np.float32)  # 10_001 to test edge case
     idx = np.arange(len(arr))
     for downsampler in all_downsamplers:
         s_downsampled = downsampler.downsample(arr, n_out=100)
