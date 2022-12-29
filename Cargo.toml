@@ -1,6 +1,6 @@
 [package]
 name = "tsdownsample"  # Same name as the Python package
-version = "0.1.0a6"
+version = "0.1.0"
 edition = "2021"
 authors = ["Jeroen Van Der Donckt"]
 description = "Python bindings for time series downsampling algorithms"
