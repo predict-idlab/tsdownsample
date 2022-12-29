@@ -75,7 +75,7 @@ def test_parallel_downsampling():
 
 def test_parallel_downsampling_with_x():
     """Test parallel downsampling with x."""
-    arr = np.random.randn(10_000).astype(np.float32)
+    arr = np.random.randn(10_001).astype(np.float32)  # 10_001 to test edge case
     idx = np.arange(len(arr))
     for downsampler in rust_downsamplers:
         s_downsampled = downsampler.downsample(idx, arr, n_out=100, parallel=False)
@@ -90,7 +90,7 @@ all_downsamplers = rust_downsamplers + [EveryNthDownsampler()]
 
 def test_downsampling_with_x():
     """Test downsampling with x."""
-    arr = np.random.randn(2001).astype(np.float32)  # 10_001 to test edge case
+    arr = np.random.randn(2_001).astype(np.float32)  # 2_001 to test edge case
     idx = np.arange(len(arr))
     for downsampler in all_downsamplers:
         s_downsampled = downsampler.downsample(arr, n_out=100)
