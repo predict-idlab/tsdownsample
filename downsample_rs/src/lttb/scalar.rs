@@ -1,13 +1,23 @@
 use super::super::types::Num;
-use ndarray::{Array1, ArrayView1};
-use num_traits::AsPrimitive;
+use ndarray::{s, Array1, ArrayView1};
+use num_traits::{AsPrimitive, FromPrimitive, Zero};
 use std::cmp;
+
+#[inline(always)]
+fn f64_to_i64unsigned(v: f64) -> i64 {
+    // Transmute to i64 and mask out the sign bit
+    let v: i64 = unsafe { std::mem::transmute::<f64, i64>(v) };
+    v & 0x7FFF_FFFF_FFFF_FFFF
+}
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
 // ----------- WITH X
 
-pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
+pub fn lttb_with_x<
+    Tx: Num + AsPrimitive<f64>,
+    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero,
+>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -19,9 +29,9 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     assert!(n_out >= 3); // avoid division by 0
 
     // Bucket size. Leave room for start and end data points.
-    let every = (x.len() - 2) as f64 / (n_out - 2) as f64;
+    let every: f64 = (x.len() - 2) as f64 / (n_out - 2) as f64;
     // Initially a is the first point in the triangle.
-    let mut a = 0;
+    let mut a: usize = 0;
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
@@ -30,48 +40,81 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        let mut avg_x: f64 = 0.0;
-        let mut avg_y: f64 = 0.0;
-
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, x.len());
 
-        for i in avg_range_start..avg_range_end {
-            avg_x += x[i].as_();
-            avg_y += y[i].as_();
-        }
-        // Slicing seems to be a lot slower
-        // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
-        // let avg_y: Ty = y.slice(s![avg_range_start..avg_range_end]).sum();
-        let avg_x: f64 = avg_x / (avg_range_end - avg_range_start) as f64;
-        let avg_y: f64 = avg_y / (avg_range_end - avg_range_start) as f64;
+        // for i in avg_range_start..avg_range_end {
+        //     avg_x += x[i].as_();
+        //     avg_y += y[i].as_();
+        // }
+        // avg_x /= (avg_range_end - avg_range_start) as f64;
+        // avg_y /= (avg_range_end - avg_range_start) as f64;
+        // let avg_y: f64 = y.slice(s![avg_range_start..avg_range_end]).sum().as_()
+        //     / (avg_range_end - avg_range_start) as f64;
+        let avg_y: f64 = y
+            .slice(s![avg_range_start..avg_range_end])
+            .mean()
+            .unwrap()
+            .as_();
+        // TODO: avg_y could be approximated argminmax instead of mean
+        // let avg_x: f64 = x.slice(s![avg_range_start..avg_range_end]).sum().as_() / (avg_range_end - avg_range_start) as f64;
+        // TODO: below is faster than above, but not as accurate
+        let avg_x: f64 = (x[avg_range_end - 1].as_() + x[avg_range_start].as_()) / 2.0;
 
         // Get the range for this bucket
         let range_offs = (every * i as f64) as usize + 1;
-        let range_to = (every * (i + 1) as f64) as usize + 1;
+        let range_to = avg_range_start; // = start of the next bucket
 
         // Point a
         let point_ax = x[a].as_();
         let point_ay = y[a].as_();
 
-        let mut max_area = -1.0;
+        let mut max_area = -1i64;
+        let d1 = point_ax - avg_x;
+        let d2 = avg_y - point_ay;
+        let offset: f64 = d1 * point_ay + d2 * point_ax;
         for i in range_offs..range_to {
             // Calculate triangle area over three buckets
-            let area = ((point_ax - avg_x) * (y[i].as_() - point_ay)
-                - (point_ax - x[i].as_()) * (avg_y - point_ay))
-                .abs();
-            if area > max_area {
-                max_area = area;
+            // let area = d1 * (y_ - point_ay) - (point_ax - x_) * d2;
+            let area = d1 * y[i].as_() + d2 * x[i].as_() - offset;
+            let abs_area = f64_to_i64unsigned(area);
+            if abs_area > max_area {
+                max_area = abs_area;
                 a = i;
             }
         }
-        // Vectorized implementation
-        // let point_ax: Tx = x[a];
-        // let point_ay: Ty = y[a];
-        // let ar_x: Vec<Tx> = x.slice(s![range_offs..range_to]).into_iter().map(|v| point_ax - *v).collect();
-        // let ar_y: Vec<Ty> = y.slice(s![range_offs..range_to]).into_iter().map(|v| *v - point_ay).collect();
-        // let max_idx: usize = (ar_x.iter().zip(ar_y.iter()).map(|(x, y)| (x.to_f64().unwrap() * avg_y - y.to_f64().unwrap() * avg_x).abs()).enumerate().max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap().0) + range_offs;
-        // a = max_idx;
+        // (a, _) = y.slice(s![range_offs..range_to]).iter().enumerate().fold(
+        //     (0, -1i64),
+        //     |(a, max_area), (i, y)| {
+        //         let i = i + range_offs;
+        //         let area = d1 * (y.as_() - point_ay) - (point_ax - x[i].as_()) * d2;
+        //         let abs_area = f64_to_i64unsigned(area);
+        //         if abs_area > max_area {
+        //             (i, abs_area)
+        //         } else {
+        //             (a, max_area)
+        //         }
+        //     },
+        // );
+
+        // Using a fold instead of a loop is faster
+        // (a, _) = x.slice(s![range_offs..range_to])
+        //     .iter()
+        //     .zip(y.slice(s![range_offs..range_to]).iter())
+        //     .enumerate()
+        //     .fold(
+        //         (0, -1i64),
+        //         |(a, max_area), (i, (x, y))| {
+        //             let area = d1 * (y.as_() - point_ay) - (point_ax - x.as_()) * d2;
+        //             let abs_area = f64_to_i64unsigned(area);
+        //             if abs_area > max_area {
+        //                 (i + range_offs, abs_area)
+        //             } else {
+        //                 (a, max_area)
+        //             }
+        //         },
+        //     );
+
         sampled_indices[i + 1] = a;
     }
 
@@ -83,7 +126,7 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
 
 // ----------- WITHOUT X
 
-pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
+pub fn lttb_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
     // TODO: why is this slower than the one with x?
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -94,9 +137,9 @@ pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
     assert!(n_out >= 3); // avoid division by 0
 
     // Bucket size. Leave room for start and end data points.
-    let every = (y.len() - 2) as f64 / (n_out - 2) as f64;
+    let every: f64 = (y.len() - 2) as f64 / (n_out - 2) as f64;
     // Initially a is the first point in the triangle.
-    let mut a = 0;
+    let mut a: usize = 0;
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
@@ -105,45 +148,84 @@ pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
 
     for i in 0..n_out - 2 {
         // Calculate point average for next bucket (containing c).
-        let mut avg_y: f64 = 0.0;
-
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, y.len());
 
-        for i in avg_range_start..avg_range_end {
-            avg_y += y[i].as_();
-        }
-        // Slicing seems to be a lot slower
-        // let avg_x: Tx = x.slice(s![avg_range_start..avg_range_end]).sum();
-        let avg_y: f64 = avg_y / (avg_range_end - avg_range_start) as f64;
+        // TODO: handle this with a trait?
+        //  => f32 and f64 can be handled with the same code
+        //  => all other dtypes can be handled with a cast to f64 in a fold
+        let avg_y: f64 = y
+            .slice(s![avg_range_start..avg_range_end])
+            .mean()
+            .unwrap()
+            .as_();
+
+        // let avg_y: f64 = y.slice(s![avg_range_start..avg_range_end]).sum().as_()
+        //     / (avg_range_end - avg_range_start) as f64;
+        // Do not use slice here, it is slower
+        // let y_ptr = y.as_ptr();
+        // let y_slice = unsafe { ArrayView1::from_shape_ptr(
+        //     avg_range_end - avg_range_start,
+        //     y_ptr.add(avg_range_start),
+        // ) };
+        // let avg_y: f64 = y_slice.sum().as_() / (avg_range_end - avg_range_start) as f64;
+        // let avg_y: f64 = (y[avg_range_end - 1].as_() + y[avg_range_start].as_()) / 2.0;
+        // let avg_y: f64 = y
+        //     .slice(s![avg_range_start..avg_range_end])
+        //     .iter()
+        //     .fold(0.0, |acc, y| acc + y.as_()) // TODO: this might overflow
+        //     / (avg_range_end - avg_range_start) as f64;
         let avg_x: f64 = (avg_range_start + avg_range_end - 1) as f64 / 2.0;
 
         // Get the range for this bucket
         let range_offs = (every * i as f64) as usize + 1;
-        let range_to = (every * (i + 1) as f64) as usize + 1;
+        let range_to = avg_range_start; // = start of the next bucket
 
         // Point a
         let point_ay = y[a].as_();
         let point_ax = a as f64;
 
-        let mut max_area = -1.0;
+        let d1 = point_ax - avg_x;
+        let d2 = avg_y - point_ay;
+        let point_ax = point_ax - range_offs as f64; // Offset the x values
+                                                     // (a, _) = y.slice(s![range_offs..range_to]).iter().enumerate().fold(
+                                                     //     (0, -1i64),
+                                                     //     |(max_idx, max_area), (i, y)| {
+                                                     //         let area: f64 = d1 * (y.as_() - point_ay) - (point_ax - i as f64) * d2;
+                                                     //         let abs_area: i64 = f64_to_i64unsigned(area);
+                                                     //         if abs_area > max_area {
+                                                     //             (i + range_offs, abs_area)
+                                                     //         } else {
+                                                     //             (max_idx, max_area)
+                                                     //         }
+                                                     //     },
+                                                     // );
+                                                     // use a for loop
+        let mut max_area = -1i64;
+        let mut ax_x = point_ax; // point_ax - x[i]
+        let offset: f64 = d1 * point_ay;
         for i in range_offs..range_to {
-            // Calculate triangle area over three buckets
-            let area = ((point_ax - avg_x) * (y[i].as_() - point_ay)
-                - (point_ax - i as f64) * (avg_y - point_ay))
-                .abs();
-            if area > max_area {
-                max_area = area;
+            let area: f64 = d1 * y[i].as_() - ax_x * d2 - offset;
+            // let area: f64 = d1 * y[i].as_() - ax_x * d2;
+            let abs_area: i64 = f64_to_i64unsigned(area);
+            if abs_area > max_area {
                 a = i;
+                max_area = abs_area;
             }
+            ax_x -= 1.0;
         }
-        // Vectorized implementation
-        // let point_ax: Tx = x[a];
-        // let point_ay: Ty = y[a];
-        // let ar_x: Vec<Tx> = x.slice(s![range_offs..range_to]).into_iter().map(|v| point_ax - *v).collect();
-        // let ar_y: Vec<Ty> = y.slice(s![range_offs..range_to]).into_iter().map(|v| *v - point_ay).collect();
-        // let max_idx: usize = (ar_x.iter().zip(ar_y.iter()).map(|(x, y)| (x.to_f64().unwrap() * avg_y - y.to_f64().unwrap() * avg_x).abs()).enumerate().max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap().0) + range_offs;
-        // a = max_idx;
+        // let mut max_area = -1i64;
+        // let mut x = 0.0f64;
+        // for i in (range_offs..range_to).rev() {
+        //     let area: f64 = d1 * y[i].as_() + x * d2;
+        //     let abs_area: i64 = f64_to_i64unsigned(area);
+        //     if abs_area > max_area {
+        //         a = i;
+        //         max_area = abs_area;
+        //     }
+        //     x += 1.0;
+        // }
+
         sampled_indices[i + 1] = a;
     }
 

@@ -2,10 +2,13 @@ use ndarray::{s, Array1, ArrayView1};
 
 use super::super::lttb::{lttb_with_x, lttb_without_x};
 use super::super::types::Num;
-use num_traits::AsPrimitive;
+use num_traits::{AsPrimitive, FromPrimitive, Zero};
 
 #[inline(always)]
-pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
+pub(crate) fn minmaxlttb_generic<
+    Tx: Num + AsPrimitive<f64>,
+    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero,
+>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
@@ -37,7 +40,7 @@ pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimiti
 }
 
 #[inline(always)]
-pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
+pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,

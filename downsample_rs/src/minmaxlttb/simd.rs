@@ -3,7 +3,7 @@ use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 
 use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
-use num_traits::{AsPrimitive, FromPrimitive};
+use num_traits::{AsPrimitive, FromPrimitive, Zero};
 
 extern crate argminmax;
 use argminmax::ArgMinMax;
@@ -14,7 +14,7 @@ use argminmax::ArgMinMax;
 
 pub fn minmaxlttb_simd_with_x<
     Tx: Num + FromPrimitive + AsPrimitive<f64>,
-    Ty: Num + AsPrimitive<f64>,
+    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero,
 >(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
@@ -29,7 +29,7 @@ where
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_simd_without_x<Ty: Num + AsPrimitive<f64>>(
+pub fn minmaxlttb_simd_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
@@ -53,7 +53,7 @@ pub fn minmaxlttb_simd_with_x_parallel<Tx, Ty>(
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
-    Ty: Num + AsPrimitive<f64> + Send + Sync,
+    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero + Send + Sync,
 {
     minmaxlttb_generic(
         x,
@@ -66,7 +66,9 @@ where
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_simd_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + Sync>(
+pub fn minmaxlttb_simd_without_x_parallel<
+    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero + Send + Sync,
+>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
