@@ -56,7 +56,8 @@ pub fn lttb_with_x<
             .mean()
             .unwrap()
             .as_();
-        // TODO: avg_y could be approximated argminmax instead of mean
+        // TODO: avg_y could be approximated argminmax instead of mean?
+
         // let avg_x: f64 = x.slice(s![avg_range_start..avg_range_end]).sum().as_() / (avg_range_end - avg_range_start) as f64;
         // TODO: below is faster than above, but not as accurate
         let avg_x: f64 = (x[avg_range_end - 1].as_() + x[avg_range_start].as_()) / 2.0;
@@ -75,7 +76,7 @@ pub fn lttb_with_x<
         let offset: f64 = d1 * point_ay + d2 * point_ax;
         for i in range_offs..range_to {
             // Calculate triangle area over three buckets
-            // let area = d1 * (y_ - point_ay) - (point_ax - x_) * d2;
+            // -> area = d1 * (y_ - point_ay) - (point_ax - x_) * d2;
             let area = d1 * y[i].as_() + d2 * x[i].as_() - offset;
             let abs_area = f64_to_i64unsigned(area);
             if abs_area > max_area {
@@ -83,38 +84,6 @@ pub fn lttb_with_x<
                 a = i;
             }
         }
-        // (a, _) = y.slice(s![range_offs..range_to]).iter().enumerate().fold(
-        //     (0, -1i64),
-        //     |(a, max_area), (i, y)| {
-        //         let i = i + range_offs;
-        //         let area = d1 * (y.as_() - point_ay) - (point_ax - x[i].as_()) * d2;
-        //         let abs_area = f64_to_i64unsigned(area);
-        //         if abs_area > max_area {
-        //             (i, abs_area)
-        //         } else {
-        //             (a, max_area)
-        //         }
-        //     },
-        // );
-
-        // Using a fold instead of a loop is faster
-        // (a, _) = x.slice(s![range_offs..range_to])
-        //     .iter()
-        //     .zip(y.slice(s![range_offs..range_to]).iter())
-        //     .enumerate()
-        //     .fold(
-        //         (0, -1i64),
-        //         |(a, max_area), (i, (x, y))| {
-        //             let area = d1 * (y.as_() - point_ay) - (point_ax - x.as_()) * d2;
-        //             let abs_area = f64_to_i64unsigned(area);
-        //             if abs_area > max_area {
-        //                 (i + range_offs, abs_area)
-        //             } else {
-        //                 (a, max_area)
-        //             }
-        //         },
-        //     );
-
         sampled_indices[i + 1] = a;
     }
 
@@ -187,26 +156,15 @@ pub fn lttb_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
 
         let d1 = point_ax - avg_x;
         let d2 = avg_y - point_ay;
-        let point_ax = point_ax - range_offs as f64; // Offset the x values
-                                                     // (a, _) = y.slice(s![range_offs..range_to]).iter().enumerate().fold(
-                                                     //     (0, -1i64),
-                                                     //     |(max_idx, max_area), (i, y)| {
-                                                     //         let area: f64 = d1 * (y.as_() - point_ay) - (point_ax - i as f64) * d2;
-                                                     //         let abs_area: i64 = f64_to_i64unsigned(area);
-                                                     //         if abs_area > max_area {
-                                                     //             (i + range_offs, abs_area)
-                                                     //         } else {
-                                                     //             (max_idx, max_area)
-                                                     //         }
-                                                     //     },
-                                                     // );
-                                                     // use a for loop
+        let point_ax = point_ax - range_offs as f64;
+
         let mut max_area = -1i64;
         let mut ax_x = point_ax; // point_ax - x[i]
         let offset: f64 = d1 * point_ay;
         for i in range_offs..range_to {
+            // Calculate triangle area over three buckets
+            // -> area: f64 = d1 * y[i].as_() - ax_x * d2;
             let area: f64 = d1 * y[i].as_() - ax_x * d2 - offset;
-            // let area: f64 = d1 * y[i].as_() - ax_x * d2;
             let abs_area: i64 = f64_to_i64unsigned(area);
             if abs_area > max_area {
                 a = i;
@@ -214,17 +172,6 @@ pub fn lttb_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
             }
             ax_x -= 1.0;
         }
-        // let mut max_area = -1i64;
-        // let mut x = 0.0f64;
-        // for i in (range_offs..range_to).rev() {
-        //     let area: f64 = d1 * y[i].as_() + x * d2;
-        //     let abs_area: i64 = f64_to_i64unsigned(area);
-        //     if abs_area > max_area {
-        //         a = i;
-        //         max_area = abs_area;
-        //     }
-        //     x += 1.0;
-        // }
 
         sampled_indices[i + 1] = a;
     }
