@@ -1,8 +1,9 @@
+use super::super::helpers::Average;
 use super::super::minmax;
 use super::super::types::Num;
 use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 use ndarray::{Array1, ArrayView1};
-use num_traits::{AsPrimitive, FromPrimitive, Zero};
+use num_traits::{AsPrimitive, FromPrimitive};
 
 extern crate argminmax;
 use argminmax::{ScalarArgMinMax, SCALAR};
@@ -12,8 +13,8 @@ use argminmax::{ScalarArgMinMax, SCALAR};
 // ----------- WITH X
 
 pub fn minmaxlttb_scalar_with_x<
-    Tx: Num + FromPrimitive + AsPrimitive<f64>,
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero,
+    Tx: Num + AsPrimitive<f64> + FromPrimitive,
+    Ty: Num + AsPrimitive<f64>,
 >(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
@@ -22,19 +23,21 @@ pub fn minmaxlttb_scalar_with_x<
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
+    for<'a> ArrayView1<'a, Ty>: Average,
 {
     minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_scalar_with_x)
 }
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_scalar_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
+pub fn minmaxlttb_scalar_without_x<Ty: Num + AsPrimitive<f64>>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
+    for<'a> ArrayView1<'a, Ty>: Average,
 {
     minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_scalar_without_x)
 }
@@ -44,8 +47,8 @@ where
 // ----------- WITH X
 
 pub fn minmaxlttb_scalar_with_x_parallel<
-    Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero + Send + Sync,
+    Tx: Num + AsPrimitive<f64> + FromPrimitive + Send + Sync,
+    Ty: Num + AsPrimitive<f64> + Send + Sync,
 >(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
@@ -54,6 +57,7 @@ pub fn minmaxlttb_scalar_with_x_parallel<
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
+    for<'a> ArrayView1<'a, Ty>: Average,
 {
     minmaxlttb_generic(
         x,
@@ -66,15 +70,14 @@ where
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_scalar_without_x_parallel<
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero + Send + Sync,
->(
+pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
+    for<'a> ArrayView1<'a, Ty>: Average,
 {
     minmaxlttb_generic_without_x(
         y,

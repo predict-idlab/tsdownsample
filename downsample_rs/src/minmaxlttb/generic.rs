@@ -1,20 +1,21 @@
 use ndarray::{s, Array1, ArrayView1};
 
+use super::super::helpers::Average;
 use super::super::lttb::{lttb_with_x, lttb_without_x};
 use super::super::types::Num;
-use num_traits::{AsPrimitive, FromPrimitive, Zero};
+use num_traits::AsPrimitive;
 
 #[inline(always)]
-pub(crate) fn minmaxlttb_generic<
-    Tx: Num + AsPrimitive<f64>,
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero,
->(
+pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
     f_minmax: fn(ArrayView1<Tx>, ArrayView1<Ty>, usize) -> Array1<usize>,
-) -> Array1<usize> {
+) -> Array1<usize>
+where
+    for<'a> ArrayView1<'a, Ty>: Average,
+{
     assert_eq!(x.len(), y.len());
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
@@ -40,12 +41,15 @@ pub(crate) fn minmaxlttb_generic<
 }
 
 #[inline(always)]
-pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
+pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
     f_minmax: fn(ArrayView1<Ty>, usize) -> Array1<usize>,
-) -> Array1<usize> {
+) -> Array1<usize>
+where
+    for<'a> ArrayView1<'a, Ty>: Average,
+{
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {

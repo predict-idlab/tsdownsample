@@ -1,6 +1,7 @@
+use super::super::helpers::Average;
 use super::super::types::Num;
 use ndarray::{s, Array1, ArrayView1};
-use num_traits::{AsPrimitive, FromPrimitive, Zero};
+use num_traits::AsPrimitive;
 use std::cmp;
 
 #[inline(always)]
@@ -14,14 +15,14 @@ fn f64_to_i64unsigned(v: f64) -> i64 {
 
 // ----------- WITH X
 
-pub fn lttb_with_x<
-    Tx: Num + AsPrimitive<f64>,
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero,
->(
+pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
-) -> Array1<usize> {
+) -> Array1<usize>
+where
+    for<'a> ArrayView1<'a, Ty>: Average,
+{
     assert_eq!(x.len(), y.len());
     if n_out >= x.len() || n_out == 0 {
         return Array1::from((0..x.len()).collect::<Vec<usize>>());
@@ -43,22 +44,8 @@ pub fn lttb_with_x<
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, x.len());
 
-        // for i in avg_range_start..avg_range_end {
-        //     avg_x += x[i].as_();
-        //     avg_y += y[i].as_();
-        // }
-        // avg_x /= (avg_range_end - avg_range_start) as f64;
-        // avg_y /= (avg_range_end - avg_range_start) as f64;
-        // let avg_y: f64 = y.slice(s![avg_range_start..avg_range_end]).sum().as_()
-        //     / (avg_range_end - avg_range_start) as f64;
-        let avg_y: f64 = y
-            .slice(s![avg_range_start..avg_range_end])
-            .mean()
-            .unwrap()
-            .as_();
+        let avg_y: f64 = y.slice(s![avg_range_start..avg_range_end]).average();
         // TODO: avg_y could be approximated argminmax instead of mean?
-
-        // let avg_x: f64 = x.slice(s![avg_range_start..avg_range_end]).sum().as_() / (avg_range_end - avg_range_start) as f64;
         // TODO: below is faster than above, but not as accurate
         let avg_x: f64 = (x[avg_range_end - 1].as_() + x[avg_range_start].as_()) / 2.0;
 
@@ -95,11 +82,14 @@ pub fn lttb_with_x<
 
 // ----------- WITHOUT X
 
-pub fn lttb_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
+pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
     // TODO: why is this slower than the one with x?
     y: ArrayView1<Ty>,
     n_out: usize,
-) -> Array1<usize> {
+) -> Array1<usize>
+where
+    for<'a> ArrayView1<'a, Ty>: Average,
+{
     if n_out >= y.len() || n_out == 0 {
         return Array1::from((0..y.len()).collect::<Vec<usize>>());
     }
@@ -120,30 +110,7 @@ pub fn lttb_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
         let avg_range_start = (every * (i + 1) as f64) as usize + 1;
         let avg_range_end = cmp::min((every * (i + 2) as f64) as usize + 1, y.len());
 
-        // TODO: handle this with a trait?
-        //  => f32 and f64 can be handled with the same code
-        //  => all other dtypes can be handled with a cast to f64 in a fold
-        let avg_y: f64 = y
-            .slice(s![avg_range_start..avg_range_end])
-            .mean()
-            .unwrap()
-            .as_();
-
-        // let avg_y: f64 = y.slice(s![avg_range_start..avg_range_end]).sum().as_()
-        //     / (avg_range_end - avg_range_start) as f64;
-        // Do not use slice here, it is slower
-        // let y_ptr = y.as_ptr();
-        // let y_slice = unsafe { ArrayView1::from_shape_ptr(
-        //     avg_range_end - avg_range_start,
-        //     y_ptr.add(avg_range_start),
-        // ) };
-        // let avg_y: f64 = y_slice.sum().as_() / (avg_range_end - avg_range_start) as f64;
-        // let avg_y: f64 = (y[avg_range_end - 1].as_() + y[avg_range_start].as_()) / 2.0;
-        // let avg_y: f64 = y
-        //     .slice(s![avg_range_start..avg_range_end])
-        //     .iter()
-        //     .fold(0.0, |acc, y| acc + y.as_()) // TODO: this might overflow
-        //     / (avg_range_end - avg_range_start) as f64;
+        let avg_y: f64 = y.slice(s![avg_range_start..avg_range_end]).average();
         let avg_x: f64 = (avg_range_start + avg_range_end - 1) as f64 / 2.0;
 
         // Get the range for this bucket

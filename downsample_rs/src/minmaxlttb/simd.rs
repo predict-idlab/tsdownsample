@@ -1,9 +1,10 @@
 use super::super::minmax;
 use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
 
+use super::super::helpers::Average;
 use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
-use num_traits::{AsPrimitive, FromPrimitive, Zero};
+use num_traits::{AsPrimitive, FromPrimitive};
 
 extern crate argminmax;
 use argminmax::ArgMinMax;
@@ -14,7 +15,7 @@ use argminmax::ArgMinMax;
 
 pub fn minmaxlttb_simd_with_x<
     Tx: Num + FromPrimitive + AsPrimitive<f64>,
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero,
+    Ty: Num + AsPrimitive<f64>,
 >(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
@@ -23,19 +24,21 @@ pub fn minmaxlttb_simd_with_x<
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    for<'a> ArrayView1<'a, Ty>: Average,
 {
     minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_simd_with_x)
 }
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_simd_without_x<Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero>(
+pub fn minmaxlttb_simd_without_x<Ty: Num + AsPrimitive<f64>>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    for<'a> ArrayView1<'a, Ty>: Average,
 {
     minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_simd_without_x)
 }
@@ -52,8 +55,9 @@ pub fn minmaxlttb_simd_with_x_parallel<Tx, Ty>(
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    for<'a> ArrayView1<'a, Ty>: Average,
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero + Send + Sync,
+    Ty: Num + AsPrimitive<f64> + Send + Sync,
 {
     minmaxlttb_generic(
         x,
@@ -66,15 +70,14 @@ where
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_simd_without_x_parallel<
-    Ty: Num + AsPrimitive<f64> + FromPrimitive + Zero + Send + Sync,
->(
+pub fn minmaxlttb_simd_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + Sync>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    for<'a> ArrayView1<'a, Ty>: Average,
 {
     minmaxlttb_generic_without_x(
         y,

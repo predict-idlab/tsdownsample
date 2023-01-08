@@ -5,10 +5,10 @@ use argminmax::{ScalarArgMinMax, SCALAR};
 use ndarray::{Array1, ArrayView1};
 use num_traits::{AsPrimitive, FromPrimitive};
 
-use super::super::types::Num;
-use super::super::utils::{
+use super::super::searchsorted::{
     get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
+use super::super::types::Num;
 use super::generic::{m4_generic, m4_generic_parallel};
 use super::generic::{m4_generic_with_x, m4_generic_with_x_parallel};
 
