@@ -21,16 +21,18 @@ where
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
-        let mut index = f_minmax(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio)
-            .map(|i| i + 1)
-            .into_raw_vec();
+        let mut index: Array1<usize> =
+            f_minmax(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio);
+        // inplace + 1
+        index.mapv_inplace(|i| i + 1);
+        let mut index: Vec<usize> = index.into_raw_vec();
         // Prepend first and last point
         index.insert(0, 0);
         index.push(x.len() - 1);
-        let index = Array1::from(index);
+        let index = Array1::from_vec(index);
         // Get x and y values at index
-        let x = index.mapv(|i| x[i]);
-        let y = index.mapv(|i| y[i]);
+        let x = unsafe { index.mapv(|i| *x.uget(i)) };
+        let y = unsafe { index.mapv(|i| *y.uget(i)) };
         // Apply lttb on the reduced data
         let index_points_selected = lttb_with_x(x.view(), y.view(), n_out);
         // Return the original index
@@ -54,17 +56,18 @@ where
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {
         // Get index of min max points
-        let mut index = f_minmax(y.slice(s![1..-1]), n_out * minmax_ratio)
-            .map(|i| i + 1)
-            .into_raw_vec();
+        let mut index: Array1<usize> = f_minmax(y.slice(s![1..-1]), n_out * minmax_ratio);
+        // inplace + 1
+        index.mapv_inplace(|i| i + 1);
+        let mut index: Vec<usize> = index.into_raw_vec();
         // Prepend first and last point
         index.insert(0, 0);
         index.push(y.len() - 1);
-        let index = Array1::from(index);
+        let index = Array1::from_vec(index);
         // Get y values at index
-        let y = index.mapv(|i| y[i]);
+        let y = unsafe { index.mapv(|i| *y.uget(i)) };
         // Apply lttb on the reduced data
-        let index_points_selected = lttb_with_x(index.view(), y.view(), n_out);
+        let index_points_selected = lttb_without_x(y.view(), n_out);
         // Return the original index
         return index_points_selected.mapv(|i| index[i]);
     }
