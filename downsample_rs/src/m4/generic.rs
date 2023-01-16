@@ -62,10 +62,8 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let block_size = arr.len() as f64 / (n_out as f64) * 4.0;
     let block_size = block_size.floor() as usize;
 
-    let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
-
-    // Create step array
-    let idxs = Array1::from((0..n_out / 4).collect::<Vec<usize>>());
+    // Store the enumerated indexes in the output array
+    let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
 
     // Iterate over the sample_index pointers and the array chunks
     Zip::from(
@@ -73,11 +71,10 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
             .exact_chunks(block_size),
     )
     .and(sampled_indices.exact_chunks_mut(4))
-    .and(idxs.view())
-    .par_for_each(|step, mut sampled_index, i| {
+    .par_for_each(|step, mut sampled_index| {
         let (min_index, max_index) = f_argminmax(step);
 
-        let start_idx = block_size * i;
+        let start_idx = block_size * unsafe { *sampled_index.uget(0) >> 2 };
         sampled_index[0] = start_idx;
 
         // Add the indexes in sorted order
@@ -108,12 +105,15 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
+    let arr_ptr = arr.as_ptr();
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
     bin_idx_iterator
         .enumerate()
         .for_each(|(i, (start_idx, end_idx))| {
-            let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
+            let step =
+                unsafe { ArrayView1::from_shape_ptr(end_idx - start_idx, arr_ptr.add(start_idx)) };
+            let (min_index, max_index) = f_argminmax(step);
 
             sampled_indices[4 * i] = start_idx;
 

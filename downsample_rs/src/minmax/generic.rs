@@ -23,13 +23,11 @@ pub(crate) fn min_max_generic<T: Copy>(
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
+    let mut i: usize = 0; // TODO: for some reason is this faster than enumerate
     arr.slice(s![..block_size * n_out / 2])
         .exact_chunks(block_size)
         .into_iter()
-        .enumerate()
-        // .take(n_out / 2)
-        .for_each(|(i, step)| {
-            // TODO over sampled_indexes itereren voor efficiente mut pointers door te geven
+        .for_each(|step| {
             let (min_index, max_index) = f_argminmax(step);
             let offset = block_size * i;
 
@@ -41,6 +39,7 @@ pub(crate) fn min_max_generic<T: Copy>(
                 sampled_indices[2 * i] = max_index + offset;
                 sampled_indices[2 * i + 1] = min_index + offset;
             }
+            i += 1;
         });
 
     sampled_indices
@@ -60,29 +59,25 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let block_size = arr.len() as f64 / (n_out as f64) * 2.0;
     let block_size = block_size.floor() as usize;
 
-    let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
+    // Store the enumerated indexes in the output array
+    let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
 
-    // Create step array
-    let idxs = Array1::from((0..n_out / 2).collect::<Vec<usize>>());
-
-    // Iterate over the sample_index pointers and the array chunks
     Zip::from(
         arr.slice(s![..block_size * n_out / 2])
             .exact_chunks(block_size),
     )
     .and(sampled_indices.exact_chunks_mut(2))
-    .and(idxs.view())
-    .par_for_each(|step, mut sampled_index, i| {
+    .par_for_each(|step, mut sampled_index| {
         let (min_index, max_index) = f_argminmax(step);
-        let offset = block_size * i;
 
         // Add the indexes in sorted order
+        let offset = block_size * unsafe { *sampled_index.uget(0) >> 1 };
         if min_index < max_index {
             sampled_index[0] = min_index + offset;
             sampled_index[1] = max_index + offset;
         } else {
             sampled_index[0] = max_index + offset;
-            sampled_index[1] = min_index + offset
+            sampled_index[1] = min_index + offset;
         }
     });
 
@@ -103,10 +98,13 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
+    let ptr = arr.as_ptr();
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
-    bin_idx_iterator.enumerate().for_each(|(i, (start, end))| {
-        let (min_index, max_index) = f_argminmax(arr.slice(s![start..end]));
+    let mut i: usize = 0; // TODO: for some reason is this faster than enumerate
+    bin_idx_iterator.for_each(|(start, end)| {
+        let step = unsafe { ArrayView1::from_shape_ptr(end - start, ptr.add(start)) };
+        let (min_index, max_index) = f_argminmax(step);
 
         // Add the indexes in sorted order
         if min_index < max_index {
@@ -116,6 +114,7 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
             sampled_indices[2 * i] = max_index + start;
             sampled_indices[2 * i + 1] = min_index + start;
         }
+        i += 1;
     });
 
     sampled_indices

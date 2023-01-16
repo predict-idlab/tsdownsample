@@ -172,6 +172,32 @@ def test_downsampling_no_out_of_bounds_different_dtypes_with_x():
                 assert np.all(res[0] == res[i])
 
 
+### Check no overflow when calculating average
+
+
+def test_lttb_no_overflow():
+    """Test no overflow when calculating average."""
+    ### THIS SHOULD NOT OVERFLOW & HAVE THE SAME RESULT
+    arr_orig = np.array([2 * 10**5] * 10_000, dtype=np.float64)
+    s_downsampled = LTTBDownsampler().downsample(arr_orig, n_out=100)
+    arr = arr_orig.astype(np.float32)
+    s_downsampled_f32 = LTTBDownsampler().downsample(arr, n_out=100)
+    assert np.all(s_downsampled == s_downsampled_f32)
+    ### THIS SHOULD OVERFLOW & THUS HAVE A DIFFERENT RESULT...
+    # max float32 is 3.4028235 × 1038 (so 2*10**38 is too big when adding 2 values)
+    arr_orig = np.array([2 * 10**38] * 10_000, dtype=np.float64)
+    s_downsampled = LTTBDownsampler().downsample(arr_orig, n_out=100)
+    arr = arr_orig.astype(np.float32)
+    s_downsampled_f32 = LTTBDownsampler().downsample(arr, n_out=100)
+    assert not np.all(s_downsampled == s_downsampled_f32)  # TODO :(
+    # I will leave this test here, but as many (much larger) libraries do not
+    # really account for this, I guess it is perhaps less of an issue than I
+    # thought. In the end f32 MAX is 3.4028235 × 1038 & f64 MAX is
+    # 1.7976931348623157 × 10308 => which is in the end quite a lot.. (and all
+    # integer averages are handled using f64) - f32 is only used for f16 & f32
+    # (just as in numpy).
+
+
 ### Invalid n_out
 
 
