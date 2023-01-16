@@ -103,11 +103,7 @@ where
 
 // ----------- WITHOUT X
 
-pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(
-    // TODO: why is this slower than the one with x?
-    y: ArrayView1<Ty>,
-    n_out: usize,
-) -> Array1<usize>
+pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(y: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
 {

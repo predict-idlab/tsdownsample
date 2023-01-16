@@ -5,7 +5,7 @@ use ndarray::ArrayView1;
 // ------------ AVERAGE
 
 // TODO: future work -> this can be optimized by using SIMD instructions (similar to the argminmax crate)
-// TODO: this implementation can overfow
+// TODO: this implementation can overfow (but numpy does the same)
 
 // This trait implements the average function for all types that this crate
 // supports. It is used in the lttb algorithm.
