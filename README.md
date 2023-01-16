@@ -41,8 +41,6 @@
 
 ## Install
 
-> ❗🚨❗ This package is currently under development - correct installation is not yet guaranteed ❗🚨❗
-
 ```bash
 pip install tsdownsample
 ```
