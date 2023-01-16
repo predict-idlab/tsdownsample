@@ -7,7 +7,7 @@
 [![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml)
 <!-- TODO: codecov -->
 
-**📈 Time series downsampling** algorithms for visualization
+Extremely fast **📈 time series downsampling** for visualization, written in Rust.
 
 ## Features ✨
 
