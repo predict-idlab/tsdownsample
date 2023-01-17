@@ -77,15 +77,15 @@ where
     let mut value: f64 = arr[0].as_(); // Search value
     let mut idx: usize = 0; // Index of the search value
     (0..nb_bins).map(move |_| {
-        let start_idx = idx; // Start index of the bin (previous end index)
+        let start_idx: usize = idx; // Start index of the bin (previous end index)
         value += val_step;
-        let mid = idx + idx_step;
+        let mid: usize = idx + idx_step;
         let mid = if mid < arr.len() - 1 {
             mid
         } else {
             arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
         };
-        let search_value = T::from_f64(value).unwrap();
+        let search_value: T = T::from_f64(value).unwrap();
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, search_value, idx, arr.len()-1);
         idx = binary_search_with_mid(arr, search_value, idx, arr.len() - 1, mid); // End index of the bin
@@ -129,18 +129,18 @@ where
     // -> for each thread perform the binary search sorted with moving left and
     // yield the indices (using the same idea as for the sequential version)
     (0..nb_threads).into_par_iter().map(move |i| {
-        // Search the start of the fist bin of the thread
-        let mut value = sequential_add_mul(arr0, val_step, i * nb_bins_per_thread); // Search value
+        // Search the start of the fist bin o(f the thread)
+        let mut value: f64 = sequential_add_mul(arr0, val_step, i * nb_bins_per_thread); // Search value
         let start_value: T = T::from_f64(value).unwrap();
-        let mut idx = binary_search(arr, start_value, 0, arr.len() - 1); // Index of the search value
+        let mut idx: usize = binary_search(arr, start_value, 0, arr.len() - 1); // Index of the search value
         let nb_bins_thread = if i == nb_threads - 1 {
             nb_bins_last_thread
         } else {
             nb_bins_per_thread
         };
-        // Perform sequential binary search for the end of the bins
+        // Perform sequential binary search for the end of the bins (of the thread)
         (0..nb_bins_thread).map(move |_| {
-            let start_idx = idx; // Start index of the bin (previous end index)
+            let start_idx: usize = idx; // Start index of the bin (previous end index)
             value += val_step;
             let search_value: T = T::from_f64(value).unwrap();
             idx = binary_search(arr, search_value, idx, arr.len() - 1); // End index of the bin
