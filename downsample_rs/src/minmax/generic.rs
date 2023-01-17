@@ -3,7 +3,6 @@ use ndarray::{s, Array1, ArrayView1};
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
-use std::sync::{Arc, Mutex};
 
 // --------------------- WITHOUT X
 
@@ -123,7 +122,7 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
 #[inline(always)]
 pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
     arr: ArrayView1<T>,
-    bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,
+    bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, usize)>>,
     n_out: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
@@ -132,26 +131,30 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
-    // Create a mutex to store the sampled indices
-    let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
+    Array1::from_vec(
+        bin_idx_iterator
+            .flat_map(|bin_idx_iterator| {
+                bin_idx_iterator
+                    .map(|(start, end)| {
+                        let step = unsafe {
+                            ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
+                        };
+                        let (min_index, max_index) = f_argminmax(step);
 
-    // Iterate over the bins
-    bin_idx_iterator.enumerate().for_each(|(i, (start, end))| {
-        let (min_index, max_index) = f_argminmax(arr.slice(s![start..end]));
-
-        // Add the indexes in sorted order
-        if min_index < max_index {
-            sampled_indices.lock().unwrap()[2 * i] = min_index + start;
-            sampled_indices.lock().unwrap()[2 * i + 1] = max_index + start;
-        } else {
-            sampled_indices.lock().unwrap()[2 * i] = max_index + start;
-            sampled_indices.lock().unwrap()[2 * i + 1] = min_index + start;
-        }
-    });
-
-    // Remove the mutex and return the sampled indices
-    Arc::try_unwrap(sampled_indices)
-        .unwrap()
-        .into_inner()
-        .unwrap()
+                        // Add the indexes in sorted order
+                        let mut sampled_index = [0, 0];
+                        if min_index < max_index {
+                            sampled_index[0] = min_index + start;
+                            sampled_index[1] = max_index + start;
+                        } else {
+                            sampled_index[0] = max_index + start;
+                            sampled_index[1] = min_index + start;
+                        }
+                        sampled_index
+                    })
+                    .collect::<Vec<[usize; 2]>>()
+            })
+            .flatten()
+            .collect::<Vec<usize>>(),
+    )
 }

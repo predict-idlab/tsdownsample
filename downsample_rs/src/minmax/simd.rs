@@ -58,7 +58,7 @@ where
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
-    assert_eq!(n_out % 2, 0);
+    assert_eq!(n_out % 2, 0); // TODO can be faster (check last bit)
     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }

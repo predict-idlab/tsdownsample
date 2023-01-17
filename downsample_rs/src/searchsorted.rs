@@ -2,6 +2,7 @@ use ndarray::ArrayView1;
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
+use std::thread::available_parallelism;
 
 use super::types::Num;
 use num_traits::{AsPrimitive, FromPrimitive};
@@ -9,7 +10,12 @@ use num_traits::{AsPrimitive, FromPrimitive};
 // ---------------------- Binary search ----------------------
 
 // #[inline(always)]
-fn binary_search<T: PartialOrd>(arr: ArrayView1<T>, value: T, left: usize, right: usize) -> usize {
+fn binary_search<T: Copy + PartialOrd>(
+    arr: ArrayView1<T>,
+    value: T,
+    left: usize,
+    right: usize,
+) -> usize {
     let mut size: usize = right - left;
     let mut left: usize = left;
     let mut right: usize = right;
@@ -27,7 +33,7 @@ fn binary_search<T: PartialOrd>(arr: ArrayView1<T>, value: T, left: usize, right
 }
 
 // #[inline(always)]
-fn binary_search_with_mid<T: PartialOrd>(
+fn binary_search_with_mid<T: Copy + PartialOrd>(
     arr: ArrayView1<T>,
     value: T,
     left: usize,
@@ -69,17 +75,17 @@ where
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
     let mut value: f64 = arr[0].as_(); // Search value
-    let mut idx = 0; // Index of the search value
+    let mut idx: usize = 0; // Index of the search value
     (0..nb_bins).map(move |_| {
-        let start_idx = idx; // Start index of the bin (previous end index)
+        let start_idx: usize = idx; // Start index of the bin (previous end index)
         value += val_step;
-        let mid = idx + idx_step;
+        let mid: usize = idx + idx_step;
         let mid = if mid < arr.len() - 1 {
             mid
         } else {
             arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
         };
-        let search_value = T::from_f64(value).unwrap();
+        let search_value: T = T::from_f64(value).unwrap();
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, search_value, idx, arr.len()-1);
         idx = binary_search_with_mid(arr, search_value, idx, arr.len() - 1, mid); // End index of the bin
@@ -102,7 +108,7 @@ fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
-) -> impl IndexedParallelIterator<Item = (usize, usize)> + '_
+) -> impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, usize)> + '_> + '_
 where
     T: Num + FromPrimitive + AsPrimitive<f64> + Sync + Send,
 {
@@ -111,14 +117,35 @@ where
     let val_step: f64 =
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let arr0: f64 = arr[0].as_();
-    (0..nb_bins).into_par_iter().map(move |i| {
-        let start_value = sequential_add_mul(arr0, val_step, i);
-        let end_value = start_value + val_step;
-        let start_value = T::from_f64(start_value).unwrap();
-        let end_value = T::from_f64(end_value).unwrap();
-        let start_idx = binary_search(arr, start_value, 0, arr.len() - 1);
-        let end_idx = binary_search(arr, end_value, start_idx, arr.len() - 1);
-        (start_idx, end_idx)
+    let nb_threads = available_parallelism().map(|x| x.get()).unwrap_or(1);
+    let nb_threads = if nb_threads > nb_bins {
+        nb_bins
+    } else {
+        nb_threads
+    };
+    let nb_bins_per_thread = nb_bins / nb_threads;
+    let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (nb_threads - 1);
+    // Iterate over the number of threads
+    // -> for each thread perform the binary search sorted with moving left and
+    // yield the indices (using the same idea as for the sequential version)
+    (0..nb_threads).into_par_iter().map(move |i| {
+        // Search the start of the fist bin o(f the thread)
+        let mut value: f64 = sequential_add_mul(arr0, val_step, i * nb_bins_per_thread); // Search value
+        let start_value: T = T::from_f64(value).unwrap();
+        let mut idx: usize = binary_search(arr, start_value, 0, arr.len() - 1); // Index of the search value
+        let nb_bins_thread = if i == nb_threads - 1 {
+            nb_bins_last_thread
+        } else {
+            nb_bins_per_thread
+        };
+        // Perform sequential binary search for the end of the bins (of the thread)
+        (0..nb_bins_thread).map(move |_| {
+            let start_idx: usize = idx; // Start index of the bin (previous end index)
+            value += val_step;
+            let search_value: T = T::from_f64(value).unwrap();
+            idx = binary_search(arr, search_value, idx, arr.len() - 1); // End index of the bin
+            (start_idx, idx)
+        })
     })
 }
 
@@ -207,7 +234,10 @@ mod tests {
         let bin_idxs = bin_idxs_iter.map(|x| x.0).collect::<Vec<usize>>();
         assert_eq!(bin_idxs, vec![0, 3, 6]);
         let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3);
-        let bin_idxs = bin_idxs_iter.map(|x| x.0).collect::<Vec<usize>>();
+        let bin_idxs = bin_idxs_iter
+            .map(|x| x.map(|x| x.0).collect::<Vec<usize>>())
+            .flatten()
+            .collect::<Vec<usize>>();
         assert_eq!(bin_idxs, vec![0, 3, 6]);
     }
 
@@ -225,7 +255,10 @@ mod tests {
             let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), nb_bins);
             let bin_idxs = bin_idxs_iter.map(|x| x.0).collect::<Vec<usize>>();
             let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins);
-            let bin_idxs_parallel = bin_idxs_iter.map(|x| x.0).collect::<Vec<usize>>();
+            let bin_idxs_parallel = bin_idxs_iter
+                .map(|x| x.map(|x| x.0).collect::<Vec<usize>>())
+                .flatten()
+                .collect::<Vec<usize>>();
             assert_eq!(bin_idxs, bin_idxs_parallel);
         }
     }
