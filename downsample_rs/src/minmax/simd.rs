@@ -48,6 +48,58 @@ where
 
 // ----------- WITH X
 
+// use super::super::searchsorted::get_equidistant_bin_idx_iterator_parallel_v2;
+
+// pub fn min_max_simd_with_x_parallel<Tx, Ty>(
+//     x: ArrayView1<Tx>,
+//     arr: ArrayView1<Ty>,
+//     n_out: usize,
+// ) -> Array1<usize>
+// where
+//     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+//     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+//     Ty: Copy + PartialOrd + Send + Sync,
+// {
+//     assert_eq!(n_out % 2, 0);
+//     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
+//     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
+// }
+
+// use super::generic::min_max_generic_with_x_parallel_v1;
+
+// pub fn min_max_simd_with_x_parallel_v1<Tx, Ty>(
+//     x: ArrayView1<Tx>,
+//     arr: ArrayView1<Ty>,
+//     n_out: usize,
+// ) -> Array1<usize>
+// where
+//     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+//     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+//     Ty: Copy + PartialOrd + Send + Sync,
+// {
+//     assert_eq!(n_out % 2, 0);
+//     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
+//     min_max_generic_with_x_parallel_v1(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
+// }
+
+// use super::generic::min_max_generic_with_x_parallel_v2;
+
+// pub fn min_max_simd_with_x_parallel_v2<Tx, Ty>(
+//     x: ArrayView1<Tx>,
+//     arr: ArrayView1<Ty>,
+//     n_out: usize,
+// ) -> Array1<usize>
+// where
+//     for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+//     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+//     Ty: Copy + PartialOrd + Send + Sync,
+// {
+//     assert_eq!(n_out % 2, 0);
+//     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel_v2(x, n_out / 2);
+//     min_max_generic_with_x_parallel_v2(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
+// }
+
+// use super::generic::min_max_generic_with_x_parallel_v3;
 pub fn min_max_simd_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,
     arr: ArrayView1<Ty>,
@@ -58,7 +110,7 @@ where
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
-    assert_eq!(n_out % 2, 0);
+    assert_eq!(n_out % 2, 0); // TODO can be faster (check last bit)
     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }

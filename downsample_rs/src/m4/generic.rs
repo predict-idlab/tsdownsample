@@ -131,10 +131,50 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
     sampled_indices
 }
 
+// #[inline(always)]
+// pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
+//     arr: ArrayView1<T>,
+//     bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,
+//     n_out: usize,
+//     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
+// ) -> Array1<usize> {
+//     // Assumes n_out is a multiple of 4
+//     if n_out >= arr.len() {
+//         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+//     }
+
+//     let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
+
+//     // Iterate over the sample_index pointers and the array chunks
+//     bin_idx_iterator
+//         .enumerate()
+//         .for_each(|(i, (start_idx, end_idx))| {
+//             let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
+
+//             sampled_indices.lock().unwrap()[4 * i] = start_idx;
+
+//             // Add the indexes in sorted order
+//             if min_index < max_index {
+//                 sampled_indices.lock().unwrap()[4 * i + 1] = min_index + start_idx;
+//                 sampled_indices.lock().unwrap()[4 * i + 2] = max_index + start_idx;
+//             } else {
+//                 sampled_indices.lock().unwrap()[4 * i + 1] = max_index + start_idx;
+//                 sampled_indices.lock().unwrap()[4 * i + 2] = min_index + start_idx;
+//             }
+//             sampled_indices.lock().unwrap()[4 * i + 3] = end_idx - 1;
+//         });
+
+//     // Remove the mutex and return the sampled indices
+//     Arc::try_unwrap(sampled_indices)
+//         .unwrap()
+//         .into_inner()
+//         .unwrap()
+// }
+
 #[inline(always)]
 pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: ArrayView1<T>,
-    bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,
+    bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, (usize, usize))>>,
     n_out: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
@@ -143,30 +183,28 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
-    let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
+    Array1::from_vec(
+        bin_idx_iterator
+            .flat_map(|bin_idx_iterator| {
+                bin_idx_iterator
+                    .map(|(_, (start, end))| {
+                        let step = arr.slice(s![start..end]); // TODO: optimize this
+                        let (min_index, max_index) = f_argminmax(step);
 
-    // Iterate over the sample_index pointers and the array chunks
-    bin_idx_iterator
-        .enumerate()
-        .for_each(|(i, (start_idx, end_idx))| {
-            let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
-
-            sampled_indices.lock().unwrap()[4 * i] = start_idx;
-
-            // Add the indexes in sorted order
-            if min_index < max_index {
-                sampled_indices.lock().unwrap()[4 * i + 1] = min_index + start_idx;
-                sampled_indices.lock().unwrap()[4 * i + 2] = max_index + start_idx;
-            } else {
-                sampled_indices.lock().unwrap()[4 * i + 1] = max_index + start_idx;
-                sampled_indices.lock().unwrap()[4 * i + 2] = min_index + start_idx;
-            }
-            sampled_indices.lock().unwrap()[4 * i + 3] = end_idx - 1;
-        });
-
-    // Remove the mutex and return the sampled indices
-    Arc::try_unwrap(sampled_indices)
-        .unwrap()
-        .into_inner()
-        .unwrap()
+                        // Add the indexes in sorted order
+                        let mut sampled_index = [start, 0, 0, end - 1];
+                        if min_index < max_index {
+                            sampled_index[1] = min_index + start;
+                            sampled_index[2] = max_index + start;
+                        } else {
+                            sampled_index[1] = max_index + start;
+                            sampled_index[2] = min_index + start;
+                        }
+                        sampled_index
+                    })
+                    .collect::<Vec<[usize; 4]>>()
+            })
+            .flatten()
+            .collect::<Vec<usize>>(),
+    )
 }

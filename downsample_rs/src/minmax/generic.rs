@@ -120,10 +120,140 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
     sampled_indices
 }
 
+// #[inline(never)]
+// pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
+//     arr: ArrayView1<T>,
+//     bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,
+//     n_out: usize,
+//     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
+// ) -> Array1<usize> {
+//     // Assumes n_out is a multiple of 2
+//     if n_out >= arr.len() {
+//         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+//     }
+
+//     // let sampled_indices = bin_idx_iterator.enumerate().flat_map(|(i, (start, end))| {
+//     //     let step = arr.slice(s![start..end]);
+//     //     let (min_index, max_index) = f_argminmax(step);
+
+//     //     // Add the indexes in sorted order
+//     //     let mut sampled_index = [0, 0];
+//     //     if min_index < max_index {
+//     //         sampled_index[0] = min_index + start;
+//     //         sampled_index[1] = max_index + start;
+//     //         // (min_index + start, max_index + start)
+//     //     } else {
+//     //         sampled_index[0] = max_index + start;
+//     //         sampled_index[1] = min_index + start;
+//     //         // (max_index + start, min_index + start)
+//     //     }
+//     //     sampled_index
+//     // }).collect::<Vec<usize>>();
+//     // Array1::from(sampled_indices)
+
+//     // Create a mutex to store the sampled indices
+//     let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
+
+//     // Iterate over the bins
+//     bin_idx_iterator.enumerate().for_each(|(i, (start, end))| {
+//         let (min_index, max_index) = f_argminmax(arr.slice(s![start..end]));
+
+//         // Add the indexes in sorted order
+//         if min_index < max_index {
+//             sampled_indices.lock().unwrap()[2 * i] = min_index + start;
+//             sampled_indices.lock().unwrap()[2 * i + 1] = max_index + start;
+//         } else {
+//             sampled_indices.lock().unwrap()[2 * i] = max_index + start;
+//             sampled_indices.lock().unwrap()[2 * i + 1] = min_index + start;
+//         }
+//     });
+
+//     // Remove the mutex and return the sampled indices
+//     Arc::try_unwrap(sampled_indices)
+//         .unwrap()
+//         .into_inner()
+//         .unwrap()
+// }
+
+// #[inline(always)]
+// pub(crate) fn min_max_generic_with_x_parallel_v1<T: Copy + Send + Sync>(
+//     arr: ArrayView1<T>,
+//     bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,
+//     n_out: usize,
+//     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
+// ) -> Array1<usize> {
+//     // Assumes n_out is a multiple of 2
+//     if n_out >= arr.len() {
+//         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+//     }
+
+//     Array1::from_vec(
+//         bin_idx_iterator
+//             .enumerate()
+//             .flat_map(|(i, (start, end))| {
+//                 let step = arr.slice(s![start..end]);
+//                 let (min_index, max_index) = f_argminmax(step);
+
+//                 // Add the indexes in sorted order
+//                 let mut sampled_index = [0, 0];
+//                 if min_index < max_index {
+//                     sampled_index[0] = min_index + start;
+//                     sampled_index[1] = max_index + start;
+//                     // (min_index + start, max_index + start)
+//                 } else {
+//                     sampled_index[0] = max_index + start;
+//                     sampled_index[1] = min_index + start;
+//                     // (max_index + start, min_index + start)
+//                 }
+//                 sampled_index
+//             })
+//             .collect::<Vec<usize>>(),
+//     )
+// }
+
+// #[inline(always)]
+// pub(crate) fn min_max_generic_with_x_parallel_v2<T: Copy + Send + Sync>(
+//     arr: ArrayView1<T>,
+//     bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, (usize, usize))>>,
+//     n_out: usize,
+//     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
+// ) -> Array1<usize> {
+//     // Assumes n_out is a multiple of 2
+//     if n_out >= arr.len() {
+//         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+//     }
+
+//     // Create a mutex to store the sampled indices
+//     let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
+
+//     // Iterate over the bins
+//     bin_idx_iterator.for_each(|bin_idx_iterator| {
+//         bin_idx_iterator.for_each(|(bin_idx, (start, end))| {
+//             let (min_index, max_index) = f_argminmax(arr.slice(s![start..end]));
+
+//             // Add the indexes in sorted order
+//             if min_index < max_index {
+//                 sampled_indices.lock().unwrap()[2 * bin_idx] = min_index + start;
+//                 sampled_indices.lock().unwrap()[2 * bin_idx + 1] = max_index + start;
+//             } else {
+//                 sampled_indices.lock().unwrap()[2 * bin_idx] = max_index + start;
+//                 sampled_indices.lock().unwrap()[2 * bin_idx + 1] = min_index + start;
+//             }
+//         });
+//     });
+
+//     // Remove the mutex and return the sampled indices
+//     Arc::try_unwrap(sampled_indices)
+//         .unwrap()
+//         .into_inner()
+//         .unwrap()
+// }
+
+
 #[inline(always)]
 pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
     arr: ArrayView1<T>,
-    bin_idx_iterator: impl IndexedParallelIterator<Item = (usize, usize)>,
+    bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, (usize, usize))>>,
     n_out: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
@@ -132,26 +262,28 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
-    // Create a mutex to store the sampled indices
-    let sampled_indices = Arc::new(Mutex::new(Array1::<usize>::default(n_out)));
+    Array1::from_vec(
+        bin_idx_iterator
+            .flat_map(|bin_idx_iterator| {
+                bin_idx_iterator
+                    .map(|(_, (start, end))| {  // TODO: Remove the bin_idx
+                        let step = arr.slice(s![start..end]); // TODO: optimize this
+                        let (min_index, max_index) = f_argminmax(step);
 
-    // Iterate over the bins
-    bin_idx_iterator.enumerate().for_each(|(i, (start, end))| {
-        let (min_index, max_index) = f_argminmax(arr.slice(s![start..end]));
-
-        // Add the indexes in sorted order
-        if min_index < max_index {
-            sampled_indices.lock().unwrap()[2 * i] = min_index + start;
-            sampled_indices.lock().unwrap()[2 * i + 1] = max_index + start;
-        } else {
-            sampled_indices.lock().unwrap()[2 * i] = max_index + start;
-            sampled_indices.lock().unwrap()[2 * i + 1] = min_index + start;
-        }
-    });
-
-    // Remove the mutex and return the sampled indices
-    Arc::try_unwrap(sampled_indices)
-        .unwrap()
-        .into_inner()
-        .unwrap()
+                        // Add the indexes in sorted order
+                        let mut sampled_index = [0, 0];
+                        if min_index < max_index {
+                            sampled_index[0] = min_index + start;
+                            sampled_index[1] = max_index + start;
+                        } else {
+                            sampled_index[0] = max_index + start;
+                            sampled_index[1] = min_index + start;
+                        }
+                        sampled_index
+                    })
+                    .collect::<Vec<[usize; 2]>>()
+            })
+            .flatten()
+            .collect::<Vec<usize>>(),
+    )
 }
