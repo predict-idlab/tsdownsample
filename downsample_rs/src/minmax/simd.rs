@@ -26,7 +26,7 @@ where
     Tx: Num + FromPrimitive + AsPrimitive<f64>,
     Ty: Copy + PartialOrd,
 {
-    assert_eq!(n_out % 2, 0);
+    assert_eq!(n_out & 1, 0);
     let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 2);
     min_max_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
@@ -40,7 +40,7 @@ pub fn min_max_simd_without_x<T: Copy + PartialOrd>(
 where
     for<'a> ArrayView1<'a, T>: ArgMinMax,
 {
-    assert_eq!(n_out % 2, 0);
+    assert_eq!(n_out & 1, 0);
     min_max_generic(arr, n_out, |arr| arr.argminmax())
 }
 
@@ -58,7 +58,7 @@ where
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
-    assert_eq!(n_out % 2, 0); // TODO can be faster (check last bit)
+    assert_eq!(n_out & 1, 0);
     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
@@ -72,7 +72,7 @@ pub fn min_max_simd_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
 where
     for<'a> ArrayView1<'a, T>: ArgMinMax,
 {
-    assert_eq!(n_out % 2, 0);
+    assert_eq!(n_out & 1, 0);
     min_max_generic_parallel(arr, n_out, |arr| arr.argminmax())
 }
 
