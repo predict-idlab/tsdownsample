@@ -171,6 +171,72 @@ mod tests {
     }
 
     #[test]
+    fn test_min_max_simd_with_x_gap() {
+        // We will create a gap in the middle of the array
+        let x = (0..101).collect::<Vec<i32>>();
+
+        // Increment the second half of the array by 50
+        let x = x
+            .iter()
+            .map(|x| if *x > 50 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        let x = Array1::from(x);
+        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = Array1::from(arr);
+
+        let sampled_indices = min_max_simd_with_x(x.view(), arr.view(), 10);
+        assert_eq!(sampled_indices.len(), 8); // One full gap
+        let expected_indices = vec![0, 29, 30, 50, 51, 69, 70, 99];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+
+        // Increment the second half of the array by 50 again
+        let x = x
+            .iter()
+            .map(|x| if *x > 101 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        println!("{:?}", x);
+        let x = Array1::from(x);
+
+        let sampled_indices = min_max_simd_with_x(x.view(), arr.view(), 10);
+        assert_eq!(sampled_indices.len(), 9); // Gap with 1 value
+        let expected_indices = vec![0, 39, 40, 50, 51, 52, 59, 60, 99];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+    }
+
+    #[test]
+    fn test_min_max_simd_with_x_parallel_gap() {
+        // Create a gap in the middle of the array
+        let x = (0..101).collect::<Vec<i32>>();
+
+        // Increment the second half of the array by 50
+        let x = x
+            .iter()
+            .map(|x| if *x > 50 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        let x = Array1::from(x);
+        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = Array1::from(arr);
+
+        let sampled_indices = min_max_simd_with_x_parallel(x.view(), arr.view(), 10);
+        assert_eq!(sampled_indices.len(), 8); // One full gap
+        let expected_indices = vec![0, 29, 30, 50, 51, 69, 70, 99];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+
+        // Increment the second half of the array by 50 again
+        let x = x
+            .iter()
+            .map(|x| if *x > 101 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        println!("{:?}", x);
+        let x = Array1::from(x);
+
+        let sampled_indices = min_max_simd_with_x_parallel(x.view(), arr.view(), 10);
+        assert_eq!(sampled_indices.len(), 9); // Gap with 1 value
+        let expected_indices = vec![0, 39, 40, 50, 51, 52, 59, 60, 99];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+    }
+
+    #[test]
     fn test_many_random_runs_same_output() {
         let n = 20_001;
         let n_out = 200;

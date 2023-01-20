@@ -98,25 +98,33 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
     }
 
     let ptr = arr.as_ptr();
-    let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
+    let mut sampled_indices: Vec<usize> = Vec::with_capacity(n_out);
 
-    let mut i: usize = 0; // TODO: for some reason is this faster than enumerate
     bin_idx_iterator.for_each(|(start, end)| {
+        if start == end {
+            // If the bin is empty, do nothing
+            return;
+        } else if start + 1 == end {
+            // If the bin has only one element, add it
+            sampled_indices.push(start);
+            return;
+        }
+
+        // Get the index of the min and max of the bin
         let step = unsafe { ArrayView1::from_shape_ptr(end - start, ptr.add(start)) };
         let (min_index, max_index) = f_argminmax(step);
 
         // Add the indexes in sorted order
         if min_index < max_index {
-            sampled_indices[2 * i] = min_index + start;
-            sampled_indices[2 * i + 1] = max_index + start;
+            sampled_indices.push(min_index + start);
+            sampled_indices.push(max_index + start);
         } else {
-            sampled_indices[2 * i] = max_index + start;
-            sampled_indices[2 * i + 1] = min_index + start;
+            sampled_indices.push(max_index + start);
+            sampled_indices.push(min_index + start);
         }
-        i += 1;
     });
 
-    sampled_indices
+    Array1::from_vec(sampled_indices)
 }
 
 #[inline(always)]
@@ -136,23 +144,29 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
             .flat_map(|bin_idx_iterator| {
                 bin_idx_iterator
                     .map(|(start, end)| {
+                        // TODO: explore the use of smallvec
+                        if start == end {
+                            // If the bin is empty, return empty
+                            return vec![];
+                        } else if start + 1 == end {
+                            // If the bin has only one element, return it
+                            return vec![start];
+                        }
+
+                        // Get the index of the min and max of the bin
                         let step = unsafe {
                             ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
                         };
                         let (min_index, max_index) = f_argminmax(step);
 
-                        // Add the indexes in sorted order
-                        let mut sampled_index = [0, 0];
+                        // Return the indexes in sorted order
                         if min_index < max_index {
-                            sampled_index[0] = min_index + start;
-                            sampled_index[1] = max_index + start;
+                            vec![min_index + start, max_index + start]
                         } else {
-                            sampled_index[0] = max_index + start;
-                            sampled_index[1] = min_index + start;
+                            vec![max_index + start, min_index + start]
                         }
-                        sampled_index
                     })
-                    .collect::<Vec<[usize; 2]>>()
+                    .collect::<Vec<Vec<usize>>>()
             })
             .flatten()
             .collect::<Vec<usize>>(),
