@@ -7,13 +7,14 @@
 [![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml)
 <!-- TODO: codecov -->
 
-Extremely fast **📈 time series downsampling** for visualization, written in Rust.
+Extremely fast **time series downsampling 📈** for visualization, written in Rust.
 
 ## Features ✨
 
 * **Fast**: written in rust with PyO3 bindings  
   - leverages optimized [argminmax](https://github.com/jvdd/argminmax) - which is SIMD accelerated with runtime feature detection
   - scales linearly with the number of data points
+  <!-- TODO check if it scales sublinearly -->
   - multithreaded with Rayon (in Rust)
     <details>
       <summary><i>Why we do not use Python multiprocessing</i></summary>
@@ -62,6 +63,35 @@ s_ds = MinMaxLTTBDownsampler().downsample(y, n_out=1000)
 s_ds = MinMaxLTTBDownsampler().downsample(x, y, n_out=1000)
 ```
 
+## Downsampling algorithms & API 
+
+### Downsampling API 📑
+
+Each downsampling algorithm is implemented as a class that implements a `downsample` method. The signature of the `downsample` method:
+
+```
+downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
+```
+
+**Arguments**:
+- `x` is optional
+- `x` and `y` are both positional arguments
+- `n_out` is a mandatory keyword argument that defines the number of output values
+- `**kwargs` are optional keyword arguments:
+  <!-- - `n_threads`: number of threads to use (default: `None` - use all available threads) -->
+  - `parallel`: whether to use multi-threading (default: `False`)
+
+**Returns**: a `ndarray[uint64]` of indices that can be used to index the original data.
+
+
+### Downsampling algorithms 📈
+
+The following downsampling algorithms (classes) are implemented:
+- `MinMaxDownsampler`: downsamples by selecting the min and max value in each bin. `n_out` / 2 bins are created.
+- `M4Downsampler`: downsamples by selecting the min, max, 1st and last value in each bin. `n_out` / 4 bins are created.
+- `LTTBDownsampler`: downsamples according to the [Largest Triangle Three Buckets](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm. `n_out` - 2 bins are created.
+- `MinMaxLTTBDownsampler`: **novel downsampling algorithm 🎉** that combines the `MinMaxDownsampler` and `LTTBDownsampler` algorithms. `n_out` - 2 bins are created.
+  - ❗(optional) keyword argument `minmax_ratio`: the ratio of the number of min/max values to the `n_out` value. Default: `30` (i.e., 30x the `n_out` values are prefetched by MinMaxDownsampler).
 ## Limitations
 
 Assumes;
