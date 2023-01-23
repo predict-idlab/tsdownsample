@@ -67,7 +67,8 @@ s_ds = MinMaxLTTBDownsampler().downsample(x, y, n_out=1000)
 
 ### Downsampling API 📑
 
-Each downsampling algorithm is implemented as a class that implements a `downsample` method. The signature of the `downsample` method:
+Each downsampling algorithm is implemented as a class that implements a `downsample` method.  
+The signature of the `downsample` method:
 
 ```
 downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
@@ -96,7 +97,7 @@ The following downsampling algorithms (classes) are implemented:
 | `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm |
 | `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `parallel`, `minmax_ratio`<sup>*</sup> |
 
-<sup>*</sup><i>Default value for `minmax_ratio` is 30, which is empirically proven to be a good default.</i>
+<sup>*</sup><i>Default value for `minmax_ratio` is 30, which is empirically proven to be a good default. (More details in our upcomming paper)</i>
 
 
 ## Limitations & assumptions 🚨
