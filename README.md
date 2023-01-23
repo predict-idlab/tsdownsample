@@ -78,7 +78,6 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 - `x` and `y` are both positional arguments
 - `n_out` is a mandatory keyword argument that defines the number of output values<sup>*</sup>
 - `**kwargs` are optional keyword arguments *(see [table below](#downsampling-algorithms-📈))*:
-  <!-- - `n_threads`: number of threads to use (default: `None` - use all available threads) -->
   - `parallel`: whether to use multi-threading (default: `False`)<sup>**</sup>
   - ...
 
@@ -88,26 +87,19 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 <sup>**</sup><i>`parallel` is not supported for `LTTBDownsampler`.</i>
 ### Downsampling algorithms 📈
 
-<!-- The following downsampling algorithms (classes) are implemented:
-- `MinMaxDownsampler`: downsamples by selecting the min and max value in each bin. `n_out` / 2 bins are created.
-- `M4Downsampler`: downsamples by selecting the min, max, 1st and last value in each bin. `n_out` / 4 bins are created.
-- `LTTBDownsampler`: downsamples according to the [Largest Triangle Three Buckets](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm. `n_out` - 2 bins are created.
-- `MinMaxLTTBDownsampler`: **novel downsampling algorithm 🎉** that combines the `MinMaxDownsampler` and `LTTBDownsampler` algorithms. `n_out` - 2 bins are created.
-  - ❗(optional) keyword argument `minmax_ratio`: the ratio of the number of min/max values to the `n_out` value. Default: `30` (i.e., 30x the `n_out` values are prefetched by MinMaxDownsampler). -->
-
-<!-- Table of the downsampling algorithms -->
+The following downsampling algorithms (classes) are implemented:
 
 | Downsampler | Description | `# bins` | `**kwargs` |
 | --- | --- | --- | --- |
 | `MinMaxDownsampler` | selects the **min and max** value in each bin | `n_out` / 2 | `parallel` |
 | `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `n_out` / 4 | `parallel` |
 | `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm | `n_out` - 2 | |
-| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `parallel`, `minmax_ratio`<sup>*</sup> |
+| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | *N.A.* | `parallel`, `minmax_ratio`<sup>*</sup> |
 
 <sup>*</sup><i>Default value for `minmax_ratio` is 30, which is empirically proven to be a good default.</i>
 
 
-## Limitations
+## Limitations & assumptions 🚨
 
 Assumes;
 1. `x`-data monotonic increasing (i.e., sorted)
