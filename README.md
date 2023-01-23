@@ -89,12 +89,12 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 
 The following downsampling algorithms (classes) are implemented:
 
-| Downsampler | Description | `# bins` | `**kwargs` |
-| --- | --- | --- | --- |
-| `MinMaxDownsampler` | selects the **min and max** value in each bin | `n_out` / 2 | `parallel` |
-| `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `n_out` / 4 | `parallel` |
-| `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm | `n_out` - 2 | |
-| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | *N.A.* | `parallel`, `minmax_ratio`<sup>*</sup> |
+| Downsampler | Description | `**kwargs` |
+| ---:| --- |--- |
+| `MinMaxDownsampler` | selects the **min and max** value in each bin | `parallel` |
+| `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `parallel` |
+| `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm |
+| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `parallel`, `minmax_ratio`<sup>*</sup> |
 
 <sup>*</sup><i>Default value for `minmax_ratio` is 30, which is empirically proven to be a good default.</i>
 
@@ -102,7 +102,7 @@ The following downsampling algorithms (classes) are implemented:
 ## Limitations & assumptions 🚨
 
 Assumes;
-1. `x`-data monotonic increasing (i.e., sorted)
+1. `x`-data is (non-strictly) monotonic increasing (i.e., sorted)
 2. no `NaNs` in the data
 
 ---
