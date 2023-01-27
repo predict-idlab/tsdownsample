@@ -108,50 +108,43 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
     let mut sampled_indices: Vec<usize> = Vec::with_capacity(n_out);
 
     bin_idx_iterator.for_each(|bin| {
-        match bin {
-            Some((start, end)) => {
-                if end <= start + 4 {
-                    // If the bin has <= 4 elements, just add them all
-                    for i in start..end {
-                        sampled_indices.push(i);
-                    }
-                } else {
-                    // If the bin has > 4 elements, add the first and last + argmin and argmax
-                    let step =
-                        unsafe { ArrayView1::from_shape_ptr(end - start, arr_ptr.add(start)) };
-                    let (min_index, max_index) = f_argminmax(step);
-
-                    sampled_indices.push(start);
-
-                    // Add the indexes in sorted order
-                    if min_index < max_index {
-                        // TODO: check the below (is more "data" efficient)
-                        // if min_index > start{
-                        //     sampled_indices.push(min_index + start);
-                        // }
-                        // if max_index < end - 1{
-                        //     sampled_indices.push(max_index + start);
-                        // }
-                        sampled_indices.push(min_index + start);
-                        sampled_indices.push(max_index + start);
-                    } else {
-                        // TODO: check the below (is more "data" efficient)
-                        // if max_index > start{
-                        //     sampled_indices.push(max_index + start);
-                        // }
-                        // if min_index < end - 1{
-                        //     sampled_indices.push(min_index + start);
-                        // }
-                        sampled_indices.push(max_index + start);
-                        sampled_indices.push(min_index + start);
-                    }
-
-                    sampled_indices.push(end - 1);
+        if let Some((start, end)) = bin {
+            if end <= start + 4 {
+                // If the bin has <= 4 elements, just add them all
+                for i in start..end {
+                    sampled_indices.push(i);
                 }
-            }
-            // If the bin is empty, do nothing
-            None => {
-                // Do nothing
+            } else {
+                // If the bin has > 4 elements, add the first and last + argmin and argmax
+                let step = unsafe { ArrayView1::from_shape_ptr(end - start, arr_ptr.add(start)) };
+                let (min_index, max_index) = f_argminmax(step);
+
+                sampled_indices.push(start);
+
+                // Add the indexes in sorted order
+                if min_index < max_index {
+                    // TODO: check the below (is more "data" efficient)
+                    // if min_index > start{
+                    //     sampled_indices.push(min_index + start);
+                    // }
+                    // if max_index < end - 1{
+                    //     sampled_indices.push(max_index + start);
+                    // }
+                    sampled_indices.push(min_index + start);
+                    sampled_indices.push(max_index + start);
+                } else {
+                    // TODO: check the below (is more "data" efficient)
+                    // if max_index > start{
+                    //     sampled_indices.push(max_index + start);
+                    // }
+                    // if min_index < end - 1{
+                    //     sampled_indices.push(min_index + start);
+                    // }
+                    sampled_indices.push(max_index + start);
+                    sampled_indices.push(min_index + start);
+                }
+
+                sampled_indices.push(end - 1);
             }
         }
     });
@@ -205,7 +198,7 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
                                 }
                             } // If the bin is empty, return empty Vec
                             None => {
-                                return vec![];
+                                vec![]
                             }
                         }
                     })
