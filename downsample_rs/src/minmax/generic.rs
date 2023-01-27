@@ -88,7 +88,7 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 #[inline(always)]
 pub(crate) fn min_max_generic_with_x<T: Copy>(
     arr: ArrayView1<T>,
-    bin_idx_iterator: impl Iterator<Item = (usize, usize)>,
+    bin_idx_iterator: impl Iterator<Item = Option<(usize, usize)>>,
     n_out: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
@@ -100,27 +100,31 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
     let ptr = arr.as_ptr();
     let mut sampled_indices: Vec<usize> = Vec::with_capacity(n_out);
 
-    bin_idx_iterator.for_each(|(start, end)| {
-        if start == end {
+    bin_idx_iterator.for_each(|bin| {
+        match bin {
+            Some((start, end)) => {
+                if start + 1 == end {
+                    // If the bin has only one element, add it
+                    sampled_indices.push(start)
+                } else {
+                    // If the bin has at least two elements, add the argmin and argmax
+                    let step = unsafe { ArrayView1::from_shape_ptr(end - start, ptr.add(start)) };
+                    let (min_index, max_index) = f_argminmax(step);
+
+                    // Add the indexes in sorted order
+                    if min_index < max_index {
+                        sampled_indices.push(min_index + start);
+                        sampled_indices.push(max_index + start);
+                    } else {
+                        sampled_indices.push(max_index + start);
+                        sampled_indices.push(min_index + start);
+                    }
+                }
+            }
             // If the bin is empty, do nothing
-            return;
-        } else if start + 1 == end {
-            // If the bin has only one element, add it
-            sampled_indices.push(start);
-            return;
-        }
-
-        // Get the index of the min and max of the bin
-        let step = unsafe { ArrayView1::from_shape_ptr(end - start, ptr.add(start)) };
-        let (min_index, max_index) = f_argminmax(step);
-
-        // Add the indexes in sorted order
-        if min_index < max_index {
-            sampled_indices.push(min_index + start);
-            sampled_indices.push(max_index + start);
-        } else {
-            sampled_indices.push(max_index + start);
-            sampled_indices.push(min_index + start);
+            None => {
+                // Do nothing
+            }
         }
     });
 

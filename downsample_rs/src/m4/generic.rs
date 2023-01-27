@@ -95,7 +95,7 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 #[inline(always)]
 pub(crate) fn m4_generic_with_x<T: Copy>(
     arr: ArrayView1<T>,
-    bin_idx_iterator: impl Iterator<Item = (usize, usize)>,
+    bin_idx_iterator: impl Iterator<Item = Option<(usize, usize)>>,
     n_out: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
@@ -105,29 +105,74 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
     }
 
     let arr_ptr = arr.as_ptr();
-    let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
+    let mut sampled_indices: Vec<usize> = Vec::with_capacity(n_out);
 
-    bin_idx_iterator
-        .enumerate()
-        .for_each(|(i, (start_idx, end_idx))| {
-            let step =
-                unsafe { ArrayView1::from_shape_ptr(end_idx - start_idx, arr_ptr.add(start_idx)) };
-            let (min_index, max_index) = f_argminmax(step);
+    bin_idx_iterator.for_each(|bin| {
+        match bin {
+            Some((start, end)) => {
+                if end <= start + 4 {
+                    // If the bin has <= 4 elements, just add them all
+                    for i in start..end {
+                        sampled_indices.push(i);
+                    }
+                } else {
+                    // If the bin has > 4 elements, add the first and last + argmin and argmax
+                    let step =
+                        unsafe { ArrayView1::from_shape_ptr(end - start, arr_ptr.add(start)) };
+                    let (min_index, max_index) = f_argminmax(step);
 
-            sampled_indices[4 * i] = start_idx;
+                    sampled_indices.push(start);
 
-            // Add the indexes in sorted order
-            if min_index < max_index {
-                sampled_indices[4 * i + 1] = min_index + start_idx;
-                sampled_indices[4 * i + 2] = max_index + start_idx;
-            } else {
-                sampled_indices[4 * i + 1] = max_index + start_idx;
-                sampled_indices[4 * i + 2] = min_index + start_idx;
+                    // Add the indexes in sorted order
+                    if min_index < max_index {
+                        // TODO: check the below (is more "data" efficient)
+                        // if min_index > start{
+                        //     sampled_indices.push(min_index + start);
+                        // }
+                        // if max_index < end - 1{
+                        //     sampled_indices.push(max_index + start);
+                        // }
+                        sampled_indices.push(min_index + start);
+                        sampled_indices.push(max_index + start);
+                    } else {
+                        // TODO: check the below (is more "data" efficient)
+                        // if max_index > start{
+                        //     sampled_indices.push(max_index + start);
+                        // }
+                        // if min_index < end - 1{
+                        //     sampled_indices.push(min_index + start);
+                        // }
+                        sampled_indices.push(max_index + start);
+                        sampled_indices.push(min_index + start);
+                    }
+
+                    sampled_indices.push(end - 1);
+                }
             }
-            sampled_indices[4 * i + 3] = end_idx - 1;
-        });
+            // If the bin is empty, do nothing
+            None => {
+                // Do nothing
+            }
+        }
+    });
+    //     let step =
+    //         unsafe { ArrayView1::from_shape_ptr(end_idx - start_idx, arr_ptr.add(start_idx)) };
+    //     let (min_index, max_index) = f_argminmax(step);
 
-    sampled_indices
+    //     sampled_indices[4 * i] = start_idx;
+
+    //     // Add the indexes in sorted order
+    //     if min_index < max_index {
+    //         sampled_indices[4 * i + 1] = min_index + start_idx;
+    //         sampled_indices[4 * i + 2] = max_index + start_idx;
+    //     } else {
+    //         sampled_indices[4 * i + 1] = max_index + start_idx;
+    //         sampled_indices[4 * i + 2] = min_index + start_idx;
+    //     }
+    //     sampled_indices[4 * i + 3] = end_idx - 1;
+    // });
+
+    Array1::from_vec(sampled_indices)
 }
 
 #[inline(always)]
