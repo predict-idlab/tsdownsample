@@ -62,37 +62,6 @@ fn binary_search_with_mid<T: Copy + PartialOrd>(
 
 // --- Sequential version
 
-// pub(crate) fn get_equidistant_bin_idx_iterator<T>(
-//     arr: ArrayView1<T>,
-//     nb_bins: usize,
-// ) -> impl Iterator<Item = (usize, usize)> + '_
-// where
-//     T: Num + FromPrimitive + AsPrimitive<f64>,
-// {
-//     assert!(nb_bins >= 2);
-//     // Divide by nb_bins to avoid overflow!
-//     let val_step: f64 =
-//         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
-//     let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
-//     let mut value: f64 = arr[0].as_(); // Search value
-//     let mut idx: usize = 0; // Index of the search value
-//     (0..nb_bins).map(move |_| {
-//         let start_idx: usize = idx; // Start index of the bin (previous end index)
-//         value += val_step;
-//         let mid: usize = idx + idx_step;
-//         let mid = if mid < arr.len() - 1 {
-//             mid
-//         } else {
-//             arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
-//         };
-//         let search_value: T = T::from_f64(value).unwrap();
-//         // Implementation WITHOUT pre-guessing mid is slower!!
-//         // idx = binary_search(arr, search_value, idx, arr.len()-1);
-//         idx = binary_search_with_mid(arr, search_value, idx, arr.len() - 1, mid); // End index of the bin
-//         (start_idx, idx)
-//     })
-// }
-
 pub(crate) fn get_equidistant_bin_idx_iterator<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
