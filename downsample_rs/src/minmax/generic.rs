@@ -167,31 +167,11 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
                                 } else {
                                     vec![max_index + start, min_index + start]
                                 }
-                            } // If the bin is empty, do nothing
+                            } // If the bin is empty, return empty Vec
                             None => {
-                                // Do nothing
                                 return vec![];
                             }
                         }
-
-                        // // TODO: explore the use of smallvec
-                        // if start + 1 == end {
-                        //     // If the bin has only one element, return it
-                        //     return vec![start];
-                        // }
-
-                        // // Get the index of the min and max of the bin
-                        // let step = unsafe {
-                        //     ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
-                        // };
-                        // let (min_index, max_index) = f_argminmax(step);
-
-                        // // Return the indexes in sorted order
-                        // if min_index < max_index {
-                        //     vec![min_index + start, max_index + start]
-                        // } else {
-                        //     vec![max_index + start, min_index + start]
-                        // }
                     })
                     .collect::<Vec<Vec<usize>>>()
             })

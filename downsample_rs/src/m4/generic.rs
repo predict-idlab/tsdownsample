@@ -155,22 +155,6 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
             }
         }
     });
-    //     let step =
-    //         unsafe { ArrayView1::from_shape_ptr(end_idx - start_idx, arr_ptr.add(start_idx)) };
-    //     let (min_index, max_index) = f_argminmax(step);
-
-    //     sampled_indices[4 * i] = start_idx;
-
-    //     // Add the indexes in sorted order
-    //     if min_index < max_index {
-    //         sampled_indices[4 * i + 1] = min_index + start_idx;
-    //         sampled_indices[4 * i + 2] = max_index + start_idx;
-    //     } else {
-    //         sampled_indices[4 * i + 1] = max_index + start_idx;
-    //         sampled_indices[4 * i + 2] = min_index + start_idx;
-    //     }
-    //     sampled_indices[4 * i + 3] = end_idx - 1;
-    // });
 
     Array1::from_vec(sampled_indices)
 }
@@ -208,6 +192,7 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
                                     let (min_index, max_index) = f_argminmax(step);
 
                                     // Add the indexes in sorted order
+                                    // TODO: check above (is more "data" efficient)
                                     let mut sampled_index = vec![start, 0, 0, end - 1];
                                     if min_index < max_index {
                                         sampled_index[1] = min_index + start;
@@ -218,27 +203,11 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
                                     }
                                     sampled_index
                                 }
-                            }
+                            } // If the bin is empty, return empty Vec
                             None => {
                                 return vec![];
                             }
                         }
-
-                        // let step = unsafe {
-                        //     ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
-                        // };
-                        // let (min_index, max_index) = f_argminmax(step);
-
-                        // // Add the indexes in sorted order
-                        // let mut sampled_index = [start, 0, 0, end - 1];
-                        // if min_index < max_index {
-                        //     sampled_index[1] = min_index + start;
-                        //     sampled_index[2] = max_index + start;
-                        // } else {
-                        //     sampled_index[1] = max_index + start;
-                        //     sampled_index[2] = min_index + start;
-                        // }
-                        // sampled_index
                     })
                     .collect::<Vec<Vec<usize>>>()
             })
