@@ -194,7 +194,6 @@ mod tests {
             .iter()
             .map(|x| if *x > 101 { *x + 50 } else { *x })
             .collect::<Vec<i32>>();
-        println!("{:?}", x);
         let x = Array1::from(x);
 
         let sampled_indices = min_max_simd_with_x(x.view(), arr.view(), 10);

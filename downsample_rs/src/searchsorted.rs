@@ -62,10 +62,41 @@ fn binary_search_with_mid<T: Copy + PartialOrd>(
 
 // --- Sequential version
 
+// pub(crate) fn get_equidistant_bin_idx_iterator<T>(
+//     arr: ArrayView1<T>,
+//     nb_bins: usize,
+// ) -> impl Iterator<Item = (usize, usize)> + '_
+// where
+//     T: Num + FromPrimitive + AsPrimitive<f64>,
+// {
+//     assert!(nb_bins >= 2);
+//     // Divide by nb_bins to avoid overflow!
+//     let val_step: f64 =
+//         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
+//     let idx_step: usize = arr.len() / nb_bins; // used to pre-guess the mid index
+//     let mut value: f64 = arr[0].as_(); // Search value
+//     let mut idx: usize = 0; // Index of the search value
+//     (0..nb_bins).map(move |_| {
+//         let start_idx: usize = idx; // Start index of the bin (previous end index)
+//         value += val_step;
+//         let mid: usize = idx + idx_step;
+//         let mid = if mid < arr.len() - 1 {
+//             mid
+//         } else {
+//             arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
+//         };
+//         let search_value: T = T::from_f64(value).unwrap();
+//         // Implementation WITHOUT pre-guessing mid is slower!!
+//         // idx = binary_search(arr, search_value, idx, arr.len()-1);
+//         idx = binary_search_with_mid(arr, search_value, idx, arr.len() - 1, mid); // End index of the bin
+//         (start_idx, idx)
+//     })
+// }
+
 pub(crate) fn get_equidistant_bin_idx_iterator<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
-) -> impl Iterator<Item = (usize, usize)> + '_
+) -> impl Iterator<Item = Option<(usize, usize)>> + '_
 where
     T: Num + FromPrimitive + AsPrimitive<f64>,
 {
@@ -79,17 +110,22 @@ where
     (0..nb_bins).map(move |_| {
         let start_idx: usize = idx; // Start index of the bin (previous end index)
         value += val_step;
+        let search_value: T = T::from_f64(value).unwrap();
+        if arr[start_idx] >= search_value {
+            // If the first value of the bin is already >= the search value, then the
+            // bin is empty.
+            return None;
+        }
         let mid: usize = idx + idx_step;
         let mid = if mid < arr.len() - 1 {
             mid
         } else {
             arr.len() - 2 // TODO: arr.len() - 1 gives error I thought...
         };
-        let search_value: T = T::from_f64(value).unwrap();
         // Implementation WITHOUT pre-guessing mid is slower!!
         // idx = binary_search(arr, search_value, idx, arr.len()-1);
         idx = binary_search_with_mid(arr, search_value, idx, arr.len() - 1, mid); // End index of the bin
-        (start_idx, idx)
+        Some((start_idx, idx))
     })
 }
 
@@ -231,7 +267,7 @@ mod tests {
     fn test_get_equidistant_bin_idxs() {
         let arr = Array1::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
         let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), 3);
-        let bin_idxs = bin_idxs_iter.map(|x| x.0).collect::<Vec<usize>>();
+        let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
         assert_eq!(bin_idxs, vec![0, 3, 6]);
         let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3);
         let bin_idxs = bin_idxs_iter
@@ -253,7 +289,7 @@ mod tests {
             let arr = Array1::from(arr);
             // Calculate the bin indexes
             let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), nb_bins);
-            let bin_idxs = bin_idxs_iter.map(|x| x.0).collect::<Vec<usize>>();
+            let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
             let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins);
             let bin_idxs_parallel = bin_idxs_iter
                 .map(|x| x.map(|x| x.0).collect::<Vec<usize>>())
