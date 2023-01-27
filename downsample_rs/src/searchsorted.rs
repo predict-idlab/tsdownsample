@@ -144,7 +144,7 @@ fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
-) -> impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, usize)> + '_> + '_
+) -> impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>> + '_> + '_
 where
     T: Num + FromPrimitive + AsPrimitive<f64> + Sync + Send,
 {
@@ -179,8 +179,13 @@ where
             let start_idx: usize = idx; // Start index of the bin (previous end index)
             value += val_step;
             let search_value: T = T::from_f64(value).unwrap();
+            if arr[start_idx] >= search_value {
+                // If the first value of the bin is already >= the search value, then the
+                // bin is empty.
+                return None;
+            }
             idx = binary_search(arr, search_value, idx, arr.len() - 1); // End index of the bin
-            (start_idx, idx)
+            Some((start_idx, idx))
         })
     })
 }
@@ -271,7 +276,7 @@ mod tests {
         assert_eq!(bin_idxs, vec![0, 3, 6]);
         let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3);
         let bin_idxs = bin_idxs_iter
-            .map(|x| x.map(|x| x.0).collect::<Vec<usize>>())
+            .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
             .flatten()
             .collect::<Vec<usize>>();
         assert_eq!(bin_idxs, vec![0, 3, 6]);
@@ -292,7 +297,7 @@ mod tests {
             let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
             let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins);
             let bin_idxs_parallel = bin_idxs_iter
-                .map(|x| x.map(|x| x.0).collect::<Vec<usize>>())
+                .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
                 .flatten()
                 .collect::<Vec<usize>>();
             assert_eq!(bin_idxs, bin_idxs_parallel);

@@ -178,7 +178,7 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
 #[inline(always)]
 pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: ArrayView1<T>,
-    bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, usize)>>,
+    bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>>>,
     n_out: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
@@ -191,24 +191,56 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
         bin_idx_iterator
             .flat_map(|bin_idx_iterator| {
                 bin_idx_iterator
-                    .map(|(start, end)| {
-                        let step = unsafe {
-                            ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
-                        };
-                        let (min_index, max_index) = f_argminmax(step);
+                    .map(|bin| {
+                        match bin {
+                            Some((start, end)) => {
+                                if end <= start + 4 {
+                                    // If the bin has <= 4 elements, just add them all
+                                    (start..end).collect::<Vec<usize>>()
+                                } else {
+                                    // If the bin has > 4 elements, add the first and last + argmin and argmax
+                                    let step = unsafe {
+                                        ArrayView1::from_shape_ptr(
+                                            end - start,
+                                            arr.as_ptr().add(start),
+                                        )
+                                    };
+                                    let (min_index, max_index) = f_argminmax(step);
 
-                        // Add the indexes in sorted order
-                        let mut sampled_index = [start, 0, 0, end - 1];
-                        if min_index < max_index {
-                            sampled_index[1] = min_index + start;
-                            sampled_index[2] = max_index + start;
-                        } else {
-                            sampled_index[1] = max_index + start;
-                            sampled_index[2] = min_index + start;
+                                    // Add the indexes in sorted order
+                                    let mut sampled_index = vec![start, 0, 0, end - 1];
+                                    if min_index < max_index {
+                                        sampled_index[1] = min_index + start;
+                                        sampled_index[2] = max_index + start;
+                                    } else {
+                                        sampled_index[1] = max_index + start;
+                                        sampled_index[2] = min_index + start;
+                                    }
+                                    sampled_index
+                                }
+                            }
+                            None => {
+                                return vec![];
+                            }
                         }
-                        sampled_index
+
+                        // let step = unsafe {
+                        //     ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
+                        // };
+                        // let (min_index, max_index) = f_argminmax(step);
+
+                        // // Add the indexes in sorted order
+                        // let mut sampled_index = [start, 0, 0, end - 1];
+                        // if min_index < max_index {
+                        //     sampled_index[1] = min_index + start;
+                        //     sampled_index[2] = max_index + start;
+                        // } else {
+                        //     sampled_index[1] = max_index + start;
+                        //     sampled_index[2] = min_index + start;
+                        // }
+                        // sampled_index
                     })
-                    .collect::<Vec<[usize; 4]>>()
+                    .collect::<Vec<Vec<usize>>>()
             })
             .flatten()
             .collect::<Vec<usize>>(),

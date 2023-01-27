@@ -134,7 +134,7 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
 #[inline(always)]
 pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
     arr: ArrayView1<T>,
-    bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = (usize, usize)>>,
+    bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>>>,
     n_out: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
@@ -147,28 +147,51 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
         bin_idx_iterator
             .flat_map(|bin_idx_iterator| {
                 bin_idx_iterator
-                    .map(|(start, end)| {
-                        // TODO: explore the use of smallvec
-                        if start == end {
-                            // If the bin is empty, return empty
-                            return vec![];
-                        } else if start + 1 == end {
-                            // If the bin has only one element, return it
-                            return vec![start];
+                    .map(|bin| {
+                        match bin {
+                            Some((start, end)) => {
+                                if start + 1 == end {
+                                    // If the bin has only one element, return it
+                                    return vec![start];
+                                }
+
+                                // If the bin has at least two elements, add the argmin and argmax
+                                let step = unsafe {
+                                    ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
+                                };
+                                let (min_index, max_index) = f_argminmax(step);
+
+                                // Return the indexes in sorted order
+                                if min_index < max_index {
+                                    vec![min_index + start, max_index + start]
+                                } else {
+                                    vec![max_index + start, min_index + start]
+                                }
+                            } // If the bin is empty, do nothing
+                            None => {
+                                // Do nothing
+                                return vec![];
+                            }
                         }
 
-                        // Get the index of the min and max of the bin
-                        let step = unsafe {
-                            ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
-                        };
-                        let (min_index, max_index) = f_argminmax(step);
+                        // // TODO: explore the use of smallvec
+                        // if start + 1 == end {
+                        //     // If the bin has only one element, return it
+                        //     return vec![start];
+                        // }
 
-                        // Return the indexes in sorted order
-                        if min_index < max_index {
-                            vec![min_index + start, max_index + start]
-                        } else {
-                            vec![max_index + start, min_index + start]
-                        }
+                        // // Get the index of the min and max of the bin
+                        // let step = unsafe {
+                        //     ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
+                        // };
+                        // let (min_index, max_index) = f_argminmax(step);
+
+                        // // Return the indexes in sorted order
+                        // if min_index < max_index {
+                        //     vec![min_index + start, max_index + start]
+                        // } else {
+                        //     vec![max_index + start, min_index + start]
+                        // }
                     })
                     .collect::<Vec<Vec<usize>>>()
             })
