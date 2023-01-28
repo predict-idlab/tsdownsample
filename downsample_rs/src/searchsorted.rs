@@ -91,7 +91,7 @@ where
             return None;
         }
         // Update the pre-guess index
-        let mid: usize = std::cmp::min(idx + idx_step, arr.len() - 1);
+        let mid: usize = std::cmp::min(idx + idx_step, arr.len() - 2);
         // TODO: Implementation WITHOUT pre-guessing mid is slower!!
         idx = binary_search_with_mid(arr, search_value, idx, arr.len() - 1, mid); // End index of the bin
         Some((start_idx, idx))
