@@ -4,6 +4,12 @@ use ndarray::{s, Array1, ArrayView1};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
+// TODO: check for duplicate data in the output array
+// -> In the current implementation we always add 4 datapoints per bin (if of
+//    course the bin has >= 4 datapoints). However, the argmin and argmax might
+//    be the start and end of the bin, which would result in duplicate data in
+//    the output array. (this is for example the case for monotonic data).
+
 // --------------------- WITHOUT X
 
 #[inline(always)]
@@ -26,7 +32,6 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
         .exact_chunks(block_size)
         .into_iter()
         .enumerate()
-        // .take(n_out / 4)
         .for_each(|(i, step)| {
             let (min_index, max_index) = f_argminmax(step);
 
@@ -123,23 +128,9 @@ pub(crate) fn m4_generic_with_x<T: Copy>(
 
                 // Add the indexes in sorted order
                 if min_index < max_index {
-                    // TODO: check the below (is more "data" efficient)
-                    // if min_index > start{
-                    //     sampled_indices.push(min_index + start);
-                    // }
-                    // if max_index < end - 1{
-                    //     sampled_indices.push(max_index + start);
-                    // }
                     sampled_indices.push(min_index + start);
                     sampled_indices.push(max_index + start);
                 } else {
-                    // TODO: check the below (is more "data" efficient)
-                    // if max_index > start{
-                    //     sampled_indices.push(max_index + start);
-                    // }
-                    // if min_index < end - 1{
-                    //     sampled_indices.push(min_index + start);
-                    // }
                     sampled_indices.push(max_index + start);
                     sampled_indices.push(min_index + start);
                 }
@@ -172,10 +163,10 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
                         match bin {
                             Some((start, end)) => {
                                 if end <= start + 4 {
-                                    // If the bin has <= 4 elements, just add them all
+                                    // If the bin has <= 4 elements, just return them all
                                     (start..end).collect::<Vec<usize>>()
                                 } else {
-                                    // If the bin has > 4 elements, add the first and last + argmin and argmax
+                                    // If the bin has > 4 elements, return the first and last + argmin and argmax
                                     let step = unsafe {
                                         ArrayView1::from_shape_ptr(
                                             end - start,
@@ -184,8 +175,7 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
                                     };
                                     let (min_index, max_index) = f_argminmax(step);
 
-                                    // Add the indexes in sorted order
-                                    // TODO: check above (is more "data" efficient)
+                                    // Return the indexes in sorted order
                                     let mut sampled_index = vec![start, 0, 0, end - 1];
                                     if min_index < max_index {
                                         sampled_index[1] = min_index + start;

@@ -149,7 +149,7 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
                                     return vec![start];
                                 }
 
-                                // If the bin has at least two elements, add the argmin and argmax
+                                // If the bin has at least two elements, return the argmin and argmax
                                 let step = unsafe {
                                     ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
                                 };
