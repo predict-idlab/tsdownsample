@@ -164,28 +164,25 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
                             Some((start, end)) => {
                                 if end <= start + 4 {
                                     // If the bin has <= 4 elements, just return them all
-                                    (start..end).collect::<Vec<usize>>()
-                                } else {
-                                    // If the bin has > 4 elements, return the first and last + argmin and argmax
-                                    let step = unsafe {
-                                        ArrayView1::from_shape_ptr(
-                                            end - start,
-                                            arr.as_ptr().add(start),
-                                        )
-                                    };
-                                    let (min_index, max_index) = f_argminmax(step);
-
-                                    // Return the indexes in sorted order
-                                    let mut sampled_index = vec![start, 0, 0, end - 1];
-                                    if min_index < max_index {
-                                        sampled_index[1] = min_index + start;
-                                        sampled_index[2] = max_index + start;
-                                    } else {
-                                        sampled_index[1] = max_index + start;
-                                        sampled_index[2] = min_index + start;
-                                    }
-                                    sampled_index
+                                    return (start..end).collect::<Vec<usize>>();
                                 }
+
+                                // If the bin has > 4 elements, return the first and last + argmin and argmax
+                                let step = unsafe {
+                                    ArrayView1::from_shape_ptr(end - start, arr.as_ptr().add(start))
+                                };
+                                let (min_index, max_index) = f_argminmax(step);
+
+                                // Return the indexes in sorted order
+                                let mut sampled_index = vec![start, 0, 0, end - 1];
+                                if min_index < max_index {
+                                    sampled_index[1] = min_index + start;
+                                    sampled_index[2] = max_index + start;
+                                } else {
+                                    sampled_index[1] = max_index + start;
+                                    sampled_index[2] = min_index + start;
+                                }
+                                sampled_index
                             } // If the bin is empty, return empty Vec
                             None => {
                                 vec![]

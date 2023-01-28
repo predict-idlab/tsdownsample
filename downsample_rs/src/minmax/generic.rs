@@ -102,9 +102,11 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
 
     bin_idx_iterator.for_each(|bin| {
         if let Some((start, end)) = bin {
-            if start + 1 == end {
-                // If the bin has only one element, add it
-                sampled_indices.push(start)
+            if end <= start + 2 {
+                // If the bin has <= 2 elements, just add them all
+                for i in start..end {
+                    sampled_indices.push(i);
+                }
             } else {
                 // If the bin has at least two elements, add the argmin and argmax
                 let step = unsafe { ArrayView1::from_shape_ptr(end - start, ptr.add(start)) };
@@ -144,9 +146,9 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
                     .map(|bin| {
                         match bin {
                             Some((start, end)) => {
-                                if start + 1 == end {
-                                    // If the bin has only one element, return it
-                                    return vec![start];
+                                if end <= start + 2 {
+                                    // If the bin has <= 2 elements, just return them all
+                                    return (start..end).collect::<Vec<usize>>();
                                 }
 
                                 // If the bin has at least two elements, return the argmin and argmax
