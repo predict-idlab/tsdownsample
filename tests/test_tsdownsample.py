@@ -98,6 +98,25 @@ def test_downsampling_with_x():
         assert np.all(s_downsampled == s_downsampled_x)
 
 
+## Gaps in x
+
+
+def test_downsampling_with_gaps_in_x():
+    """Test downsampling with gaps in x.
+
+    With gap we do NOT mean a NaN in the array, but a large gap in the x values.
+    """
+    # TODO: might improve this test, now we just validate that the code does
+    # not crash
+    arr = np.random.randn(10_000).astype(np.float32)
+    idx = np.arange(len(arr))
+    idx[: len(idx) // 2] += len(idx) // 2  # add large gap in x
+    for downsampler in all_downsamplers:
+        s_downsampled = downsampler.downsample(idx, arr, n_out=100)
+        assert len(s_downsampled) <= 100
+        assert len(s_downsampled) >= 66
+
+
 ## Data types
 
 

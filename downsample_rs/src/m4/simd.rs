@@ -162,6 +162,72 @@ mod tests {
     }
 
     #[test]
+    fn test_m4_simd_with_x_gap() {
+        // We will create a gap in the middle of the array
+        let x = (0..101).collect::<Vec<i32>>();
+
+        // Increment the second half of the array by 50
+        let x = x
+            .iter()
+            .map(|x| if *x > 50 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        let x = Array1::from(x);
+        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = Array1::from(arr);
+
+        let sampled_indices = m4_simd_with_x(x.view(), arr.view(), 20);
+        assert_eq!(sampled_indices.len(), 16); // One full gap
+        let expected_indices = vec![0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+
+        // Increment the second half of the array by 50 again
+        let x = x
+            .iter()
+            .map(|x| if *x > 101 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        let x = Array1::from(x);
+
+        let sampled_indices = m4_simd_with_x(x.view(), arr.view(), 20);
+        assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
+        let expected_indices = vec![
+            0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99, 100,
+        ];
+    }
+
+    #[test]
+    fn test_m4_simd_with_x_gap_parallel() {
+        // We will create a gap in the middle of the array
+        let x = (0..101).collect::<Vec<i32>>();
+
+        // Increment the second half of the array by 50
+        let x = x
+            .iter()
+            .map(|x| if *x > 50 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        let x = Array1::from(x);
+        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = Array1::from(arr);
+
+        let sampled_indices = m4_simd_with_x_parallel(x.view(), arr.view(), 20);
+        assert_eq!(sampled_indices.len(), 16); // One full gap
+        let expected_indices = vec![0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+
+        // Increment the second half of the array by 50 again
+        let x = x
+            .iter()
+            .map(|x| if *x > 101 { *x + 50 } else { *x })
+            .collect::<Vec<i32>>();
+        let x = Array1::from(x);
+
+        let sampled_indices = m4_simd_with_x_parallel(x.view(), arr.view(), 20);
+        assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
+        let expected_indices = vec![
+            0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99, 100,
+        ];
+    }
+
+    #[test]
     fn test_many_random_runs_correct() {
         let n = 20_001; // not 20_000 because then the last bin is not "full"
         let x = (0..n).map(|x| x as i32).collect::<Vec<i32>>();
