@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import numpy as np
 import pytest
 from test_config import supported_dtypes_x, supported_dtypes_y
@@ -26,12 +28,12 @@ ALL_DOWNSAMPLERS = [
     EveryNthDownsampler()
 ]
 
-def generate_rust_downsamplers():
+def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS:
         yield downsampler
 
 
-def generate_all_downsamplers():
+def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in list(RUST_DOWNSAMPLERS) + ALL_DOWNSAMPLERS:
         yield downsampler
 
