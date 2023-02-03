@@ -8,7 +8,7 @@ tsdownsample welcomes contributions in the form of Pull Requests. For small chan
 
 ### Prerequisites
 
-tsdownsample is written in Rust. You'll need to install the [Rust toolchain](https://www.rust-lang.org/tools/install) for development.  
+tsdownsample is written in Rust. You'll need to install the [Rust toolchain](https://www.rust-lang.org/tools/install) for development.
 
 This project uses the nightly version of Rust. You can install it with:
 
@@ -22,7 +22,7 @@ and then set it as the default toolchain with:
 rustup default nightly
 ```
 
-### tsdownsample 
+### tsdownsample
 
 The structure of the tsdownsample project is as follows:
 
@@ -69,7 +69,7 @@ To run the tests and linting:
 make lint
 ```
 
-### Formatting 
+### Formatting
 
 We use [black](https://github.com/psf/black) and [isort](https://github.com/PyCQA/isort) to format the Python code.
 
