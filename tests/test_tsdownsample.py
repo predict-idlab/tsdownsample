@@ -24,9 +24,8 @@ RUST_DOWNSAMPLERS = [
     MinMaxLTTBDownsampler(),
 ]
 
-ALL_DOWNSAMPLERS = [
-    EveryNthDownsampler()
-]
+ALL_DOWNSAMPLERS = [EveryNthDownsampler()]
+
 
 def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS:
@@ -128,7 +127,9 @@ def test_downsampling_different_dtypes_with_x(downsampler: AbstractDownsampler):
 
 
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
-def test_downsampling_no_out_of_bounds_different_dtypes(downsampler: AbstractDownsampler):
+def test_downsampling_no_out_of_bounds_different_dtypes(
+    downsampler: AbstractDownsampler,
+):
     """Test no out of bounds issues when downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=100)
     res = []
@@ -144,7 +145,9 @@ def test_downsampling_no_out_of_bounds_different_dtypes(downsampler: AbstractDow
 
 
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
-def test_downsampling_no_out_of_bounds_different_dtypes_with_x(downsampler: AbstractDownsampler):
+def test_downsampling_no_out_of_bounds_different_dtypes_with_x(
+    downsampler: AbstractDownsampler,
+):
     """Test no out of bounds issues when downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=100)
     idx_orig = np.arange(len(arr_orig))
@@ -154,9 +157,7 @@ def test_downsampling_no_out_of_bounds_different_dtypes_with_x(downsampler: Abst
         for dtype_y in supported_dtypes_y:
             arr = arr_orig.astype(dtype_y)
             s_downsampled = downsampler.downsample(idx, arr, n_out=76)
-            s_downsampled_p = downsampler.downsample(
-                idx, arr, n_out=76, parallel=True
-            )
+            s_downsampled_p = downsampler.downsample(idx, arr, n_out=76, parallel=True)
             assert np.all(s_downsampled == s_downsampled_p)
             if dtype_y is not np.bool_:
                 res += [s_downsampled]
