@@ -59,11 +59,18 @@ x = np.arange(len(y))
 # Downsample to 1000 points (assuming constant sampling rate)
 s_ds = MinMaxLTTBDownsampler().downsample(y, n_out=1000)
 
+# Select downsampled data
+downsampled_y = y[s_ds]
+
 # Downsample to 1000 points using the (possible irregularly spaced) x-data
 s_ds = MinMaxLTTBDownsampler().downsample(x, y, n_out=1000)
+
+# Select downsampled data
+downsampled_x = x[s_ds]
+downsampled_y = y[s_ds]
 ```
 
-## Downsampling algorithms & API 
+## Downsampling algorithms & API
 
 ### Downsampling API 📑
 
