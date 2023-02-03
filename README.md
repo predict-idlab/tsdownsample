@@ -11,7 +11,7 @@ Extremely fast **time series downsampling 📈** for visualization, written in R
 
 ## Features ✨
 
-* **Fast**: written in rust with PyO3 bindings  
+* **Fast**: written in rust with PyO3 bindings
   - leverages optimized [argminmax](https://github.com/jvdd/argminmax) - which is SIMD accelerated with runtime feature detection
   - scales linearly with the number of data points
   <!-- TODO check if it scales sublinearly -->
@@ -59,15 +59,22 @@ x = np.arange(len(y))
 # Downsample to 1000 points (assuming constant sampling rate)
 s_ds = MinMaxLTTBDownsampler().downsample(y, n_out=1000)
 
+# Select downsampled data
+downsampled_y = y[s_ds]
+
 # Downsample to 1000 points using the (possible irregularly spaced) x-data
 s_ds = MinMaxLTTBDownsampler().downsample(x, y, n_out=1000)
+
+# Select downsampled data
+downsampled_x = x[s_ds]
+downsampled_y = y[s_ds]
 ```
 
-## Downsampling algorithms & API 
+## Downsampling algorithms & API
 
 ### Downsampling API 📑
 
-Each downsampling algorithm is implemented as a class that implements a `downsample` method.  
+Each downsampling algorithm is implemented as a class that implements a `downsample` method.
 The signature of the `downsample` method:
 
 ```
@@ -84,7 +91,7 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 
 **Returns**: a `ndarray[uint64]` of indices that can be used to index the original data.
 
-<sup>*</sup><i>When there are gaps in the time series, fewer than `n_out` indices may be returned.</i>  
+<sup>*</sup><i>When there are gaps in the time series, fewer than `n_out` indices may be returned.</i>
 <sup>**</sup><i>`parallel` is not supported for `LTTBDownsampler`.</i>
 ### Downsampling algorithms 📈
 
