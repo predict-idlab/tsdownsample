@@ -24,9 +24,8 @@ RUST_DOWNSAMPLERS = [
     MinMaxLTTBDownsampler(),
 ]
 
-OTHER_DOWNSAMPLERS = [
-    EveryNthDownsampler()
-]
+OTHER_DOWNSAMPLERS = [EveryNthDownsampler()]
+
 
 def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS:
@@ -34,21 +33,26 @@ def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
 
 
 def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
-    for downsampler in list(RUST_DOWNSAMPLERS) + OTHER_DOWNSAMPLERS:
+    for downsampler in RUST_DOWNSAMPLERS + OTHER_DOWNSAMPLERS:
         yield downsampler
 
 
-@pytest.mark.parametrize("downsampler", generate_all_downsamplers())
+@pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
 def test_rust_downsampler(downsampler: AbstractDownsampler):
-    """Test MinMaxLTTB downsampler."""
-    arr = np.array(np.arange(10_000))
+    """Test the Rust downsamplers."""
+    arr = np.arange(10_000)
     s_downsampled = downsampler.downsample(arr, n_out=100)
     assert s_downsampled[0] == 0
-    if isinstance(downsampler, EveryNthDownsampler):
-        comparison = 9_900
-    else:
-        comparison = len(arr) - 1
-    assert s_downsampled[-1] == comparison
+    assert s_downsampled[-1] == len(arr) - 1
+
+
+def test_everynth_downsampler():
+    """Test EveryNth downsampler."""
+    arr = np.arange(10_000)
+    downsampler = EveryNthDownsampler()
+    s_downsampled = downsampler.downsample(arr, n_out=100)
+    assert s_downsampled[0] == 0
+    assert s_downsampled[-1] == 9_900
 
 
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
@@ -101,10 +105,10 @@ def test_downsampling_different_dtypes(downsampler: AbstractDownsampler):
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     res = []
-    for dtype in supported_dtypes_y:
-        arr = arr_orig.astype(dtype)
+    for dtype_y in supported_dtypes_y:
+        arr = arr_orig.astype(dtype_y)
         s_downsampled = downsampler.downsample(arr, n_out=100)
-        if dtype is not np.bool_:
+        if dtype_y is not np.bool_:
             res += [s_downsampled]
     for i in range(1, len(res)):
         assert np.all(res[0] == res[i])
@@ -112,7 +116,7 @@ def test_downsampling_different_dtypes(downsampler: AbstractDownsampler):
 
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
 def test_downsampling_different_dtypes_with_x(downsampler: AbstractDownsampler):
-    """Test downsampling with different data types."""
+    """Test downsampling with x with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     idx_orig = np.arange(len(arr_orig))
     for dtype_x in supported_dtypes_x:
