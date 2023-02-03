@@ -24,8 +24,9 @@ RUST_DOWNSAMPLERS = [
     MinMaxLTTBDownsampler(),
 ]
 
-ALL_DOWNSAMPLERS = [EveryNthDownsampler()]
-
+OTHER_DOWNSAMPLERS = [
+    EveryNthDownsampler()
+]
 
 def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS:
@@ -33,7 +34,7 @@ def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
 
 
 def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
-    for downsampler in list(RUST_DOWNSAMPLERS) + ALL_DOWNSAMPLERS:
+    for downsampler in list(RUST_DOWNSAMPLERS) + OTHER_DOWNSAMPLERS:
         yield downsampler
 
 
