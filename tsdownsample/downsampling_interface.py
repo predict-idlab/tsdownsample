@@ -68,7 +68,7 @@ class AbstractDownsampler(ABC):
 
     @abstractmethod
     def _downsample(
-        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, n_threads: Optional[int], **kwargs
     ) -> np.ndarray:
         """Downsample the data in x and y.
 
@@ -79,7 +79,7 @@ class AbstractDownsampler(ABC):
         """
         raise NotImplementedError
 
-    def downsample(self, *args, n_out: int, **kwargs):  # x and y are optional
+    def downsample(self, *args, n_out: int, n_threads: Optional[int] = None, **kwargs):  # x and y are optional
         """Downsample y (and x).
 
         Call signatures::
@@ -95,6 +95,8 @@ class AbstractDownsampler(ABC):
             These arguments cannot be passed as keywords.
         n_out : int
             The number of points to keep.
+        n_threads : int (optional)
+            Number of threads to use. If not specified will default to available_parallelism
         **kwargs
             Additional keyword arguments are passed to the downsampler.
 
@@ -108,7 +110,7 @@ class AbstractDownsampler(ABC):
         self._supports_dtype(y, y=True)
         if x is not None:
             self._supports_dtype(x, y=False)
-        return self._downsample(x, y, n_out, **kwargs)
+        return self._downsample(x, y, n_out, n_threads, **kwargs)
 
 
 # ------------------- Rust Downsample Interface -------------------
@@ -273,6 +275,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         x: Union[np.ndarray, None],
         y: np.ndarray,
         n_out: int,
+        n_threads: Optional[int],
         parallel: bool = False,
         **kwargs,
     ) -> np.ndarray:
@@ -315,8 +318,12 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         self,
         *args,  # x and y are optional
         n_out: int,
-        parallel: bool = False,
+        n_threads: Optional[int] = None,
         **kwargs,
     ):
         """Downsample the data in x and y."""
-        return super().downsample(*args, n_out=n_out, parallel=parallel, **kwargs)
+        if n_threads is not None and n_threads > 1:
+            parallel = True
+        else:
+            parallel = False
+        return super().downsample(*args, n_out=n_out, n_threads=n_threads, parallel=parallel, **kwargs)
