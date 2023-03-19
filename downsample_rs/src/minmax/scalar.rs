@@ -52,6 +52,7 @@ pub fn min_max_scalar_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,
     arr: ArrayView1<Ty>,
     n_out: usize,
+    n_threads: Option<usize>,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -59,7 +60,7 @@ where
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 2, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2, n_threads);
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
 

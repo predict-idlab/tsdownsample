@@ -113,6 +113,7 @@ fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
+    n_threads: Option<usize>,
 ) -> impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>> + '_> + '_
 where
     T: Num + FromPrimitive + AsPrimitive<f64> + Sync + Send,
@@ -124,7 +125,9 @@ where
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let arr0: f64 = arr[0].as_(); // The first value of the array
                                   // 2. Compute the number of threads & bins per thread
-    let nb_threads = available_parallelism().map(|x| x.get()).unwrap_or(1);
+
+    let nb_threads = n_threads.unwrap_or(available_parallelism().map(|x| x.get()).unwrap_or(1));
+
     let nb_threads = std::cmp::min(nb_threads, nb_bins);
     let nb_bins_per_thread = nb_bins / nb_threads;
     let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (nb_threads - 1);
@@ -244,7 +247,7 @@ mod tests {
         let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), 3);
         let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
         assert_eq!(bin_idxs, vec![0, 3, 6]);
-        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3);
+        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3, None);
         let bin_idxs = bin_idxs_iter
             .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
             .flatten()
@@ -265,7 +268,8 @@ mod tests {
             // Calculate the bin indexes
             let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), nb_bins);
             let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
-            let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins);
+            let bin_idxs_iter =
+                get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins, None);
             let bin_idxs_parallel = bin_idxs_iter
                 .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
                 .flatten()

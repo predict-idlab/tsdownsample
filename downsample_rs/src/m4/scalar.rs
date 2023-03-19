@@ -49,6 +49,7 @@ pub fn m4_scalar_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,
     arr: ArrayView1<Ty>,
     n_out: usize,
+    n_threads: Option<usize>,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -56,7 +57,7 @@ where
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4, n_threads);
     m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
 }
 
