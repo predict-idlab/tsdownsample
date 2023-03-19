@@ -50,6 +50,12 @@ class AbstractDownsampler(ABC):
                 "downsample() takes 1 or 2 positional arguments but "
                 f"{len(args)} were given"
             )
+
+        if x is not None and not isinstance(x, np.ndarray):
+            x = np.array(x)
+        if not isinstance(y, np.ndarray):
+            y = np.array(y)
+
         # y must be 1D array
         if y.ndim != 1:
             raise ValueError("y must be 1D array")
