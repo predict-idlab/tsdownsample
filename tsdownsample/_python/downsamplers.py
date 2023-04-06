@@ -105,6 +105,10 @@ class MinMax_py(AbstractDownsampler):
     def _downsample(
         self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
     ) -> np.ndarray:
+        if x is None:
+            # Is fine for this implementation as this is only used for testing
+            x = np.arange(y.shape[0])
+
         xdt = x.dtype
         if np.issubdtype(xdt, np.datetime64) or np.issubdtype(xdt, np.timedelta64):
             x = x.view(np.int64)
@@ -119,7 +123,7 @@ class MinMax_py(AbstractDownsampler):
             y_slice = y[lower:upper]
             if not len(y_slice):
                 continue
-            # calculate the min(idx), argmin(slice), argmax(slice), max(idx)
+            # calculate the argmin(slice) & argmax(slice)
             rel_idxs.append(lower + y_slice.argmin())
             rel_idxs.append(lower + y_slice.argmax())
         return np.unique(rel_idxs)
@@ -144,6 +148,7 @@ class M4_py(AbstractDownsampler):
     ) -> np.ndarray:
         """TODO complete docs"""
         if x is None:
+            # Is fine for this implementation as this is only used for testing
             x = np.arange(y.shape[0])
 
         xdt = x.dtype
