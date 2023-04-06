@@ -37,6 +37,22 @@ def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
         yield downsampler
 
 
+@pytest.mark.parametrize("downsampler", generate_all_downsamplers())
+def test_serialization(downsampler: AbstractDownsampler):
+    """Test serialization."""
+    from copy import copy, deepcopy
+
+    dc = copy(downsampler)
+    ddc = deepcopy(downsampler)
+
+    arr = np.arange(10_000)
+    orig_downsampled = downsampler.downsample(arr, n_out=100)
+    dc_downsampled = dc.downsample(arr, n_out=100)
+    ddc_downsampled = ddc.downsample(arr, n_out=100)
+    assert np.all(orig_downsampled == dc_downsampled)
+    assert np.all(orig_downsampled == ddc_downsampled)
+
+
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
 def test_rust_downsampler(downsampler: AbstractDownsampler):
     """Test the Rust downsamplers."""

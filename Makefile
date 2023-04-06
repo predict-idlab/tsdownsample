@@ -2,7 +2,7 @@
 black = black tsdownsample tests
 
 install:
-	pip install -e .
+	pip install .
 
 .PHONY: install-dev-requirements
 install-dev-requirements:
