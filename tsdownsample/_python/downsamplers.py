@@ -5,6 +5,29 @@ import numpy as np
 from ..downsampling_interface import AbstractDownsampler
 
 
+def _get_bin_idxs(x: np.ndarray, nb_bins: int) -> np.ndarray:
+    """Get the equidistant indices of the bins to use for the aggregation.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The x values of the input data.
+    nb_bins : int
+        The number of bins.
+
+    Returns
+    -------
+    np.ndarray
+        The indices of the bins to use for the aggregation.
+    """
+    # Thanks to the `linspace` the data is evenly distributed over the index-range
+    # The searchsorted function returns the index positions
+    bins = np.searchsorted(x, np.linspace(x[0], x[-1], nb_bins + 1), side="right")
+    bins[0] = 0
+    bins[-1] = len(x)
+    return np.unique(bins)
+
+
 class LTTB_py(AbstractDownsampler):
     @staticmethod
     def _argmax_area(prev_x, prev_y, avg_next_x, avg_next_y, x_bucket, y_bucket) -> int:
@@ -113,10 +136,7 @@ class MinMax_py(AbstractDownsampler):
         if np.issubdtype(xdt, np.datetime64) or np.issubdtype(xdt, np.timedelta64):
             x = x.view(np.int64)
 
-        # Thanks to the `linspace` the data is evenly distributed over the index-range
-        # The searchsorted function returns the index positions
-        bins = np.searchsorted(x, np.linspace(x[0], x[-1], n_out // 2 + 1))
-        bins[-1] = len(x)
+        bins = _get_bin_idxs(x, n_out // 2)
 
         rel_idxs = []
         for lower, upper in zip(bins, bins[1:]):
@@ -155,11 +175,7 @@ class M4_py(AbstractDownsampler):
         if np.issubdtype(xdt, np.datetime64) or np.issubdtype(xdt, np.timedelta64):
             x = x.view(np.int64)
 
-        # Thanks to the `linspace` the data is evenly distributed over the index-range
-        # The searchsorted function returns the index positions
-        bins = np.searchsorted(x, np.linspace(x[0], x[-1], n_out // 4 + 1))
-        bins[-1] = len(x)
-        bins = np.unique(bins)
+        bins = _get_bin_idxs(x, n_out // 4)
 
         rel_idxs = []
         for lower, upper in zip(bins, bins[1:]):
