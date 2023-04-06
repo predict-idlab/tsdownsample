@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "tsdownsample"
-description = "Extremely fast time series downsampling in Rust"
-version = "0.1.1"
+description = "Time series downsampling in rust"
+version = "0.1.0a6"
 requires-python = ">=3.7"
 dependencies = ["numpy"]
 authors = [{name = "Jeroen Van Der Donckt"}]
@@ -36,6 +36,7 @@ bindings = "pyo3"
 
 # Linting
 [tool.ruff]
+select = ["E", "F", "I"]
 line-length = 88
 extend-select = ["Q"]
 ignore = ["E402", "F403"]
@@ -46,17 +47,6 @@ color = true
 line-length = 88
 skip-string-normalization = true
 skip-magic-trailing-comma = true
-
-# Sort imports
-[tool.isort]
-line_length = 88
-known_first_party = ["tsdownsample"]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
-color_output = true
-skip = "tests/toml_test.py"
 
 # Static typing
 [tool.mypy]

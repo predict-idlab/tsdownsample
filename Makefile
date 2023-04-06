@@ -1,5 +1,4 @@
 .DEFAULT_GOAL := all
-isort = isort tsdownsample tests
 black = black tsdownsample tests
 
 install:
@@ -12,14 +11,13 @@ install-dev-requirements:
 
 .PHONY: format
 format:
-	$(isort)
+	ruff --fix tsdownsample tests
 	$(black)
 	cargo fmt
 
 .PHONY: lint-python
 lint-python:
 	ruff tsdownsample tests
-	$(isort) --check-only --df
 	$(black) --check --diff
 
 .PHONY: lint-rust
