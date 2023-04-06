@@ -97,6 +97,7 @@ class MinMax_py(AbstractDownsampler):
     """Aggregation method which performs binned min-max aggregation over fully
     overlapping windows.
     """
+
     @staticmethod
     def _check_valid_n_out(n_out: int):
         assert n_out % 2 == 0, "n_out must be a multiple of 2"
@@ -133,6 +134,7 @@ class M4_py(AbstractDownsampler):
         visualization w.r.t. the raw data.
 
     """
+
     @staticmethod
     def _check_valid_n_out(n_out: int):
         assert n_out % 4 == 0, "n_out must be a multiple of 4"

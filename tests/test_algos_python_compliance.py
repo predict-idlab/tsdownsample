@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from tsdownsample import LTTBDownsampler, M4Downsampler, MinMaxDownsampler
-from tsdownsample._python.downsamplers import LTTB_py, M4_py, MinMax_py
+from tsdownsample import MinMaxDownsampler
+from tsdownsample._python.downsamplers import MinMax_py
 
 
 @pytest.mark.parametrize(
