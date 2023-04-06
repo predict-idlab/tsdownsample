@@ -63,5 +63,5 @@ class EveryNthDownsampler(AbstractDownsampler):
                 f"x is passed to downsample method of {name}, but is not taken "
                 "into account by the current implementation of the EveryNth algorithm."
             )
-        step = max(1, math.ceil(len(y) / n_out))
-        return np.arange(0, len(y), step)
+        step = max(1, len(y) / n_out)
+        return np.arange(start=0, stop=len(y), step=step).astype('np.int64')
