@@ -1,3 +1,4 @@
+import math
 from typing import Union
 
 import numpy as np
@@ -91,3 +92,79 @@ class LTTB_py(AbstractDownsampler):
             + offset[-2]
         )
         return sampled_x
+
+
+class MinMax_py(AbstractDownsampler):
+    """Aggregation method which performs binned min-max aggregation over fully
+    overlapping windows.
+    """
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        assert n_out % 2 == 0, "n_out must be a multiple of 2"
+
+    def _downsample(
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
+    ) -> np.ndarray:
+        # The block size is 2x the bin size we also perform the ceil-operation
+        block_size = math.ceil(y.shape[0] / n_out * 2)
+
+        # Calculate the offset range which will be added to the argmin and argmax pos
+        offset = np.arange(0, stop=y.shape[0] - block_size, step=block_size)
+
+        # Calculate the argmin & argmax on the reshaped view of `s` &
+        # add the corresponding offset
+        argmin = (
+            y[: block_size * offset.shape[0]].reshape(-1, block_size).argmin(axis=1)
+            + offset
+        )
+        argmax = (
+            y[: block_size * offset.shape[0]].reshape(-1, block_size).argmax(axis=1)
+            + offset
+        )
+        return np.unique(np.concatenate((argmin, argmax, [0, y.shape[0] - 1])))
+
+
+class M4_py(AbstractDownsampler):
+    """Aggregation method which selects the 4 M-s, i.e y-argmin, y-argmax, x-argmin, and
+    x-argmax per bin.
+
+    .. note::
+        When `n_out` is 4 * the canvas its pixel widht it should create a pixel-perfect
+        visualization w.r.t. the raw data.
+
+    """
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        assert n_out % 4 == 0, "n_out must be a multiple of 4"
+
+    def _downsample(
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
+    ) -> np.ndarray:
+        """TODO complete docs"""
+        if x is None:
+            x = np.arange(y.shape[0])
+
+        xdt = x.dtype
+        if np.issubdtype(xdt, np.datetime64) or np.issubdtype(xdt, np.timedelta64):
+            x = x.view(np.int64)
+
+        # Thanks to the `linspace` the data is evenly distributed over the index-range
+        # The searchsorted function returns the index positions
+        bins = np.searchsorted(x, np.linspace(x[0], x[-1], n_out // 4 + 1))
+        bins[-1] = len(x)
+        bins = np.unique(bins)
+
+        rel_idxs = []
+        for lower, upper in zip(bins, bins[1:]):
+            y_slice = y[lower:upper]
+            if not len(y_slice):
+                continue
+
+            # calculate the min(idx), argmin(slice), argmax(slice), max(idx)
+            rel_idxs.append(lower)
+            rel_idxs.append(lower + y_slice.argmin())
+            rel_idxs.append(lower + y_slice.argmax())
+            rel_idxs.append(upper - 1)
+
+        # NOTE: we do not use the np.unique so that all indices are retained
+        return np.array(sorted(rel_idxs))
