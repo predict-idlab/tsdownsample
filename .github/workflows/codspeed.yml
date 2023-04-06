@@ -9,6 +9,11 @@ on:
   # performance analysis in order to generate initial data.
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash
+    working-directory: downsample_rs
+
 jobs:
   Benchmarks:
     runs-on: ubuntu-latest
