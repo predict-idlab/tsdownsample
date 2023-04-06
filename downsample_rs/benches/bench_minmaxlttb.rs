@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate criterion;
-extern crate dev_utils;
-
 use downsample_rs::minmaxlttb as minmaxlttb_mod;
 
 use codspeed_criterion_compat::*;
