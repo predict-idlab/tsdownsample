@@ -1,4 +1,3 @@
 black
 ruff
-isort[colors]
 mypy
