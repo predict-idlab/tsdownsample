@@ -4,7 +4,7 @@ extern crate dev_utils;
 
 use downsample_rs::m4 as m4_mod;
 
-use criterion::{black_box, Criterion};
+use codspeed_criterion_compat::*;
 use dev_utils::{config, utils};
 
 use ndarray::Array1;
