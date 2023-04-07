@@ -1,6 +1,6 @@
 use downsample_rs::lttb as lttb_mod;
 
-use criterion::{black_box, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dev_utils::{config, utils};
 use ndarray::Array1;
 
