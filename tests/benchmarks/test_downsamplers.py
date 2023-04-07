@@ -2,13 +2,14 @@ import numpy as np
 import pytest
 
 from tsdownsample import (
+    EveryNthDownsampler,
     LTTBDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
 )
 
-NB_SAMPLES = ["5,000,000"]  # , "50,000,000"]
+NB_SAMPLES = ["250,000", "2,500,000"]
 N_OUT = ["100", "1,000", "5,000"]
 Y_DTYPES = [np.float32, np.float64] + [np.int32, np.int64]
 
@@ -162,3 +163,22 @@ def test_minmaxlttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
     y = np.random.randn(n_samples).astype(dtype)
 
     benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+
+
+# --------------------------------------------------------------------------- #
+#                             EveryNthDownsampler
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.benchmark(group="everynth")
+@pytest.mark.parametrize("n_samples", NB_SAMPLES)
+@pytest.mark.parametrize("n_out", N_OUT)
+def test_everynth(benchmark, n_samples, n_out):
+    """Test the EveryNthDownsampler."""
+    downsampler = EveryNthDownsampler()
+    n_samples = int(n_samples.replace(",", ""))
+    n_out = int(n_out.replace(",", ""))
+
+    y = np.random.randn(n_samples)
+
+    benchmark(downsampler.downsample, y, n_out=n_out)
