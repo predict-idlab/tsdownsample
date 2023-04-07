@@ -8,7 +8,7 @@ from tsdownsample import (
     MinMaxLTTBDownsampler,
 )
 
-NB_SAMPLES = ["5,000,000", "50,000,000"]
+NB_SAMPLES = ["5,000,000"]  # , "50,000,000"]
 N_OUT = ["100", "1,000", "5,000"]
 Y_DTYPES = [np.float32, np.float64] + [np.int32, np.int64]
 
