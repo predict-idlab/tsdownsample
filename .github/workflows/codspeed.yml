@@ -9,16 +9,15 @@ on:
   # performance analysis in order to generate initial data.
   workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: downsample_rs
-
 jobs:
   Benchmarks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: go to downsample_rs
+        run: cd downsample_rs
 
       - name: Cache cargo registry
         uses: actions/cache@v3
