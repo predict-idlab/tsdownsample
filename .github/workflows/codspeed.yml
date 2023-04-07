@@ -47,6 +47,4 @@ jobs:
       - uses: CodSpeedHQ/action@v1
         name: Run benchmarks
         with:
-          run: |
-            cd downsample_rs
-            cargo codspeed run
+          run: cargo codspeed run
