@@ -13,38 +13,36 @@ jobs:
   Benchmarks:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Cache cargo registry
-        uses: actions/cache@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-stable-${{ hashFiles('Cargo.toml') }}
+          python-version: '3.10'
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: nightly
+          components: clippy, rustfmt
       - name: Setup Rust
         run: |
           rustup update nightly --no-self-update
           rustup default nightly
-      - name: Install cargo-codspeed (with cache)
-        uses: baptiste0928/cargo-install@v1
-        with:
-          crate: cargo-codspeed
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
 
-      - name: Build the benchmark target(s)
-        run: |
-          cd downsample_rs
-          cargo codspeed build
+      - name: install develop version
+        run: make install
 
-      - uses: CodSpeedHQ/action@v1
-        name: Run benchmarks
+      - run: pip install -r tests/requirements.txt
+      - run: pip install pytest-codspeed
+
+      - run: pip freeze
+
+      # this is required so that pytest uses the installed package
+      # - run: rm tests/__init__.py
+
+      - name: Run CodSpeed benchmarks
+        uses: CodSpeedHQ/action@v1
         with:
-          run: cargo codspeed run
+          run: pytest tests/benchmarks/ --codspeed
