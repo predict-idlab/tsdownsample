@@ -7,7 +7,7 @@ use std::cmp;
 #[inline(always)]
 fn f64_to_i64unsigned(v: f64) -> i64 {
     // Transmute to i64 and mask out the sign bit
-    let v: i64 = unsafe { std::mem::transmute::<f64, i64>(v) };
+    let v: i64 = v.to_bits() as i64;
     v & 0x7FFF_FFFF_FFFF_FFFF
 }
 
