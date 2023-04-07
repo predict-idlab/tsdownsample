@@ -1,0 +1,48 @@
+name: CodSpeed Benchmarks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+jobs:
+  Benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: clippy, rustfmt
+      - name: Setup Rust
+        run: |
+          rustup update nightly --no-self-update
+          rustup default nightly
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: install develop version
+        run: make install
+
+      - run: pip install -r tests/requirements.txt
+      - run: pip install pytest-codspeed
+
+      - run: pip freeze
+
+      # this is required so that pytest uses the installed package
+      # - run: rm tests/__init__.py
+
+      - name: Run CodSpeed benchmarks
+        uses: CodSpeedHQ/action@v1
+        with:
+          run: pytest tests/benchmarks/ --codspeed

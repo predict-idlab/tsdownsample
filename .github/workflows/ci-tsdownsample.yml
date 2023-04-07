@@ -73,7 +73,6 @@ jobs:
 
       - name: install develop version
         run: make install
-      # python setup.py develop
         
       - run: pip install -r tests/requirements.txt
 

@@ -1,12 +1,7 @@
-#[macro_use]
-extern crate criterion;
-extern crate dev_utils;
-
 use downsample_rs::minmax as minmax_mod;
 
-use criterion::{black_box, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dev_utils::{config, utils};
-
 use ndarray::Array1;
 
 fn minmax_f32_random_array_long_single_core(c: &mut Criterion) {
