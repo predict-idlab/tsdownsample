@@ -16,9 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: go to downsample_rs
-        run: cd downsample_rs
-
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -43,9 +40,13 @@ jobs:
           crate: cargo-codspeed
 
       - name: Build the benchmark target(s)
-        run: cargo codspeed build
+        run: |
+          cd downsample_rs
+          cargo codspeed build
 
       - uses: CodSpeedHQ/action@v1
         name: Run benchmarks
         with:
-          run: cargo codspeed run
+          run: |
+            cd downsample_rs
+            cargo codspeed run
