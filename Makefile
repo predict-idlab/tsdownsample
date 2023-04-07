@@ -2,7 +2,7 @@
 black = black tsdownsample tests
 
 install:
-	pip install -e .
+	pip install .
 
 .PHONY: install-dev-requirements
 install-dev-requirements:
@@ -37,7 +37,11 @@ mypy:
 
 .PHONY: test
 test:
-	pytest --cov=tsdownsample --cov-report=term-missing --cov-report=html --cov-report=xml
+	pytest --benchmark-skip --cov=tsdownsample --cov-report=term-missing --cov-report=html --cov-report=xml
+
+.PHONY: bench
+bench:
+	pytest --benchmark-only --benchmark-max-time=5
 
 
 .PHONY: all

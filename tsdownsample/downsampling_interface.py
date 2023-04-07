@@ -5,6 +5,7 @@ __author__ = "Jeroen Van Der Donckt"
 import re
 import warnings
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from types import ModuleType
 from typing import Callable, List, Optional, Tuple, Union
 
@@ -326,3 +327,16 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
     ):
         """Downsample the data in x and y."""
         return super().downsample(*args, n_out=n_out, parallel=parallel, **kwargs)
+
+    def __deepcopy__(self, memo):
+        """Deepcopy the object."""
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k.endswith("_mod") or k.startswith("mod_"):
+                # Don't (deep)copy the compiled modules
+                setattr(result, k, v)
+            else:
+                setattr(result, k, deepcopy(v, memo))
+        return result
