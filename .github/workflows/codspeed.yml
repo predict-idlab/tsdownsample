@@ -11,7 +11,6 @@ on:
 
 defaults:
   run:
-    shell: bash
     working-directory: downsample_rs
 
 jobs:
