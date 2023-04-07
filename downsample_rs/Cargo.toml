@@ -16,7 +16,6 @@ num-traits = { version = "0.2.15", default-features = false }
 rayon = { version = "1.6.0", default-features = false }
 
 [dev-dependencies]
-codspeed-criterion-compat = "1.1"
 criterion = "0.4.0"
 dev_utils = { path = "dev_utils" }
 

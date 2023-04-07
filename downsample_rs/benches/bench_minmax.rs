@@ -1,6 +1,6 @@
 use downsample_rs::minmax as minmax_mod;
 
-use codspeed_criterion_compat::*;
+use criterion::{black_box, Criterion};
 use dev_utils::{config, utils};
 use ndarray::Array1;
 
