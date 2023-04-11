@@ -85,7 +85,6 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         let (min_index, max_index) = f_argminmax(unsafe {
             ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
         });
-        // let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
 
         // Add the indexes in sorted order
         if min_index < max_index {

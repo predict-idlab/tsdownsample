@@ -88,7 +88,9 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         };
         let end_idx = (block_size * (i + 1) as f64) as usize + 1;
 
-        let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
+        let (min_index, max_index) = f_argminmax(unsafe {
+            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
+        });
 
         sampled_index[0] = start_idx;
         // Add the indexes in sorted order
