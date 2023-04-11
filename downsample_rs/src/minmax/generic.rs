@@ -17,7 +17,9 @@ pub(crate) fn min_max_generic<T: Copy>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
+    // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
+    let arr_ptr = arr.as_ptr();
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
@@ -34,7 +36,10 @@ pub(crate) fn min_max_generic<T: Copy>(
         // as multiplication seems to be less prone to rounding errors.
         // let end: f64 = block_size * (i + 1) as f64;
         let end_idx: usize = end as usize + 1;
-        let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
+        let (min_index, max_index) = f_argminmax(unsafe {
+            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr_ptr.add(start_idx))
+        });
+        // let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
 
         // Add the indexes in sorted order
         if min_index < max_index {
@@ -62,6 +67,7 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
+    // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
 
     // Store the enumerated indexes in the output array

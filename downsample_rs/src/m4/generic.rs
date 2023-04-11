@@ -23,6 +23,7 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
+    // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 4) as f64;
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
@@ -69,6 +70,7 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
+    // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 4) as f64;
 
     // Store the enumerated indexes in the output array
