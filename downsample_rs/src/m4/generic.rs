@@ -38,7 +38,7 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
         // Decided to use multiplication instead of adding to the accumulator (end)
         // as multiplication seems to be less prone to rounding errors.
         let end: f64 = block_size * (i + 1) as f64;
-        let end_idx: usize = end.floor() as usize + 1;
+        let end_idx: usize = end as usize + 1;
         let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
 
         // Add the indexes in sorted order
@@ -79,9 +79,9 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         let start_idx = if i == 0 {
             0
         } else {
-            (block_size * i as f64).floor() as usize + 1
+            (block_size * i as f64) as usize + 1
         };
-        let end_idx = (block_size * (i + 1) as f64).floor() as usize + 1;
+        let end_idx = (block_size * (i + 1) as f64) as usize + 1;
 
         let (min_index, max_index) = f_argminmax(arr.slice(s![start_idx..end_idx]));
 
