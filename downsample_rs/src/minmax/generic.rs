@@ -69,31 +69,53 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
 
-    // Store the enumerated indexes in the output array
-    let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
+    // // Store the enumerated indexes in the output array
+    // let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
 
-    // TODO: comply with the implementation above
-    Zip::from(sampled_indices.exact_chunks_mut(2)).par_for_each(|mut sampled_index| {
-        let i: usize = unsafe { *sampled_index.uget(0) >> 1 };
-        let mut start_idx: usize = (block_size * i as f64) as usize;
-        start_idx += (i != 0) as usize; // add 1 if i > 0 (otherwise start_idx = 0)
-        let end_idx = (block_size * (i + 1) as f64) as usize + 1;
+    // Zip::from(sampled_indices.exact_chunks_mut(2)).par_for_each(|mut sampled_index| {
+    //     let i: usize = unsafe { *sampled_index.uget(0) >> 1 };
+    //     let mut start_idx: usize = (block_size * i as f64) as usize;
+    //     start_idx += (i != 0) as usize; // add 1 if i > 0 (otherwise start_idx = 0)
+    //     let end_idx = (block_size * (i + 1) as f64) as usize + 1;
 
-        let (min_index, max_index) = f_argminmax(unsafe {
-            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
-        });
+    //     let (min_index, max_index) = f_argminmax(unsafe {
+    //         ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
+    //     });
 
-        // Add the indexes in sorted order
-        if min_index < max_index {
-            sampled_index[0] = min_index + start_idx;
-            sampled_index[1] = max_index + start_idx;
-        } else {
-            sampled_index[0] = max_index + start_idx;
-            sampled_index[1] = min_index + start_idx;
-        }
-    });
+    //     // Add the indexes in sorted order
+    //     if min_index < max_index {
+    //         sampled_index[0] = min_index + start_idx;
+    //         sampled_index[1] = max_index + start_idx;
+    //     } else {
+    //         sampled_index[0] = max_index + start_idx;
+    //         sampled_index[1] = min_index + start_idx;
+    //     }
+    // });
 
-    sampled_indices
+    // sampled_indices
+
+    Array1::from_iter(
+        (0..n_out / 2)
+            .into_par_iter()
+            .map(|i| {
+                let mut start_idx: usize = (block_size * i as f64) as usize;
+                start_idx += (i != 0) as usize; // add 1 if i > 0 (otherwise start_idx = 0)
+                let end_idx = (block_size * (i + 1) as f64) as usize + 1;
+
+                let (min_index, max_index) = f_argminmax(unsafe {
+                    ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
+                });
+
+                // Add the indexes in sorted order
+                if min_index < max_index {
+                    [min_index + start_idx, max_index + start_idx]
+                } else {
+                    [max_index + start_idx, min_index + start_idx]
+                }
+            })
+            .flatten()
+            .collect::<Vec<usize>>(),
+    )
 }
 
 // --------------------- WITH X
