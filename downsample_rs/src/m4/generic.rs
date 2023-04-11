@@ -1,5 +1,5 @@
 use ndarray::Zip;
-use ndarray::{s, Array1, ArrayView1};
+use ndarray::{Array1, ArrayView1};
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
