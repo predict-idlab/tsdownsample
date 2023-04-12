@@ -77,7 +77,7 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     Zip::from(sampled_indices.exact_chunks_mut(4)).par_for_each(|mut sampled_index| {
         let i: f64 = unsafe { *sampled_index.uget(0) >> 2 } as f64;
         let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
-        let end_idx: usize = (block_size * (i + 1.0) as f64) as usize + 1;
+        let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
 
         let (min_index, max_index) = f_argminmax(unsafe {
             ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))

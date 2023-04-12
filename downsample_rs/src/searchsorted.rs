@@ -9,6 +9,12 @@ use num_traits::{AsPrimitive, FromPrimitive};
 
 // ---------------------- Binary search ----------------------
 
+/// Binary search for the index position of the given value in the given array.
+/// The array must be sorted in ascending order and contain no duplicates.
+///
+/// Complies with the Python bisect function
+/// https://docs.python.org/3/library/bisect.html#bisect.bisect
+///
 // #[inline(always)]
 fn binary_search<T: Copy + PartialOrd>(
     arr: ArrayView1<T>,
@@ -19,7 +25,7 @@ fn binary_search<T: Copy + PartialOrd>(
     let mut size: usize = right - left;
     let mut left: usize = left;
     let mut right: usize = right;
-    // Return the index where the value is <= arr[index] and arr[index+1] < value
+    // Return the index where the value is >= arr[index] and arr[index-1] < value
     while left < right {
         let mid = left + size / 2;
         if arr[mid] < value {
@@ -36,6 +42,14 @@ fn binary_search<T: Copy + PartialOrd>(
     }
 }
 
+/// Binary search for the index position of the given value in the given array.
+/// The array must be sorted in ascending order and contain no duplicates.
+///
+/// The mid index is pre-guessed to speed up the search.
+///
+/// Complies with the Python bisect function
+/// https://docs.python.org/3/library/bisect.html#bisect.bisect
+///
 // #[inline(always)]
 fn binary_search_with_mid<T: Copy + PartialOrd>(
     arr: ArrayView1<T>,
