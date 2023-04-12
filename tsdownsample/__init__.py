@@ -8,7 +8,7 @@ from .downsamplers import (
     MinMaxLTTBDownsampler,
 )
 
-__version__ = "0.1.1"
+__version__ = "0.1.2a0"
 __author__ = "Jeroen Van Der Donckt"
 
 __all__ = [
