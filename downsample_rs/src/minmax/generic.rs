@@ -1,5 +1,5 @@
 use ndarray::Zip;
-use ndarray::{s, Array1, ArrayView1};
+use ndarray::{Array1, ArrayView1};
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
@@ -17,29 +17,34 @@ pub(crate) fn min_max_generic<T: Copy>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
-    let block_size = arr.len() as f64 / (n_out as f64) * 2.0;
-    let block_size = block_size.floor() as usize;
+    // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
+    let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
+    let arr_ptr = arr.as_ptr();
 
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
-    let mut i: usize = 0; // TODO: for some reason is this faster than enumerate
-    arr.slice(s![..block_size * n_out / 2])
-        .exact_chunks(block_size)
-        .into_iter()
-        .for_each(|step| {
-            let (min_index, max_index) = f_argminmax(step);
-            let offset = block_size * i;
+    let mut start_idx: usize = 0;
+    for i in 0..n_out / 2 {
+        // Decided to use multiplication instead of adding to the accumulator (end)
+        // as multiplication seems to be less prone to rounding errors.
+        let end: f64 = block_size * (i + 1) as f64;
+        let end_idx: usize = end as usize + 1;
 
-            // Add the indexes in sorted order
-            if min_index < max_index {
-                sampled_indices[2 * i] = min_index + offset;
-                sampled_indices[2 * i + 1] = max_index + offset;
-            } else {
-                sampled_indices[2 * i] = max_index + offset;
-                sampled_indices[2 * i + 1] = min_index + offset;
-            }
-            i += 1;
+        let (min_index, max_index) = f_argminmax(unsafe {
+            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr_ptr.add(start_idx))
         });
+
+        // Add the indexes in sorted order
+        if min_index < max_index {
+            sampled_indices[2 * i] = min_index + start_idx;
+            sampled_indices[2 * i + 1] = max_index + start_idx;
+        } else {
+            sampled_indices[2 * i] = max_index + start_idx;
+            sampled_indices[2 * i + 1] = min_index + start_idx;
+        }
+
+        start_idx = end_idx;
+    }
 
     sampled_indices
 }
@@ -55,28 +60,28 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
     }
 
-    let block_size = arr.len() as f64 / (n_out as f64) * 2.0;
-    let block_size = block_size.floor() as usize;
+    // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
+    let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
 
     // Store the enumerated indexes in the output array
     let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
 
-    Zip::from(
-        arr.slice(s![..block_size * n_out / 2])
-            .exact_chunks(block_size),
-    )
-    .and(sampled_indices.exact_chunks_mut(2))
-    .par_for_each(|step, mut sampled_index| {
-        let (min_index, max_index) = f_argminmax(step);
+    Zip::from(sampled_indices.exact_chunks_mut(2)).par_for_each(|mut sampled_index| {
+        let i: f64 = unsafe { *sampled_index.uget(0) >> 1 } as f64;
+        let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
+        let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
+
+        let (min_index, max_index) = f_argminmax(unsafe {
+            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
+        });
 
         // Add the indexes in sorted order
-        let offset = block_size * unsafe { *sampled_index.uget(0) >> 1 };
         if min_index < max_index {
-            sampled_index[0] = min_index + offset;
-            sampled_index[1] = max_index + offset;
+            sampled_index[0] = min_index + start_idx;
+            sampled_index[1] = max_index + start_idx;
         } else {
-            sampled_index[0] = max_index + offset;
-            sampled_index[1] = min_index + offset;
+            sampled_index[0] = max_index + start_idx;
+            sampled_index[1] = min_index + start_idx;
         }
     });
 

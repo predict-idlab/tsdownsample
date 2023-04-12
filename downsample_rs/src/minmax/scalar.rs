@@ -131,9 +131,9 @@ mod tests {
 
     #[test]
     fn test_min_max_scalar_with_x_correct() {
-        let x = (0..101).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
         let x = Array1::from(x);
-        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
         let sampled_indices = min_max_scalar_with_x(x.view(), arr.view(), 10);
@@ -151,9 +151,9 @@ mod tests {
 
     #[test]
     fn test_min_max_scalar_with_x_parallel_correct() {
-        let x = (0..101).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
         let x = Array1::from(x);
-        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
         let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10);
@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn test_min_max_scalar_with_x_gap() {
         // We will create a gap in the middle of the array
-        let x = (0..101).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
 
         // Increment the second half of the array by 50
         let x = x
@@ -180,7 +180,7 @@ mod tests {
             .map(|x| if *x > 50 { *x + 50 } else { *x })
             .collect::<Vec<i32>>();
         let x = Array1::from(x);
-        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
         let sampled_indices = min_max_scalar_with_x(x.view(), arr.view(), 10);
@@ -204,7 +204,7 @@ mod tests {
     #[test]
     fn test_min_max_scalar_with_x_parallel_gap() {
         // Create a gap in the middle of the array
-        let x = (0..101).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
 
         // Increment the second half of the array by 50
         let x = x
@@ -212,7 +212,7 @@ mod tests {
             .map(|x| if *x > 50 { *x + 50 } else { *x })
             .collect::<Vec<i32>>();
         let x = Array1::from(x);
-        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
         let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10);
@@ -225,7 +225,6 @@ mod tests {
             .iter()
             .map(|x| if *x > 101 { *x + 50 } else { *x })
             .collect::<Vec<i32>>();
-        println!("{:?}", x);
         let x = Array1::from(x);
 
         let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10);
@@ -236,12 +235,13 @@ mod tests {
 
     #[test]
     fn test_many_random_runs_same_output() {
-        let n: usize = 20_001;
-        let n_out = 200;
+        let n: usize = 20_003;
+        let n_out = 202;
         let x = (0..n as i32).collect::<Vec<i32>>();
         let x = Array1::from(x);
         for _ in 0..100 {
-            let arr = get_array_f32(n);
+            let mut arr = get_array_f32(n);
+            arr[n - 1] = f32::INFINITY; // Make sure the last value is always the max
             let idxs1 = min_max_scalar_without_x(arr.view(), n_out);
             let idxs2 = min_max_scalar_without_x_parallel(arr.view(), n_out);
             let idxs3 = min_max_scalar_with_x(x.view(), arr.view(), n_out);

@@ -98,7 +98,7 @@ mod tests {
         let sampled_indices = m4_scalar_without_x(arr.view(), 12);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 0, 32, 32, 33, 33, 65, 65, 66, 66, 98, 98];
+        let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
@@ -116,7 +116,7 @@ mod tests {
         let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 0, 32, 32, 33, 33, 65, 65, 66, 66, 98, 98];
+        let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
@@ -136,7 +136,7 @@ mod tests {
         let sampled_indices = m4_scalar_with_x(x.view(), arr.view(), 12);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 0, 32, 32, 33, 33, 65, 65, 66, 66, 98, 98];
+        let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
@@ -156,7 +156,7 @@ mod tests {
         let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 12);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
-        let expected_indices = vec![0, 0, 32, 32, 33, 33, 65, 65, 66, 66, 98, 98];
+        let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn test_m4_scalar_with_x_gap() {
         // We will create a gap in the middle of the array
-        let x = (0..101).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
 
         // Increment the second half of the array by 50
         let x = x
@@ -177,7 +177,7 @@ mod tests {
             .map(|x| if *x > 50 { *x + 50 } else { *x })
             .collect::<Vec<i32>>();
         let x = Array1::from(x);
-        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
         let sampled_indices = m4_scalar_with_x(x.view(), arr.view(), 20);
@@ -195,14 +195,15 @@ mod tests {
         let sampled_indices = m4_scalar_with_x(x.view(), arr.view(), 20);
         assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
         let expected_indices = vec![
-            0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99, 100,
+            0, 0, 39, 39, 40, 40, 50, 50, 51, 52, 52, 59, 59, 60, 60, 99, 99,
         ];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
     }
 
     #[test]
     fn test_m4_scalar_with_x_gap_parallel() {
         // We will create a gap in the middle of the array
-        let x = (0..101).collect::<Vec<i32>>();
+        let x = (0..100).collect::<Vec<i32>>();
 
         // Increment the second half of the array by 50
         let x = x
@@ -210,7 +211,7 @@ mod tests {
             .map(|x| if *x > 50 { *x + 50 } else { *x })
             .collect::<Vec<i32>>();
         let x = Array1::from(x);
-        let arr = (0..101).map(|x| x as f32).collect::<Vec<f32>>();
+        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
         let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 20);
@@ -228,21 +229,23 @@ mod tests {
         let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 20);
         assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
         let expected_indices = vec![
-            0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99, 100,
+            0, 0, 39, 39, 40, 40, 50, 50, 51, 52, 52, 59, 59, 60, 60, 99, 99,
         ];
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
     }
 
     #[test]
     fn test_many_random_runs_correct() {
-        let n: usize = 20_001; // not 20_000 because then the last bin is not "full"
+        let n: usize = 20_003;
+        let n_out: usize = 204;
         let x = (0..n as i32).collect::<Vec<i32>>();
         let x = Array1::from(x);
         for _ in 0..100 {
             let arr = get_array_f32(n);
-            let idxs1 = m4_scalar_without_x(arr.view(), 100);
-            let idxs2 = m4_scalar_without_x_parallel(arr.view(), 100);
-            let idxs3 = m4_scalar_with_x(x.view(), arr.view(), 100);
-            let idxs4 = m4_scalar_with_x_parallel(x.view(), arr.view(), 100);
+            let idxs1 = m4_scalar_without_x(arr.view(), n_out);
+            let idxs2 = m4_scalar_without_x_parallel(arr.view(), n_out);
+            let idxs3 = m4_scalar_with_x(x.view(), arr.view(), n_out);
+            let idxs4 = m4_scalar_with_x_parallel(x.view(), arr.view(), n_out);
             assert_eq!(idxs1, idxs2);
             assert_eq!(idxs1, idxs3);
             assert_eq!(idxs1, idxs4);
