@@ -74,9 +74,9 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 
     Zip::from(sampled_indices.exact_chunks_mut(2)).par_for_each(|mut sampled_index| {
         let i: usize = unsafe { *sampled_index.uget(0) >> 1 };
-        let mut start_idx: usize = (block_size * i as f64) as usize;
-        start_idx += (i != 0) as usize; // add 1 if i > 0 (otherwise start_idx = 0)
-        let end_idx = (block_size * (i + 1) as f64) as usize + 1;
+        let block_offset: f64 = block_size * i as f64;
+        let start_idx: usize = block_offset as usize + (i > 0) as usize;
+        let end_idx = (block_offset + block_size) as usize + 1;
 
         let (min_index, max_index) = f_argminmax(unsafe {
             ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
