@@ -24,18 +24,12 @@ pub(crate) fn min_max_generic<T: Copy>(
     let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
 
     let mut start_idx: usize = 0;
-    let mut end: f64 = 0.0;
     for i in 0..n_out / 2 {
-        end += block_size;
-        // if i == n_out / 2 -1 {
-        if end.fract() > 1.0 - 1.0 / (n_out as f64) {
-            // Is necessary to avoid rounding errors
-            end = end.ceil();
-        }
         // Decided to use multiplication instead of adding to the accumulator (end)
         // as multiplication seems to be less prone to rounding errors.
-        // let end: f64 = block_size * (i + 1) as f64;
+        let end: f64 = block_size * (i + 1) as f64;
         let end_idx: usize = end as usize + 1;
+
         let (min_index, max_index) = f_argminmax(unsafe {
             ArrayView1::from_shape_ptr((end_idx - start_idx,), arr_ptr.add(start_idx))
         });
