@@ -22,6 +22,14 @@ and then set it as the default toolchain with:
 rustup default nightly
 ```
 
+### Installing (locally)
+
+To install the package locally, run the following command in the root directory of the project:
+
+```bash
+make install
+```
+
 ### tsdownsample
 
 The structure of the tsdownsample project is as follows:
