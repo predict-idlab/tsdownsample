@@ -21,8 +21,11 @@ where
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
-        let mut index: Array1<usize> =
-            f_minmax(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio);
+        let mut index: Array1<usize> = f_minmax(
+            unsafe { ArrayView1::from_shape_ptr(x.len() - 2, x.as_ptr().add(1)) },
+            unsafe { ArrayView1::from_shape_ptr(y.len() - 2, y.as_ptr().add(1)) },
+            n_out * minmax_ratio,
+        );
         // inplace + 1
         index.mapv_inplace(|i| i + 1);
         let mut index: Vec<usize> = index.into_raw_vec();
