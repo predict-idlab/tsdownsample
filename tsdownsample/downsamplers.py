@@ -63,4 +63,4 @@ class EveryNthDownsampler(AbstractDownsampler):
                 "into account by the current implementation of the EveryNth algorithm."
             )
         step = max(1, len(y) / n_out)
-        return np.arange(start=0, stop=len(y), step=step).astype(np.uint)
+        return np.arange(start=0, stop=len(y) - .1, step=step).astype(np.uint)
