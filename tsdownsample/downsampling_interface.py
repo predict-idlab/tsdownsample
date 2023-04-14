@@ -143,24 +143,28 @@ _y_rust_dtypes = _rust_dtypes + ["float16", "int8", "uint8", "bool"]
 class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
-    def __init__(self, resampling_mod: ModuleType):
-        super().__init__(_rust_dtypes, _y_rust_dtypes)  # same for x and y
-        self.rust_mod = resampling_mod
+    @property
+    def rust_mod(self):
+        raise NotImplementedError
 
-        # Store the single core sub module
-        self.mod_single_core = self.rust_mod.scalar
+    @property
+    def mod_single_core(self):
         if hasattr(self.rust_mod, "simd"):
             # use SIMD implementation if available
-            self.mod_single_core = self.rust_mod.simd
+            return self.rust_mod.simd
+        return self.rust_mod.scalar
 
-        # Store the multi-core sub module (if present)
-        self.mod_multi_core = None  # no multi-core implementation (default)
+    @property
+    def mod_multi_core(self):
         if hasattr(self.rust_mod, "simd_parallel"):
             # use SIMD implementation if available
-            self.mod_multi_core = self.rust_mod.simd_parallel
+            return self.rust_mod.simd_parallel
         elif hasattr(self.rust_mod, "scalar_parallel"):
             # use scalar implementation if available (when no SIMD available)
-            self.mod_multi_core = self.rust_mod.scalar_parallel
+            return self.rust_mod.scalar_parallel
+
+    def __init__(self):
+        super().__init__(_rust_dtypes, _y_rust_dtypes)  # same for x and y
 
     @staticmethod
     def _switch_mod_with_y(
