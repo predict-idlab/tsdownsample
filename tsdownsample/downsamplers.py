@@ -10,8 +10,9 @@ from .downsampling_interface import AbstractDownsampler, AbstractRustDownsampler
 
 
 class MinMaxDownsampler(AbstractRustDownsampler):
-    def __init__(self) -> None:
-        super().__init__(_tsdownsample_rs.minmax)
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.minmax
 
     @staticmethod
     def _check_valid_n_out(n_out: int):
@@ -21,8 +22,9 @@ class MinMaxDownsampler(AbstractRustDownsampler):
 
 
 class M4Downsampler(AbstractRustDownsampler):
-    def __init__(self):
-        super().__init__(_tsdownsample_rs.m4)
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.m4
 
     @staticmethod
     def _check_valid_n_out(n_out: int):
@@ -32,13 +34,15 @@ class M4Downsampler(AbstractRustDownsampler):
 
 
 class LTTBDownsampler(AbstractRustDownsampler):
-    def __init__(self):
-        super().__init__(_tsdownsample_rs.lttb)
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.lttb
 
 
 class MinMaxLTTBDownsampler(AbstractRustDownsampler):
-    def __init__(self):
-        super().__init__(_tsdownsample_rs.minmaxlttb)
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.minmaxlttb
 
     def downsample(
         self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False, **_
@@ -63,4 +67,4 @@ class EveryNthDownsampler(AbstractDownsampler):
                 "into account by the current implementation of the EveryNth algorithm."
             )
         step = max(1, len(y) / n_out)
-        return np.arange(start=0, stop=len(y), step=step).astype(np.uint)
+        return np.arange(start=0, stop=len(y) - 0.1, step=step).astype(np.uint)
