@@ -183,6 +183,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         elif hasattr(self.rust_mod, "scalar_parallel"):
             # use scalar implementation if available (when no SIMD available)
             return self.rust_mod.scalar_parallel
+        return None  # no parallel compiled module available
 
     @staticmethod
     def _switch_mod_with_y(
