@@ -38,7 +38,7 @@ def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
 
 
 @pytest.mark.parametrize("downsampler", generate_all_downsamplers())
-def test_serialization(downsampler: AbstractDownsampler):
+def test_serialization_copy(downsampler: AbstractDownsampler):
     """Test serialization."""
     from copy import copy, deepcopy
 
@@ -51,6 +51,19 @@ def test_serialization(downsampler: AbstractDownsampler):
     ddc_downsampled = ddc.downsample(arr, n_out=100)
     assert np.all(orig_downsampled == dc_downsampled)
     assert np.all(orig_downsampled == ddc_downsampled)
+
+
+@pytest.mark.parametrize("downsampler", generate_all_downsamplers())
+def test_serialization_pickle(downsampler: AbstractDownsampler):
+    """Test serialization."""
+    import pickle
+
+    dc = pickle.loads(pickle.dumps(downsampler))
+
+    arr = np.arange(10_000)
+    orig_downsampled = downsampler.downsample(arr, n_out=100)
+    dc_downsampled = dc.downsample(arr, n_out=100)
+    assert np.all(orig_downsampled == dc_downsampled)
 
 
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
