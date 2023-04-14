@@ -143,28 +143,46 @@ _y_rust_dtypes = _rust_dtypes + ["float16", "int8", "uint8", "bool"]
 class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
+    def __init__(self):
+        super().__init__(_rust_dtypes, _y_rust_dtypes)  # same for x and y
+
     @property
-    def rust_mod(self):
+    def rust_mod(self) -> ModuleType:
+        """The compiled Rust module for the current downsampler."""
         raise NotImplementedError
 
     @property
-    def mod_single_core(self):
+    def mod_single_core(self) -> ModuleType:
+        """Get the single-core Rust module.
+
+        Returns
+        -------
+        ModuleType
+            If SIMD compiled module is available, that one is returned. Otherwise, the
+            scalar compiled module is returned.
+        """
         if hasattr(self.rust_mod, "simd"):
             # use SIMD implementation if available
             return self.rust_mod.simd
         return self.rust_mod.scalar
 
     @property
-    def mod_multi_core(self):
+    def mod_multi_core(self) -> Union[ModuleType, None]:
+        """Get the multi-core Rust module.
+
+        Returns
+        -------
+        ModuleType or None
+            If SIMD parallel compiled module is available, that one is returned.
+            Otherwise, the scalar parallel compiled module is returned.
+            If no parallel compiled module is available, None is returned.
+        """
         if hasattr(self.rust_mod, "simd_parallel"):
             # use SIMD implementation if available
             return self.rust_mod.simd_parallel
         elif hasattr(self.rust_mod, "scalar_parallel"):
             # use scalar implementation if available (when no SIMD available)
             return self.rust_mod.scalar_parallel
-
-    def __init__(self):
-        super().__init__(_rust_dtypes, _y_rust_dtypes)  # same for x and y
 
     @staticmethod
     def _switch_mod_with_y(
