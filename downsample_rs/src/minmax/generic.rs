@@ -21,30 +21,27 @@ pub(crate) fn min_max_generic<T: Copy>(
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
     let arr_ptr = arr.as_ptr();
 
-    let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
+    // Store the enumerated indexes in the output array
+    let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
 
-    let mut start_idx: usize = 0;
-    for i in 0..n_out / 2 {
-        // Decided to use multiplication instead of adding to the accumulator (end)
-        // as multiplication seems to be less prone to rounding errors.
-        let end: f64 = block_size * (i + 1) as f64;
-        let end_idx: usize = end as usize + 1;
+    Zip::from(sampled_indices.exact_chunks_mut(2)).for_each(|mut sampled_index| {
+        let i: f64 = unsafe { *sampled_index.uget(0) >> 1 } as f64;
+        let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
+        let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
 
         let (min_index, max_index) = f_argminmax(unsafe {
-            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr_ptr.add(start_idx))
+            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
         });
 
         // Add the indexes in sorted order
         if min_index < max_index {
-            sampled_indices[2 * i] = min_index + start_idx;
-            sampled_indices[2 * i + 1] = max_index + start_idx;
+            sampled_index[0] = min_index + start_idx;
+            sampled_index[1] = max_index + start_idx;
         } else {
-            sampled_indices[2 * i] = max_index + start_idx;
-            sampled_indices[2 * i + 1] = min_index + start_idx;
+            sampled_index[0] = max_index + start_idx;
+            sampled_index[1] = min_index + start_idx;
         }
-
-        start_idx = end_idx;
-    }
+    });
 
     sampled_indices
 }
