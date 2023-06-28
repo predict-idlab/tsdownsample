@@ -1,0 +1,3 @@
+tsdownsample
+numpy
+pandas
