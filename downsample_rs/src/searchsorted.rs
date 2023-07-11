@@ -294,17 +294,15 @@ mod tests {
         // assert_eq!(binary_search_with_mid(arr.view(), 11, 0, arr.len() - 1, 9), 10);
     }
 
-    // use half of the available threads for testing purposes
-    const HALF_N_THREADS: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
-
     #[test]
     fn test_get_equidistant_bin_idxs() {
         let arr = Array1::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
         let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), 3);
         let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
+        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
         assert_eq!(bin_idxs, vec![0, 4, 7]);
         let bin_idxs_iter =
-            get_equidistant_bin_idx_iterator_parallel(arr.view(), 3, HALF_N_THREADS);
+            get_equidistant_bin_idx_iterator_parallel(arr.view(), 3, half_n_threads);
         let bin_idxs = bin_idxs_iter
             .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
             .flatten()
@@ -316,6 +314,7 @@ mod tests {
     fn test_many_random_same_result() {
         let n = 5_000;
         let nb_bins = 100;
+        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
         for _ in 0..100 {
             let arr = get_random_array::<i32>(n, i32::MIN, i32::MAX);
             // Sort the array
@@ -326,7 +325,7 @@ mod tests {
             let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), nb_bins);
             let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
             let bin_idxs_iter =
-                get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins, HALF_N_THREADS);
+                get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins, half_n_threads);
             let bin_idxs_parallel = bin_idxs_iter
                 .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
                 .flatten()

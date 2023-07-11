@@ -110,14 +110,14 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::thread::available_parallelism;
+
     use super::{minmaxlttb_simd_with_x, minmaxlttb_simd_without_x};
     use super::{minmaxlttb_simd_with_x_parallel, minmaxlttb_simd_without_x_parallel};
     use ndarray::{array, Array1};
 
     extern crate dev_utils;
     use dev_utils::utils;
-
-    const HALF_N_THREADS: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
 
     fn get_array_f32(n: usize) -> Array1<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
@@ -142,25 +142,28 @@ mod tests {
     fn test_minmaxlttb_with_x_parallel() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
         let sampled_indices =
-            minmaxlttb_simd_with_x_parallel(x.view(), y.view(), 4, 2, HALF_N_THREADS);
+            minmaxlttb_simd_with_x_parallel(x.view(), y.view(), 4, 2, half_n_threads);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
     #[test]
     fn test_minmaxlttb_without_x_parallel() {
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = minmaxlttb_simd_without_x_parallel(y.view(), 4, 2, HALF_N_THREADS);
+        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
+        let sampled_indices = minmaxlttb_simd_without_x_parallel(y.view(), 4, 2, half_n_threads);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
     #[test]
     fn test_many_random_runs_same_output() {
         let n = 20_000;
+        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
         for _ in 0..100 {
             let arr = get_array_f32(n);
             let idxs1 = minmaxlttb_simd_without_x(arr.view(), 100, 5);
-            let idxs2 = minmaxlttb_simd_without_x_parallel(arr.view(), 100, 5, HALF_N_THREADS);
+            let idxs2 = minmaxlttb_simd_without_x_parallel(arr.view(), 100, 5, half_n_threads);
             assert_eq!(idxs1, idxs2);
         }
     }
