@@ -303,11 +303,12 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         x: Union[np.ndarray, None],
         y: np.ndarray,
         n_out: int,
-        parallel: bool = False,
+        n_threads: int = 1,
         **kwargs,
     ) -> np.ndarray:
         """Downsample the data in x and y."""
         mod = self.mod_single_core
+        parallel = n_threads > 1
         if parallel:
             if self.mod_multi_core is None:
                 name = self.__class__.__name__
@@ -345,10 +346,11 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         self,
         *args,  # x and y are optional
         n_out: int,
-        parallel: bool = False,
+        n_threads: int = 1,
         **kwargs,
     ):
         """Downsample the data in x and y."""
+        parallel = n_threads > 1
         return super().downsample(*args, n_out=n_out, parallel=parallel, **kwargs)
 
     def __deepcopy__(self, memo):
