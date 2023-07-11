@@ -1,7 +1,9 @@
 use super::super::helpers::Average;
 use super::super::minmax;
 use super::super::types::Num;
-use super::generic::{minmaxlttb_generic, minmaxlttb_generic_without_x};
+use super::generic::{
+    minmaxlttb_generic, minmaxlttb_generic_without_x, MinMaxFunctionWithX, MinMaxFunctionWithoutX,
+};
 use ndarray::{Array1, ArrayView1};
 use num_traits::{AsPrimitive, FromPrimitive};
 
@@ -25,7 +27,14 @@ where
     SCALAR: ScalarArgMinMax<Ty>,
     for<'a> ArrayView1<'a, Ty>: Average,
 {
-    minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_scalar_with_x)
+    minmaxlttb_generic(
+        x,
+        y,
+        n_out,
+        minmax_ratio,
+        None,
+        MinMaxFunctionWithX::Serial(minmax::min_max_scalar_with_x),
+    )
 }
 
 // ----------- WITHOUT X
@@ -39,7 +48,13 @@ where
     SCALAR: ScalarArgMinMax<Ty>,
     for<'a> ArrayView1<'a, Ty>: Average,
 {
-    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_scalar_without_x)
+    minmaxlttb_generic_without_x(
+        y,
+        n_out,
+        minmax_ratio,
+        None,
+        MinMaxFunctionWithoutX::Serial(minmax::min_max_scalar_without_x),
+    )
 }
 
 // ------------------------------------- PARALLEL --------------------------------------
@@ -54,6 +69,7 @@ pub fn minmaxlttb_scalar_with_x_parallel<
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
+    n_threads: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -64,7 +80,8 @@ where
         y,
         n_out,
         minmax_ratio,
-        minmax::min_max_scalar_with_x_parallel,
+        Some(n_threads),
+        MinMaxFunctionWithX::Parallel(minmax::min_max_scalar_with_x_parallel),
     )
 }
 
@@ -74,6 +91,7 @@ pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + 
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
+    n_threads: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -83,7 +101,8 @@ where
         y,
         n_out,
         minmax_ratio,
-        minmax::min_max_scalar_without_x_parallel,
+        Some(n_threads),
+        MinMaxFunctionWithoutX::Parallel(minmax::min_max_scalar_without_x_parallel),
     )
 }
 
@@ -97,6 +116,8 @@ mod tests {
 
     extern crate dev_utils;
     use dev_utils::utils;
+
+    const HALF_N_THREADS: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
 
     fn get_array_f32(n: usize) -> Array1<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
@@ -121,14 +142,15 @@ mod tests {
     fn test_minmaxlttb_with_x_parallel() {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = minmaxlttb_scalar_with_x_parallel(x.view(), y.view(), 4, 2);
+        let sampled_indices =
+            minmaxlttb_scalar_with_x_parallel(x.view(), y.view(), 4, 2, HALF_N_THREADS);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
     #[test]
     fn test_minmaxlttb_without_x_parallel() {
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let sampled_indices = minmaxlttb_scalar_without_x_parallel(y.view(), 4, 2);
+        let sampled_indices = minmaxlttb_scalar_without_x_parallel(y.view(), 4, 2, HALF_N_THREADS);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
@@ -138,7 +160,7 @@ mod tests {
         for _ in 0..100 {
             let arr = get_array_f32(n);
             let idxs1 = minmaxlttb_scalar_without_x(arr.view(), 100, 5);
-            let idxs2 = minmaxlttb_scalar_without_x_parallel(arr.view(), 100, 5);
+            let idxs2 = minmaxlttb_scalar_without_x_parallel(arr.view(), 100, 5, HALF_N_THREADS);
             assert_eq!(idxs1, idxs2);
         }
     }
