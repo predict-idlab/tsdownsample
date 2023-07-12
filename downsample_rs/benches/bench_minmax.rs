@@ -1,3 +1,5 @@
+use std::thread::available_parallelism;
+
 use downsample_rs::minmax as minmax_mod;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
