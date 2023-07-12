@@ -58,7 +58,7 @@ where
 {
     assert_eq!(n_out % 4, 0);
     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4, n_threads);
-    m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
+    m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, SCALAR::argminmax)
 }
 
 // ----------- WITHOUT X
@@ -66,12 +66,13 @@ where
 pub fn m4_scalar_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: ArrayView1<T>,
     n_out: usize,
+    n_threads: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<T>,
 {
     assert_eq!(n_out % 4, 0);
-    m4_generic_parallel(arr, n_out, SCALAR::argminmax)
+    m4_generic_parallel(arr, n_out, n_threads, SCALAR::argminmax)
 }
 
 // --------------------------------------- TESTS ---------------------------------------
@@ -115,8 +116,9 @@ mod tests {
     fn test_m4_scalar_without_x_parallel_correct() {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
+        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
 
-        let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12);
+        let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12, half_n_threads);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
         let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
@@ -249,7 +251,7 @@ mod tests {
         for _ in 0..100 {
             let arr = get_array_f32(n);
             let idxs1 = m4_scalar_without_x(arr.view(), n_out);
-            let idxs2 = m4_scalar_without_x_parallel(arr.view(), n_out);
+            let idxs2 = m4_scalar_without_x_parallel(arr.view(), n_out, half_n_threads);
             let idxs3 = m4_scalar_with_x(x.view(), arr.view(), n_out);
             let idxs4 = m4_scalar_with_x_parallel(x.view(), arr.view(), n_out, half_n_threads);
             assert_eq!(idxs1, idxs2);

@@ -99,11 +99,11 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     };
 
     if let Ok(pool) = pool {
-        pool.install(zip_func)
+        pool.install(zip_func);
     } else {
         // if a pool, for some reason, could not be created, we fall back to default Rayon
         // behaviour. (Question: Should this be the behaviour in this case?)
-        zip_func()
+        zip_func();
     }
 
     sampled_indices
