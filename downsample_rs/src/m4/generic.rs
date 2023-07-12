@@ -190,7 +190,7 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
         .num_threads(n_threads)
         .build();
 
-    let mut iter_func = || {
+    let iter_func = || {
         Array1::from_vec(
             bin_idx_iterator
                 .flat_map(|bin_idx_iterator| {
