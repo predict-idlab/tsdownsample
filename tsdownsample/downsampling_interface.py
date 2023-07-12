@@ -351,11 +351,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             return downsample_f(x, y, n_out, **kwargs)
 
     def downsample(
-        self,
-        *args,  # x and y are optional
-        n_out: int,
-        n_threads: int = 1,
-        **kwargs,
+        self, *args, n_out: int, n_threads: int = 1, **kwargs  # x and y are optional
     ):
         """Downsample the data in x and y."""
         return super().downsample(*args, n_out=n_out, n_threads=n_threads, **kwargs)
