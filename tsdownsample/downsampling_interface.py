@@ -334,7 +334,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         if x is None:
             downsample_f = self._switch_mod_with_y(y.dtype, mod)
             if is_multi_core:
-                return downsample_f(y, n_out, n_threads, **kwargs)
+                return downsample_f(y, n_out, n_threads=n_threads, **kwargs)
             else:
                 return downsample_f(y, n_out, **kwargs)
         elif np.issubdtype(x.dtype, np.datetime64):
@@ -346,7 +346,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         ## Getting the appropriate downsample function
         downsample_f = self._switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
         if is_multi_core:
-            return downsample_f(x, y, n_out, n_threads, **kwargs)
+            return downsample_f(x, y, n_out, n_threads=n_threads, **kwargs)
         else:
             return downsample_f(x, y, n_out, **kwargs)
 
