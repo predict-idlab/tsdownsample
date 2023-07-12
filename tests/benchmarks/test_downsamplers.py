@@ -12,6 +12,7 @@ from tsdownsample import (
 NB_SAMPLES = ["100,000", "1,000,000"]
 N_OUT = ["100", "1,000", "5,000"]
 Y_DTYPES = [np.float32, np.float64] + [np.int32, np.int64]
+N_THREADS = [2, 4, 8]
 
 # --------------------------------------------------------------------------- #
 #                               MinMaxDownsampler
@@ -22,8 +23,8 @@ Y_DTYPES = [np.float32, np.float64] + [np.int32, np.int64]
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_minmax_no_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_minmax_no_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the MinMaxDownsampler."""
     downsampler = MinMaxDownsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -31,15 +32,15 @@ def test_minmax_no_x(benchmark, n_samples, n_out, dtype, parallel):
 
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, y, n_out=n_out, n_threads=n_threads)
 
 
 @pytest.mark.benchmark(group="minmax")
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_minmax_with_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_minmax_with_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the MinMaxDownsampler."""
     downsampler = MinMaxDownsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -48,7 +49,7 @@ def test_minmax_with_x(benchmark, n_samples, n_out, dtype, parallel):
     x = np.arange(n_samples)
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, x, y, n_out=n_out, n_threads=n_threads)
 
 
 # --------------------------------------------------------------------------- #
@@ -60,8 +61,8 @@ def test_minmax_with_x(benchmark, n_samples, n_out, dtype, parallel):
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_m4_no_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_m4_no_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the M4Downsampler."""
     downsampler = M4Downsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -69,15 +70,15 @@ def test_m4_no_x(benchmark, n_samples, n_out, dtype, parallel):
 
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, y, n_out=n_out, n_threads=n_threads)
 
 
 @pytest.mark.benchmark(group="m4")
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_m4_with_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_m4_with_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the M4Downsampler."""
     downsampler = M4Downsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -86,7 +87,7 @@ def test_m4_with_x(benchmark, n_samples, n_out, dtype, parallel):
     x = np.arange(n_samples)
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, x, y, n_out=n_out, n_threads=n_threads)
 
 
 # --------------------------------------------------------------------------- #
@@ -98,8 +99,8 @@ def test_m4_with_x(benchmark, n_samples, n_out, dtype, parallel):
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_lttb_no_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_lttb_no_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the LTTBDownsampler."""
     downsampler = LTTBDownsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -107,15 +108,15 @@ def test_lttb_no_x(benchmark, n_samples, n_out, dtype, parallel):
 
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, y, n_out=n_out, n_threads=n_threads)
 
 
 @pytest.mark.benchmark(group="lttb")
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_lttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_lttb_with_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the LTTBDownsampler."""
     downsampler = LTTBDownsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -124,7 +125,7 @@ def test_lttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
     x = np.arange(n_samples)
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, x, y, n_out=n_out, n_threads=n_threads)
 
 
 # --------------------------------------------------------------------------- #
@@ -136,8 +137,8 @@ def test_lttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_minmaxlttb_no_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_minmaxlttb_no_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the MinMaxLTTBDownsampler."""
     downsampler = MinMaxLTTBDownsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -145,15 +146,15 @@ def test_minmaxlttb_no_x(benchmark, n_samples, n_out, dtype, parallel):
 
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, y, n_out=n_out, n_threads=n_threads)
 
 
 @pytest.mark.benchmark(group="minmaxlttb")
 @pytest.mark.parametrize("n_samples", NB_SAMPLES)
 @pytest.mark.parametrize("n_out", N_OUT)
 @pytest.mark.parametrize("dtype", Y_DTYPES)
-@pytest.mark.parametrize("parallel", [False, True])
-def test_minmaxlttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
+@pytest.mark.parametrize("n_threads", N_THREADS)
+def test_minmaxlttb_with_x(benchmark, n_samples, n_out, dtype, n_threads):
     """Test the MinMaxLTTBDownsampler."""
     downsampler = MinMaxLTTBDownsampler()
     n_samples = int(n_samples.replace(",", ""))
@@ -162,7 +163,7 @@ def test_minmaxlttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
     x = np.arange(n_samples)
     y = np.random.randn(n_samples).astype(dtype)
 
-    benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+    benchmark(downsampler.downsample, x, y, n_out=n_out, n_threads=n_threads)
 
 
 # --------------------------------------------------------------------------- #
