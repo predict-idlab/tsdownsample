@@ -35,7 +35,7 @@ jobs:
           rustc --version
           cargo clippy --version
           cargo fmt --version
-      
+
       - name: check no optional features
         run: cargo check --verbose
       - name: check with all features
@@ -50,9 +50,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['windows-latest', 'macOS-latest', 'ubuntu-latest']
-        rust: ['nightly']  # ['stable', 'beta']
-    
+        os: ["windows-latest", "macOS-latest", "ubuntu-latest"]
+        rust: ["nightly"] # ['stable', 'beta']
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -69,20 +69,20 @@ jobs:
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v1
-      
+
       - name: Run tests (debug)
         run: cargo test --verbose --all-features
       - name: Run tests (release)
         run: cargo test --verbose --all-features --release
-  
+
   Bench:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']  # ['windows-latest', 'macOS-latest']
-        rust: ['nightly']  # ['stable', 'beta']
-    
+        os: ["ubuntu-latest"] # ['windows-latest', 'macOS-latest']
+        rust: ["nightly"] # ['stable', 'beta']
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -99,10 +99,10 @@ jobs:
 
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@v1
-      
+
       - name: Run benchmarks
         run: cargo bench --quiet --message-format=short  --all-features | grep "time:"
-  
+
   Build:
     runs-on: ubuntu-latest
     strategy:
@@ -115,8 +115,12 @@ jobs:
           - i586-unknown-linux-gnu
           - aarch64-unknown-linux-gnu
           - armv7-unknown-linux-gnueabihf
-          - mips-unknown-linux-gnu
-          - mips64-unknown-linux-gnuabi64
+          # MIPS is currently not supported anymore on nightly chains.
+          # more information:
+          #   - https://github.com/rust-lang/compiler-team/issues/648
+          #   - https://github.com/rust-lang/rust/pull/113274
+          # - mips-unknown-linux-gnu
+          # - mips64-unknown-linux-gnuabi64
           - powerpc-unknown-linux-gnu
           - powerpc64-unknown-linux-gnu
           - riscv64gc-unknown-linux-gnu
@@ -132,11 +136,10 @@ jobs:
           rustup default nightly
           rustup target add ${{ matrix.target }}
           # rustup component add clippy
-      # - name: Run Clippy
         # run: cargo clippy --all-targets --target ${{ matrix.target }}
+      # - name: Run Clippy
       - name: Build (release)
         run: cargo build --target ${{ matrix.target }} --release --all-features
-
 
       # - name: Run cargo-tarpaulin
       #   uses: actions-rs/tarpaulin@v0.1
@@ -145,6 +148,4 @@ jobs:
 
       # - name: Upload to codecov.io
       #   uses: codecov/codecov-action@v3
-
-
 # largely inspired by: https://github.com/rust-lang/portable-simd/blob/master/.github/workflows/ci.yml
