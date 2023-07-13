@@ -20,13 +20,13 @@ fn minmax_f32_random_array_long_single_core(c: &mut Criterion) {
 fn minmax_f32_random_array_long_multi_core(c: &mut Criterion) {
     let n = config::ARRAY_LENGTH_LONG;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
+    let all_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(1);
     c.bench_function("minmax_scal_p_f32", |b| {
         b.iter(|| {
             minmax_mod::min_max_scalar_without_x_parallel(
                 black_box(data.view()),
                 black_box(2_000),
-                black_box(half_n_threads),
+                black_box(all_threads),
             )
         })
     });
@@ -35,7 +35,7 @@ fn minmax_f32_random_array_long_multi_core(c: &mut Criterion) {
             minmax_mod::min_max_simd_without_x_parallel(
                 black_box(data.view()),
                 black_box(2_000),
-                black_box(half_n_threads),
+                black_box(all_threads),
             )
         })
     });
@@ -88,13 +88,13 @@ fn minmax_f32_random_array_50M_long_multi_core(c: &mut Criterion) {
     let n = 50_000_000;
     let data = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
     let x = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
-    let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
+    let all_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(1);
     c.bench_function("minmax_scal_p_50M_f32", |b| {
         b.iter(|| {
             minmax_mod::min_max_scalar_without_x_parallel(
                 black_box(data.view()),
                 black_box(2_000),
-                black_box(half_n_threads),
+                black_box(all_threads),
             )
         })
     });
@@ -103,7 +103,7 @@ fn minmax_f32_random_array_50M_long_multi_core(c: &mut Criterion) {
             minmax_mod::min_max_simd_without_x_parallel(
                 black_box(data.view()),
                 black_box(2_000),
-                black_box(half_n_threads),
+                black_box(all_threads),
             )
         })
     });
@@ -113,7 +113,7 @@ fn minmax_f32_random_array_50M_long_multi_core(c: &mut Criterion) {
                 black_box(x.view()),
                 black_box(data.view()),
                 black_box(2_000),
-                black_box(half_n_threads),
+                black_box(all_threads),
             )
         })
     });
@@ -123,7 +123,7 @@ fn minmax_f32_random_array_50M_long_multi_core(c: &mut Criterion) {
                 black_box(x.view()),
                 black_box(data.view()),
                 black_box(2_000),
-                black_box(half_n_threads),
+                black_box(all_threads),
             )
         })
     });
