@@ -33,6 +33,7 @@ where
 {
     assert_eq!(x.len(), y.len());
     assert!(minmax_ratio > 1);
+    let n_threads = clip_threadcount(n_threads);
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
@@ -78,6 +79,7 @@ where
     for<'a> ArrayView1<'a, Ty>: Average,
 {
     assert!(minmax_ratio > 1);
+    let n_threads = clip_threadcount(n_threads);
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {
         // Get index of min max points

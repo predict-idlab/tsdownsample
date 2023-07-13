@@ -4,6 +4,8 @@ use ndarray::{Array1, ArrayView1};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
+use crate::helpers::clip_threadcount;
+
 // TODO: check for duplicate data in the output array
 // -> In the current implementation we always add 4 datapoints per bin (if of
 //    course the bin has >= 4 datapoints). However, the argmin and argmax might
@@ -64,6 +66,7 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     n_threads: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
+    let n_threads = clip_threadcount(n_threads);
     // Assumes n_out is a multiple of 4
     if n_out >= arr.len() {
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
@@ -172,6 +175,7 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     n_threads: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
+    let n_threads = clip_threadcount(n_threads);
     // Assumes n_out is a multiple of 4
     if n_out >= arr.len() {
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
