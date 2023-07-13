@@ -136,8 +136,8 @@ jobs:
           rustup default nightly
           rustup target add ${{ matrix.target }}
           # rustup component add clippy
-        # run: cargo clippy --all-targets --target ${{ matrix.target }}
       # - name: Run Clippy
+      #   run: cargo clippy --all-targets --target ${{ matrix.target }}
       - name: Build (release)
         run: cargo build --target ${{ matrix.target }} --release --all-features
 
@@ -148,4 +148,6 @@ jobs:
 
       # - name: Upload to codecov.io
       #   uses: codecov/codecov-action@v3
+#
+#
 # largely inspired by: https://github.com/rust-lang/portable-simd/blob/master/.github/workflows/ci.yml

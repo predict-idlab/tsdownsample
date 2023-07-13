@@ -36,7 +36,6 @@ where
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
-        // check if function is serial or parallel. if parallel, n_threads cannot be None
         let mut index = match f_minmax {
             MinMaxFunctionWithX::Serial(func) => {
                 func(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio)
@@ -45,7 +44,7 @@ where
                 x.slice(s![1..-1]),
                 y.slice(s![1..-1]),
                 n_out * minmax_ratio,
-                n_threads.unwrap_or(1),
+                n_threads.unwrap_or(1), // n_threads cannot be None
             ),
         };
         // inplace + 1
@@ -87,7 +86,7 @@ where
             MinMaxFunctionWithoutX::Parallel(func) => func(
                 y.slice(s![1..-1]),
                 n_out * minmax_ratio,
-                n_threads.unwrap_or(1),
+                n_threads.unwrap_or(1), // n_threads cannot be None
             ),
         };
         // inplace + 1

@@ -67,9 +67,6 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     // Store the enumerated indexes in the output array
     let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
 
-    // as the ndarray parallel features are based on Rayon (https://docs.rs/ndarray/latest/ndarray/parallel/index.html)
-    // we should be able to use the same procedure as in `min_max_generic_with_x_parallel`
-
     // to limit the amounts of threads Rayon uses, an explicit threadpool needs to be created
     // in which the required code is "installed". This limits the amount of used threads.
     // https://docs.rs/rayon/latest/rayon/struct.ThreadPool.html#method.install
