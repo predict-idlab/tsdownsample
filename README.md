@@ -86,23 +86,22 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 - `x` and `y` are both positional arguments
 - `n_out` is a mandatory keyword argument that defines the number of output values<sup>*</sup>
 - `**kwargs` are optional keyword arguments *(see [table below](#downsampling-algorithms-📈))*:
-  - `parallel`: whether to use multi-threading (default: `False`)<sup>**</sup>
+  - `n_threads`: how many threads to use for multi-threading (default `1`, so no multi-threading)
   - ...
 
 **Returns**: a `ndarray[uint64]` of indices that can be used to index the original data.
 
 <sup>*</sup><i>When there are gaps in the time series, fewer than `n_out` indices may be returned.</i>
-<sup>**</sup><i>`parallel` is not supported for `LTTBDownsampler`.</i>
 ### Downsampling algorithms 📈
 
 The following downsampling algorithms (classes) are implemented:
 
 | Downsampler | Description | `**kwargs` |
 | ---:| --- |--- |
-| `MinMaxDownsampler` | selects the **min and max** value in each bin | `parallel` |
-| `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `parallel` |
-| `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm |
-| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `parallel`, `minmax_ratio`<sup>*</sup> |
+| `MinMaxDownsampler` | selects the **min and max** value in each bin | `n_threads` |
+| `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `n_threads` |
+| `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm | `n_threads` |
+| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `n_threads`, `minmax_ratio`<sup>*</sup> |
 
 <sup>*</sup><i>Default value for `minmax_ratio` is 30, which is empirically proven to be a good default. (More details in our upcomming paper)</i>
 
