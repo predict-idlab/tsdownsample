@@ -1,6 +1,5 @@
 use ndarray::ArrayView1;
 
-use super::helpers::clip_threadcount;
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 use std::thread::available_parallelism;
@@ -149,14 +148,13 @@ where
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let arr0: f64 = arr[0].as_(); // The first value of the array
                                   // 2. Compute the number of threads & bins per thread
-    let nb_threads = clip_threadcount(n_threads);
-    let nb_threads = std::cmp::min(nb_threads, nb_bins);
-    let nb_bins_per_thread = nb_bins / nb_threads;
-    let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (nb_threads - 1);
+    let n_threads = std::cmp::min(n_threads, nb_bins);
+    let nb_bins_per_thread = nb_bins / n_threads;
+    let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (n_threads - 1);
     // 3. Iterate over the number of threads
     // -> for each thread perform the binary search sorted with moving left and
     // yield the indices (using the same idea as for the sequential version)
-    (0..nb_threads).into_par_iter().map(move |i| {
+    (0..n_threads).into_par_iter().map(move |i| {
         // The moving index & value (for the thread)
         let arr0_thr: f64 = sequential_add_mul(arr0, val_step, i * nb_bins_per_thread); // Search value
         let start_value: T = T::from_f64(arr0_thr).unwrap();
@@ -167,7 +165,7 @@ where
         }
 
         // The number of bins for the thread
-        let nb_bins_thread = if i == nb_threads - 1 {
+        let nb_bins_thread = if i == n_threads - 1 {
             nb_bins_last_thread
         } else {
             nb_bins_per_thread

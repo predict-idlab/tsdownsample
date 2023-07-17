@@ -1,6 +1,6 @@
 use ndarray::{s, Array1, ArrayView1};
 
-use super::super::helpers::{clip_threadcount, Average};
+use super::super::helpers::Average;
 use super::super::lttb::{lttb_with_x, lttb_without_x};
 use super::super::types::Num;
 use num_traits::AsPrimitive;
@@ -44,7 +44,7 @@ where
                 x.slice(s![1..-1]),
                 y.slice(s![1..-1]),
                 n_out * minmax_ratio,
-                clip_threadcount(n_threads.unwrap()), // n_threads cannot be None
+                n_threads.unwrap(), // n_threads cannot be None
             ),
         };
         // inplace + 1
@@ -86,7 +86,7 @@ where
             MinMaxFunctionWithoutX::Parallel(func) => func(
                 y.slice(s![1..-1]),
                 n_out * minmax_ratio,
-                clip_threadcount(n_threads.unwrap()), // n_threads cannot be None
+                n_threads.unwrap(), // n_threads cannot be None
             ),
         };
         // inplace + 1

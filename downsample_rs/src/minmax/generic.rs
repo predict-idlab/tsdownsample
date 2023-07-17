@@ -4,8 +4,6 @@ use ndarray::{Array1, ArrayView1};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
-use super::super::helpers::clip_threadcount;
-
 // --------------------- WITHOUT X
 
 #[inline(always)]
@@ -58,7 +56,6 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     n_threads: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
-    let n_threads = clip_threadcount(n_threads);
     // Assumes n_out is a multiple of 2
     if n_out >= arr.len() {
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());
@@ -161,7 +158,6 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
     n_threads: usize,
     f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
 ) -> Array1<usize> {
-    let n_threads = clip_threadcount(n_threads);
     // Assumes n_out is a multiple of 2
     if n_out >= arr.len() {
         return Array1::from((0..arr.len()).collect::<Vec<usize>>());

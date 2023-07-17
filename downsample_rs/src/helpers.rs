@@ -1,5 +1,3 @@
-use std::thread::available_parallelism;
-
 #[cfg(feature = "half")]
 use half::f16;
 use ndarray::ArrayView1;
@@ -57,18 +55,3 @@ macro_rules! impl_average {
 
 // Implement for all signed and unsigned integers
 impl_average!(i8 i16 i32 i64 u8 u16 u32 u64);
-
-// Clip threads between 1 and the amount of available threads
-pub(crate) fn clip_threadcount(n_requested_threads: usize) -> usize {
-    // if 0 threads are requested, default to 1
-    if n_requested_threads == 0 {
-        return 1;
-    }
-
-    let total_available_threads = available_parallelism().map(|x| x.get()).unwrap_or(1);
-    return if n_requested_threads > total_available_threads {
-        total_available_threads
-    } else {
-        n_requested_threads
-    };
-}
