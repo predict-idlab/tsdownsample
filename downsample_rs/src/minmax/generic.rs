@@ -74,7 +74,7 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         .num_threads(n_threads)
         .build();
 
-    let mut zip_func = || {
+    let zip_func = || {
         Zip::from(sampled_indices.exact_chunks_mut(2)).par_for_each(|mut sampled_index| {
             let i: f64 = unsafe { *sampled_index.uget(0) >> 1 } as f64;
             let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
@@ -95,13 +95,7 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         });
     };
 
-    if let Ok(pool) = pool {
-        pool.install(zip_func);
-    } else {
-        // if a pool, for some reason, could not be created, we fall back to default Rayon
-        // behaviour. (Question: Should this be the behaviour in this case?)
-        zip_func();
-    }
+    pool.unwrap().install(zip_func); // allow panic if pool could not be created
 
     sampled_indices
 }
@@ -170,7 +164,7 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
         .num_threads(n_threads)
         .build();
 
-    let iterator_func = || {
+    let iter_func = || {
         Array1::from_vec(
             bin_idx_iterator
                 .flat_map(|bin_idx_iterator| {
@@ -211,11 +205,5 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
         )
     };
 
-    if let Ok(pool) = pool {
-        pool.install(iterator_func)
-    } else {
-        // if a pool, for some reason, could not be created, we fall back to default Rayon
-        // behaviour. (Question: Should this be the behaviour in this case?)
-        iterator_func()
-    }
+    pool.unwrap().install(iter_func) // allow panic if pool could not be created
 }

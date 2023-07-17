@@ -82,7 +82,7 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         .num_threads(n_threads)
         .build();
 
-    let mut zip_func = || {
+    let zip_func = || {
         Zip::from(sampled_indices.exact_chunks_mut(4)).par_for_each(|mut sampled_index| {
             let i: f64 = unsafe { *sampled_index.uget(0) >> 2 } as f64;
             let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
@@ -105,13 +105,7 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         })
     };
 
-    if let Ok(pool) = pool {
-        pool.install(zip_func)
-    } else {
-        // if a pool, for some reason, could not be created, we fall back to default Rayon
-        // behaviour. (Question: Should this be the behaviour in this case?)
-        zip_func()
-    }
+    pool.unwrap().install(zip_func); // allow panic if pool could not be created
 
     sampled_indices
 }
@@ -228,11 +222,6 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
                 .collect::<Vec<usize>>(),
         )
     };
-    if let Ok(pool) = pool {
-        pool.install(iter_func)
-    } else {
-        // if a pool, for some reason, could not be created, we fall back to default Rayon
-        // behaviour. (Question: Should this be the behaviour in this case?)
-        iter_func()
-    }
+
+    pool.unwrap().install(iter_func) // allow panic if pool could not be created
 }
