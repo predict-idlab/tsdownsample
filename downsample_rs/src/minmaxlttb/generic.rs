@@ -1,6 +1,6 @@
 use ndarray::{s, Array1, ArrayView1};
 
-use super::super::helpers::Average;
+use super::super::helpers::{clip_threadcount, Average};
 use super::super::lttb::{lttb_with_x, lttb_without_x};
 use super::super::types::Num;
 use num_traits::AsPrimitive;
@@ -33,7 +33,6 @@ where
 {
     assert_eq!(x.len(), y.len());
     assert!(minmax_ratio > 1);
-    let n_threads = clip_threadcount(n_threads);
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
@@ -45,7 +44,7 @@ where
                 x.slice(s![1..-1]),
                 y.slice(s![1..-1]),
                 n_out * minmax_ratio,
-                n_threads.unwrap_or(1), // n_threads cannot be None
+                clip_threadcount(n_threads.unwrap()), // n_threads cannot be None
             ),
         };
         // inplace + 1
@@ -79,7 +78,6 @@ where
     for<'a> ArrayView1<'a, Ty>: Average,
 {
     assert!(minmax_ratio > 1);
-    let n_threads = clip_threadcount(n_threads);
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {
         // Get index of min max points
@@ -88,7 +86,7 @@ where
             MinMaxFunctionWithoutX::Parallel(func) => func(
                 y.slice(s![1..-1]),
                 n_out * minmax_ratio,
-                n_threads.unwrap_or(1), // n_threads cannot be None
+                clip_threadcount(n_threads.unwrap()), // n_threads cannot be None
             ),
         };
         // inplace + 1

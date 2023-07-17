@@ -4,6 +4,8 @@ use ndarray::{Array1, ArrayView1};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
+use super::super::helpers::clip_threadcount;
+
 // --------------------- WITHOUT X
 
 #[inline(always)]

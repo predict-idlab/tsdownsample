@@ -58,8 +58,8 @@ macro_rules! impl_average {
 // Implement for all signed and unsigned integers
 impl_average!(i8 i16 i32 i64 u8 u16 u32 u64);
 
-// clip threads between 1 and the amount of available threads
-pub fn clip_threadcount(n_requested_threads: usize) -> usize {
+// Clip threads between 1 and the amount of available threads
+pub(crate) fn clip_threadcount(n_requested_threads: usize) -> usize {
     // if 0 threads are requested, default to 1
     if n_requested_threads == 0 {
         return 1;
