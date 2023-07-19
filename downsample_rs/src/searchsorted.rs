@@ -318,8 +318,6 @@ mod tests {
     fn test_many_random_same_result(n_threads: usize) {
         let n = 5_000;
         let nb_bins = 100;
-        let all_threads = available_parallelism().map(|x| x.get()).unwrap_or(2);
-        let nb_threads = vec![1, all_threads / 2, all_threads, all_threads + 1];
 
         for _ in 0..100 {
             let arr = get_random_array::<i32>(n, i32::MIN, i32::MAX);
