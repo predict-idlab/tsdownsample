@@ -118,10 +118,26 @@ mod tests {
 
     extern crate dev_utils;
     use dev_utils::utils;
+    use rstest::rstest;
+    use rstest_reuse::{self, *};
 
     fn get_array_f32(n: usize) -> Array1<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
+
+    fn get_all_threads() -> usize {
+        available_parallelism().map(|x| x.get()).unwrap_or(1)
+    }
+
+    // Template for the n_threads matrix
+    #[template]
+    #[rstest]
+    #[case(1)]
+    #[case(get_all_threads() / 2)]
+    #[case(get_all_threads())]
+    #[case(get_all_threads() * 2)] // Causes random many runs test to fail
+                                   // -> only when this equals 16
+    fn threads(#[case] n_threads: usize) {}
 
     #[test]
     fn test_minmaxlttb_with_x() {
@@ -138,32 +154,28 @@ mod tests {
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
-    #[test]
-    fn test_minmaxlttb_with_x_parallel() {
+    #[apply(threads)]
+    fn test_minmaxlttb_with_x_parallel(n_threads: usize) {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
-        let sampled_indices =
-            minmaxlttb_simd_with_x_parallel(x.view(), y.view(), 4, 2, half_n_threads);
+        let sampled_indices = minmaxlttb_simd_with_x_parallel(x.view(), y.view(), 4, 2, n_threads);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
-    #[test]
-    fn test_minmaxlttb_without_x_parallel() {
+    #[apply(threads)]
+    fn test_minmaxlttb_without_x_parallel(n_threads: usize) {
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
-        let sampled_indices = minmaxlttb_simd_without_x_parallel(y.view(), 4, 2, half_n_threads);
+        let sampled_indices = minmaxlttb_simd_without_x_parallel(y.view(), 4, 2, n_threads);
         assert_eq!(sampled_indices, array![0, 1, 5, 9]);
     }
 
-    #[test]
-    fn test_many_random_runs_same_output() {
+    #[apply(threads)]
+    fn test_many_random_runs_same_output(n_threads: usize) {
         let n = 20_000;
-        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
         for _ in 0..100 {
             let arr = get_array_f32(n);
             let idxs1 = minmaxlttb_simd_without_x(arr.view(), 100, 5);
-            let idxs2 = minmaxlttb_simd_without_x_parallel(arr.view(), 100, 5, half_n_threads);
+            let idxs2 = minmaxlttb_simd_without_x_parallel(arr.view(), 100, 5, n_threads);
             assert_eq!(idxs1, idxs2);
         }
     }
