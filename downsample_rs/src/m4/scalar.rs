@@ -81,6 +81,9 @@ where
 mod tests {
     use std::thread::available_parallelism;
 
+    use rstest::rstest;
+    use rstest_reuse::{self, *};
+
     use super::{
         m4_scalar_with_x, m4_scalar_with_x_parallel, m4_scalar_without_x,
         m4_scalar_without_x_parallel,
@@ -93,6 +96,19 @@ mod tests {
     fn get_array_f32(n: usize) -> Array1<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
+
+    fn get_all_threads() -> usize {
+        available_parallelism().map(|x| x.get()).unwrap_or(1)
+    }
+
+    // Template for the n_threads matrix
+    #[template]
+    #[rstest]
+    #[case(1)]
+    #[case(get_all_threads() / 2)]
+    #[case(get_all_threads())]
+    #[case(get_all_threads() * 2)]
+    fn threads(#[case] n_threads: usize) {}
 
     #[test]
     fn test_m4_scalar_without_x_correct() {
@@ -112,8 +128,8 @@ mod tests {
         assert_eq!(sampled_values, Array1::from(expected_values));
     }
 
-    #[test]
-    fn test_m4_scalar_without_x_parallel_correct() {
+    #[apply(threads)]
+    fn test_m4_scalar_without_x_parallel_correct(n_threads: usize) {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
@@ -125,15 +141,10 @@ mod tests {
             .collect::<Vec<f32>>();
         let expected_values = Array1::from(expected_values);
 
-        let all_threads = available_parallelism().map(|x| x.get()).unwrap_or(2);
-        let nb_threads = vec![1, all_threads / 2, all_threads, all_threads + 1];
-
-        for n_threads in nb_threads {
-            let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12, n_threads);
-            let sampled_values = sampled_indices.mapv(|x| arr[x]);
-            assert_eq!(sampled_indices, expected_indices);
-            assert_eq!(sampled_values, expected_values);
-        }
+        let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12, n_threads);
+        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+        assert_eq!(sampled_indices, expected_indices);
+        assert_eq!(sampled_values, expected_values);
     }
 
     #[test]
@@ -156,8 +167,8 @@ mod tests {
         assert_eq!(sampled_values, Array1::from(expected_values));
     }
 
-    #[test]
-    fn test_m4_scalar_with_x_parallel_correct() {
+    #[apply(threads)]
+    fn test_m4_scalar_with_x_parallel_correct(n_threads: usize) {
         let x = (0..100).collect::<Vec<i32>>();
         let x = Array1::from(x);
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
@@ -171,14 +182,10 @@ mod tests {
             .collect::<Vec<f32>>();
         let expected_values = Array1::from(expected_values);
 
-        let all_threads = available_parallelism().map(|x| x.get()).unwrap_or(2);
-        let nb_threads = vec![1, all_threads / 2, all_threads, all_threads + 1];
-        for n_threads in nb_threads {
-            let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 12, n_threads);
-            let sampled_values = sampled_indices.mapv(|x| arr[x]);
-            assert_eq!(sampled_indices, expected_indices);
-            assert_eq!(sampled_values, expected_values);
-        }
+        let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 12, n_threads);
+        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+        assert_eq!(sampled_indices, expected_indices);
+        assert_eq!(sampled_values, expected_values);
     }
 
     #[test]
@@ -215,8 +222,8 @@ mod tests {
         assert_eq!(sampled_indices, Array1::from(expected_indices));
     }
 
-    #[test]
-    fn test_m4_scalar_with_x_gap_parallel() {
+    #[apply(threads)]
+    fn test_m4_scalar_with_x_gap_parallel(n_threads: usize) {
         // We will create a gap in the middle of the array
         let x = (0..100).collect::<Vec<i32>>();
 
@@ -228,9 +235,8 @@ mod tests {
         let x = Array1::from(x);
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
-        let half_n_threads: usize = available_parallelism().map(|x| x.get()).unwrap_or(2) / 2;
 
-        let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 20, half_n_threads);
+        let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 20, n_threads);
         assert_eq!(sampled_indices.len(), 16); // One full gap
         let expected_indices = vec![0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99];
         assert_eq!(sampled_indices, Array1::from(expected_indices));
@@ -242,7 +248,7 @@ mod tests {
             .collect::<Vec<i32>>();
         let x = Array1::from(x);
 
-        let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 20, half_n_threads);
+        let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 20, n_threads);
         assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
         let expected_indices = vec![
             0, 0, 39, 39, 40, 40, 50, 50, 51, 52, 52, 59, 59, 60, 60, 99, 99,
@@ -250,25 +256,21 @@ mod tests {
         assert_eq!(sampled_indices, Array1::from(expected_indices));
     }
 
-    #[test]
-    fn test_many_random_runs_correct() {
+    #[apply(threads)]
+    fn test_many_random_runs_correct(n_threads: usize) {
         let n: usize = 20_003;
         let n_out: usize = 204;
         let x = (0..n as i32).collect::<Vec<i32>>();
         let x = Array1::from(x);
-        let all_threads = available_parallelism().map(|x| x.get()).unwrap_or(2);
-        let nb_threads = vec![1, all_threads / 2, all_threads, all_threads + 1];
         for _ in 0..100 {
             let arr = get_array_f32(n);
             let idxs1 = m4_scalar_without_x(arr.view(), n_out);
             let idxs2 = m4_scalar_with_x(x.view(), arr.view(), n_out);
             assert_eq!(idxs1, idxs2);
-            for &n_threads in nb_threads.iter() {
-                let idxs3 = m4_scalar_without_x_parallel(arr.view(), n_out, n_threads);
-                let idxs4 = m4_scalar_with_x_parallel(x.view(), arr.view(), n_out, n_threads);
-                assert_eq!(idxs1, idxs3);
-                assert_eq!(idxs1, idxs4); // TODO: this should not fail
-            }
+            let idxs3 = m4_scalar_without_x_parallel(arr.view(), n_out, n_threads);
+            let idxs4 = m4_scalar_with_x_parallel(x.view(), arr.view(), n_out, n_threads);
+            assert_eq!(idxs1, idxs3);
+            assert_eq!(idxs1, idxs4); // TODO: this should not fail
         }
     }
 }
