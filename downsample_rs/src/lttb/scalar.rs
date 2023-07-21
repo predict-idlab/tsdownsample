@@ -202,8 +202,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    extern crate dev_utils;
-
     use dev_utils::utils;
 
     use super::{lttb_with_x, lttb_without_x};

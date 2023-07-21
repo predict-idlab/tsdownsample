@@ -196,7 +196,6 @@ mod tests {
     use super::*;
     use ndarray::Array1;
 
-    extern crate dev_utils;
     use dev_utils::utils::{get_all_threads, get_random_array};
 
     // Template for the n_threads matrix

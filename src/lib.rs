@@ -1,6 +1,3 @@
-extern crate downsample_rs;
-extern crate paste;
-
 use half::f16;
 
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1};
