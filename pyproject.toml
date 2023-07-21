@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=0.14,<0.15"]
+requires = ["maturin>=1.1,<2.0"]
 build-backend = "maturin"
 
 [project]
@@ -33,6 +33,8 @@ Repository = "https://github.com/predict-idlab/tsdownsample"
 # Build Python bindings for rust
 [tool.maturin]
 bindings = "pyo3"
+module-name = "tsdownsample._rust._tsdownsample_rs" # The path to place the compiled Rust module
+# See: https://www.maturin.rs/project_layout.html#import-rust-as-a-submodule-of-your-project
 
 # Linting
 [tool.ruff]
