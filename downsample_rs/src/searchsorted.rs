@@ -195,14 +195,9 @@ mod tests {
 
     use super::*;
     use ndarray::Array1;
-    use std::thread::available_parallelism;
 
     extern crate dev_utils;
-    use dev_utils::utils::get_random_array;
-
-    fn get_all_threads() -> usize {
-        available_parallelism().map(|x| x.get()).unwrap_or(1)
-    }
+    use dev_utils::utils::{get_all_threads, get_random_array};
 
     // Template for the n_threads matrix
     #[template]

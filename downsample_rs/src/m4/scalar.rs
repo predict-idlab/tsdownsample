@@ -79,15 +79,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::thread::available_parallelism;
-
     use rstest::rstest;
     use rstest_reuse::{self, *};
 
-    use super::{
-        m4_scalar_with_x, m4_scalar_with_x_parallel, m4_scalar_without_x,
-        m4_scalar_without_x_parallel,
-    };
+    use super::{m4_scalar_with_x, m4_scalar_without_x};
+    use super::{m4_scalar_with_x_parallel, m4_scalar_without_x_parallel};
     use ndarray::Array1;
 
     extern crate dev_utils;
@@ -97,17 +93,13 @@ mod tests {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
 
-    fn get_all_threads() -> usize {
-        available_parallelism().map(|x| x.get()).unwrap_or(1)
-    }
-
     // Template for the n_threads matrix
     #[template]
     #[rstest]
     #[case(1)]
-    #[case(get_all_threads() / 2)]
-    #[case(get_all_threads())]
-    #[case(get_all_threads() * 2)]
+    #[case(utils::get_all_threads() / 2)]
+    #[case(utils::get_all_threads())]
+    #[case(utils::get_all_threads() * 2)]
     fn threads(#[case] n_threads: usize) {}
 
     #[test]
@@ -133,18 +125,17 @@ mod tests {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
+        let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12, n_threads);
+        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+
         let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
-        let expected_indices = Array1::from(expected_indices);
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
             .collect::<Vec<f32>>();
-        let expected_values = Array1::from(expected_values);
 
-        let sampled_indices = m4_scalar_without_x_parallel(arr.view(), 12, n_threads);
-        let sampled_values = sampled_indices.mapv(|x| arr[x]);
-        assert_eq!(sampled_indices, expected_indices);
-        assert_eq!(sampled_values, expected_values);
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+        assert_eq!(sampled_values, Array1::from(expected_values));
     }
 
     #[test]
@@ -174,18 +165,17 @@ mod tests {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
+        let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 12, n_threads);
+        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+
         let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
-        let expected_indices = Array1::from(expected_indices);
         let expected_values = expected_indices
             .iter()
             .map(|x| *x as f32)
             .collect::<Vec<f32>>();
-        let expected_values = Array1::from(expected_values);
 
-        let sampled_indices = m4_scalar_with_x_parallel(x.view(), arr.view(), 12, n_threads);
-        let sampled_values = sampled_indices.mapv(|x| arr[x]);
-        assert_eq!(sampled_indices, expected_indices);
-        assert_eq!(sampled_values, expected_values);
+        assert_eq!(sampled_indices, Array1::from(expected_indices));
+        assert_eq!(sampled_values, Array1::from(expected_values));
     }
 
     #[test]
@@ -270,7 +260,7 @@ mod tests {
             let idxs3 = m4_scalar_without_x_parallel(arr.view(), n_out, n_threads);
             let idxs4 = m4_scalar_with_x_parallel(x.view(), arr.view(), n_out, n_threads);
             assert_eq!(idxs1, idxs3);
-            assert_eq!(idxs1, idxs4); // TODO: this should not fail
+            assert_eq!(idxs1, idxs4); // TODO: this should not fail when n_threads = 16
         }
     }
 }

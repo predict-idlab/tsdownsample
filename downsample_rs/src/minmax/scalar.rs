@@ -82,34 +82,27 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::thread::available_parallelism;
+    use rstest::rstest;
+    use rstest_reuse::{self, *};
 
-    use super::{
-        min_max_scalar_with_x, min_max_scalar_with_x_parallel, min_max_scalar_without_x,
-        min_max_scalar_without_x_parallel,
-    };
+    use super::{min_max_scalar_with_x, min_max_scalar_without_x};
+    use super::{min_max_scalar_with_x_parallel, min_max_scalar_without_x_parallel};
     use ndarray::Array1;
 
     extern crate dev_utils;
     use dev_utils::utils;
-    use rstest::rstest;
-    use rstest_reuse::{self, *};
 
     fn get_array_f32(n: usize) -> Array1<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
-    }
-
-    fn get_all_threads() -> usize {
-        available_parallelism().map(|x| x.get()).unwrap_or(1)
     }
 
     // Template for the n_threads matrix
     #[template]
     #[rstest]
     #[case(1)]
-    #[case(get_all_threads() / 2)]
-    #[case(get_all_threads())]
-    #[case(get_all_threads() * 2)]
+    #[case(utils::get_all_threads() / 2)]
+    #[case(utils::get_all_threads())]
+    #[case(utils::get_all_threads() * 2)]
     fn threads(#[case] n_threads: usize) {}
 
     #[test]

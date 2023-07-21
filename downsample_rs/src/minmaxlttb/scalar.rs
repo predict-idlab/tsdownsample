@@ -110,7 +110,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::thread::available_parallelism;
+    use rstest::rstest;
+    use rstest_reuse::{self, *};
 
     use super::{minmaxlttb_scalar_with_x, minmaxlttb_scalar_without_x};
     use super::{minmaxlttb_scalar_with_x_parallel, minmaxlttb_scalar_without_x_parallel};
@@ -118,24 +119,18 @@ mod tests {
 
     extern crate dev_utils;
     use dev_utils::utils;
-    use rstest::rstest;
-    use rstest_reuse::{self, *};
 
     fn get_array_f32(n: usize) -> Array1<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
-    }
-
-    fn get_all_threads() -> usize {
-        available_parallelism().map(|x| x.get()).unwrap_or(1)
     }
 
     // Template for the n_threads matrix
     #[template]
     #[rstest]
     #[case(1)]
-    #[case(get_all_threads() / 2)]
-    #[case(get_all_threads())]
-    #[case(get_all_threads() * 2)]
+    #[case(utils::get_all_threads() / 2)]
+    #[case(utils::get_all_threads())]
+    #[case(utils::get_all_threads() * 2)]
     fn threads(#[case] n_threads: usize) {}
 
     #[test]
@@ -171,11 +166,15 @@ mod tests {
 
     #[apply(threads)]
     fn test_many_random_runs_same_output(n_threads: usize) {
-        let n = 20_000;
+        let n: usize = 20_000;
+        let n_out: usize = 100;
+        let minmax_ratio: usize = 5;
         for _ in 0..100 {
+            // TODO: test with x
             let arr = get_array_f32(n);
-            let idxs1 = minmaxlttb_scalar_without_x(arr.view(), 100, 5);
-            let idxs2 = minmaxlttb_scalar_without_x_parallel(arr.view(), 100, 5, n_threads);
+            let idxs1 = minmaxlttb_scalar_without_x(arr.view(), n_out, minmax_ratio);
+            let idxs2 =
+                minmaxlttb_scalar_without_x_parallel(arr.view(), n_out, minmax_ratio, n_threads);
             assert_eq!(idxs1, idxs2);
         }
     }
