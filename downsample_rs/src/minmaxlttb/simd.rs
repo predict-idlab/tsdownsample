@@ -169,6 +169,7 @@ mod tests {
         let n_out: usize = 100;
         let minmax_ratio: usize = 5;
         for _ in 0..100 {
+            // TODO: test with x
             let arr = get_array_f32(n);
             let idxs1 = minmaxlttb_simd_without_x(arr.view(), n_out, minmax_ratio);
             let idxs2 =
