@@ -5,13 +5,28 @@ use super::super::lttb::{lttb_with_x, lttb_without_x};
 use super::super::types::Num;
 use num_traits::AsPrimitive;
 
+// types to make function signatures easier to read
+type ThreadCount = usize;
+type OutputCount = usize;
+
+pub enum MinMaxFunctionWithX<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>> {
+    Serial(fn(ArrayView1<Tx>, ArrayView1<Ty>, OutputCount) -> Array1<usize>),
+    Parallel(fn(ArrayView1<Tx>, ArrayView1<Ty>, OutputCount, ThreadCount) -> Array1<usize>),
+}
+
+pub enum MinMaxFunctionWithoutX<Ty: Num + AsPrimitive<f64>> {
+    Serial(fn(ArrayView1<Ty>, OutputCount) -> Array1<usize>),
+    Parallel(fn(ArrayView1<Ty>, OutputCount, ThreadCount) -> Array1<usize>),
+}
+
 #[inline(always)]
 pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     x: ArrayView1<Tx>,
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
-    f_minmax: fn(ArrayView1<Tx>, ArrayView1<Ty>, usize) -> Array1<usize>,
+    n_threads: Option<usize>,
+    f_minmax: MinMaxFunctionWithX<Tx, Ty>,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
@@ -21,8 +36,17 @@ where
     // Apply first min max aggregation (if above ratio)
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
-        let mut index: Array1<usize> =
-            f_minmax(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio);
+        let mut index = match f_minmax {
+            MinMaxFunctionWithX::Serial(func) => {
+                func(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio)
+            }
+            MinMaxFunctionWithX::Parallel(func) => func(
+                x.slice(s![1..-1]),
+                y.slice(s![1..-1]),
+                n_out * minmax_ratio,
+                n_threads.unwrap(), // n_threads cannot be None
+            ),
+        };
         // inplace + 1
         index.mapv_inplace(|i| i + 1);
         let mut index: Vec<usize> = index.into_raw_vec();
@@ -47,7 +71,8 @@ pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
-    f_minmax: fn(ArrayView1<Ty>, usize) -> Array1<usize>,
+    n_threads: Option<usize>,
+    f_minmax: MinMaxFunctionWithoutX<Ty>,
 ) -> Array1<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
@@ -56,7 +81,14 @@ where
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {
         // Get index of min max points
-        let mut index: Array1<usize> = f_minmax(y.slice(s![1..-1]), n_out * minmax_ratio);
+        let mut index = match f_minmax {
+            MinMaxFunctionWithoutX::Serial(func) => func(y.slice(s![1..-1]), n_out * minmax_ratio),
+            MinMaxFunctionWithoutX::Parallel(func) => func(
+                y.slice(s![1..-1]),
+                n_out * minmax_ratio,
+                n_threads.unwrap(), // n_threads cannot be None
+            ),
+        };
         // inplace + 1
         index.mapv_inplace(|i| i + 1);
         let mut index: Vec<usize> = index.into_raw_vec();

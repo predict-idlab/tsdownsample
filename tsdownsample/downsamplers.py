@@ -45,11 +45,11 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
         return _tsdownsample_rs.minmaxlttb
 
     def downsample(
-        self, *args, n_out: int, minmax_ratio: int = 30, parallel: bool = False, **_
+        self, *args, n_out: int, minmax_ratio: int = 30, n_threads: int = 1, **_
     ):
         assert minmax_ratio > 0, "minmax_ratio must be greater than 0"
         return super().downsample(
-            *args, n_out=n_out, parallel=parallel, ratio=minmax_ratio
+            *args, n_out=n_out, n_threads=n_threads, ratio=minmax_ratio
         )
 
 

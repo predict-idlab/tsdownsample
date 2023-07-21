@@ -2,7 +2,6 @@ use ndarray::ArrayView1;
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
-use std::thread::available_parallelism;
 
 use super::types::Num;
 use num_traits::{AsPrimitive, FromPrimitive};
@@ -136,6 +135,7 @@ fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     arr: ArrayView1<T>,
     nb_bins: usize,
+    n_threads: usize,
 ) -> impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>> + '_> + '_
 where
     T: Num + FromPrimitive + AsPrimitive<f64> + Sync + Send,
@@ -147,14 +147,13 @@ where
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let arr0: f64 = arr[0].as_(); // The first value of the array
                                   // 2. Compute the number of threads & bins per thread
-    let nb_threads = available_parallelism().map(|x| x.get()).unwrap_or(1);
-    let nb_threads = std::cmp::min(nb_threads, nb_bins);
-    let nb_bins_per_thread = nb_bins / nb_threads;
-    let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (nb_threads - 1);
+    let n_threads = std::cmp::min(n_threads, nb_bins);
+    let nb_bins_per_thread = nb_bins / n_threads;
+    let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (n_threads - 1);
     // 3. Iterate over the number of threads
     // -> for each thread perform the binary search sorted with moving left and
     // yield the indices (using the same idea as for the sequential version)
-    (0..nb_threads).into_par_iter().map(move |i| {
+    (0..n_threads).into_par_iter().map(move |i| {
         // The moving index & value (for the thread)
         let arr0_thr: f64 = sequential_add_mul(arr0, val_step, i * nb_bins_per_thread); // Search value
         let start_value: T = T::from_f64(arr0_thr).unwrap();
@@ -165,7 +164,7 @@ where
         }
 
         // The number of bins for the thread
-        let nb_bins_thread = if i == nb_threads - 1 {
+        let nb_bins_thread = if i == n_threads - 1 {
             nb_bins_last_thread
         } else {
             nb_bins_per_thread
@@ -191,11 +190,23 @@ where
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+    use rstest_reuse::{self, *};
+
     use super::*;
     use ndarray::Array1;
 
     extern crate dev_utils;
-    use dev_utils::utils::get_random_array;
+    use dev_utils::utils::{get_all_threads, get_random_array};
+
+    // Template for the n_threads matrix
+    #[template]
+    #[rstest]
+    #[case(1)]
+    #[case(get_all_threads() / 2)]
+    #[case(get_all_threads())]
+    #[case(get_all_threads() * 2)]
+    fn threads(#[case] n_threads: usize) {}
 
     #[test]
     fn test_search_sorted_identicial_to_np_linspace_searchsorted() {
@@ -281,38 +292,48 @@ mod tests {
         // assert_eq!(binary_search_with_mid(arr.view(), 11, 0, arr.len() - 1, 9), 10);
     }
 
-    #[test]
-    fn test_get_equidistant_bin_idxs() {
+    #[apply(threads)]
+    fn test_get_equidistant_bin_idxs(n_threads: usize) {
+        let expected_indices = vec![0, 4, 7];
+
         let arr = Array1::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
         let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), 3);
         let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
-        assert_eq!(bin_idxs, vec![0, 4, 7]);
-        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3);
+        assert_eq!(bin_idxs, expected_indices);
+
+        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3, n_threads);
         let bin_idxs = bin_idxs_iter
             .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
             .flatten()
             .collect::<Vec<usize>>();
-        assert_eq!(bin_idxs, vec![0, 4, 7]);
+        assert_eq!(bin_idxs, expected_indices);
     }
 
-    #[test]
-    fn test_many_random_same_result() {
+    #[apply(threads)]
+    fn test_many_random_same_result(n_threads: usize) {
         let n = 5_000;
         let nb_bins = 100;
+
         for _ in 0..100 {
             let arr = get_random_array::<i32>(n, i32::MIN, i32::MAX);
             // Sort the array
             let mut arr = arr.to_vec();
             arr.sort_by(|a, b| a.partial_cmp(b).unwrap());
             let arr = Array1::from(arr);
+
             // Calculate the bin indexes
             let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), nb_bins);
             let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
-            let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins);
+
+            // Calculate the bin indexes in parallel
+            let bin_idxs_iter =
+                get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins, n_threads);
             let bin_idxs_parallel = bin_idxs_iter
                 .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
                 .flatten()
                 .collect::<Vec<usize>>();
+
+            // Check that the results are the same
             assert_eq!(bin_idxs, bin_idxs_parallel);
         }
     }

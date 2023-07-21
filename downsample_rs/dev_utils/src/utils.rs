@@ -35,3 +35,11 @@ where
     }
     Array1::from(arr)
 }
+
+// ------------- Multi-threading -------------
+
+use std::thread::available_parallelism;
+
+pub fn get_all_threads() -> usize {
+    available_parallelism().map(|x| x.get()).unwrap_or(1)
+}

@@ -52,6 +52,7 @@ pub fn min_max_scalar_with_x_parallel<Tx, Ty>(
     x: ArrayView1<Tx>,
     arr: ArrayView1<Ty>,
     n_out: usize,
+    n_threads: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<Ty>,
@@ -59,8 +60,8 @@ where
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 2, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
-    min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2, n_threads);
+    min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, SCALAR::argminmax)
 }
 
 // ----------- WITHOUT X
@@ -68,22 +69,24 @@ where
 pub fn min_max_scalar_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: ArrayView1<T>,
     n_out: usize,
+    n_threads: usize,
 ) -> Array1<usize>
 where
     SCALAR: ScalarArgMinMax<T>,
 {
     assert_eq!(n_out % 2, 0);
-    min_max_generic_parallel(arr, n_out, SCALAR::argminmax)
+    min_max_generic_parallel(arr, n_out, n_threads, SCALAR::argminmax)
 }
 
 // --------------------------------------- TESTS ---------------------------------------
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        min_max_scalar_with_x, min_max_scalar_with_x_parallel, min_max_scalar_without_x,
-        min_max_scalar_without_x_parallel,
-    };
+    use rstest::rstest;
+    use rstest_reuse::{self, *};
+
+    use super::{min_max_scalar_with_x, min_max_scalar_without_x};
+    use super::{min_max_scalar_with_x_parallel, min_max_scalar_without_x_parallel};
     use ndarray::Array1;
 
     extern crate dev_utils;
@@ -92,6 +95,15 @@ mod tests {
     fn get_array_f32(n: usize) -> Array1<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
+
+    // Template for the n_threads matrix
+    #[template]
+    #[rstest]
+    #[case(1)]
+    #[case(utils::get_all_threads() / 2)]
+    #[case(utils::get_all_threads())]
+    #[case(utils::get_all_threads() * 2)]
+    fn threads(#[case] n_threads: usize) {}
 
     #[test]
     fn test_min_max_scalar_without_x_correct() {
@@ -111,12 +123,12 @@ mod tests {
         assert_eq!(sampled_values, Array1::from(expected_values));
     }
 
-    #[test]
-    fn test_min_max_scalar_without_x_parallel_correct() {
+    #[apply(threads)]
+    fn test_min_max_scalar_without_x_parallel_correct(n_threads: usize) {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_scalar_without_x_parallel(arr.view(), 10);
+        let sampled_indices = min_max_scalar_without_x_parallel(arr.view(), 10, n_threads);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
         let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
@@ -149,14 +161,14 @@ mod tests {
         assert_eq!(sampled_values, Array1::from(expected_values));
     }
 
-    #[test]
-    fn test_min_max_scalar_with_x_parallel_correct() {
+    #[apply(threads)]
+    fn test_min_max_scalar_with_x_parallel_correct(n_threads: usize) {
         let x = (0..100).collect::<Vec<i32>>();
         let x = Array1::from(x);
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10);
+        let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10, n_threads);
         let sampled_values = sampled_indices.mapv(|x| arr[x]);
 
         let expected_indices = vec![0, 19, 20, 39, 40, 59, 60, 79, 80, 99];
@@ -201,8 +213,8 @@ mod tests {
         assert_eq!(sampled_indices, Array1::from(expected_indices));
     }
 
-    #[test]
-    fn test_min_max_scalar_with_x_parallel_gap() {
+    #[apply(threads)]
+    fn test_min_max_scalar_with_x_parallel_gap(n_threads: usize) {
         // Create a gap in the middle of the array
         let x = (0..100).collect::<Vec<i32>>();
 
@@ -215,7 +227,7 @@ mod tests {
         let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
         let arr = Array1::from(arr);
 
-        let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10);
+        let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10, n_threads);
         assert_eq!(sampled_indices.len(), 8); // One full gap
         let expected_indices = vec![0, 29, 30, 50, 51, 69, 70, 99];
         assert_eq!(sampled_indices, Array1::from(expected_indices));
@@ -227,14 +239,14 @@ mod tests {
             .collect::<Vec<i32>>();
         let x = Array1::from(x);
 
-        let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10);
+        let sampled_indices = min_max_scalar_with_x_parallel(x.view(), arr.view(), 10, n_threads);
         assert_eq!(sampled_indices.len(), 9); // Gap with 1 value
         let expected_indices = vec![0, 39, 40, 50, 51, 52, 59, 60, 99];
         assert_eq!(sampled_indices, Array1::from(expected_indices));
     }
 
-    #[test]
-    fn test_many_random_runs_same_output() {
+    #[apply(threads)]
+    fn test_many_random_runs_same_output(n_threads: usize) {
         let n: usize = 20_003;
         let n_out = 202;
         let x = (0..n as i32).collect::<Vec<i32>>();
@@ -243,9 +255,9 @@ mod tests {
             let mut arr = get_array_f32(n);
             arr[n - 1] = f32::INFINITY; // Make sure the last value is always the max
             let idxs1 = min_max_scalar_without_x(arr.view(), n_out);
-            let idxs2 = min_max_scalar_without_x_parallel(arr.view(), n_out);
+            let idxs2 = min_max_scalar_without_x_parallel(arr.view(), n_out, n_threads);
             let idxs3 = min_max_scalar_with_x(x.view(), arr.view(), n_out);
-            let idxs4 = min_max_scalar_with_x_parallel(x.view(), arr.view(), n_out);
+            let idxs4 = min_max_scalar_with_x_parallel(x.view(), arr.view(), n_out, n_threads);
             assert_eq!(idxs1, idxs2);
             assert_eq!(idxs1, idxs3);
             assert_eq!(idxs1, idxs4);
