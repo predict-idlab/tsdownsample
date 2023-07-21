@@ -104,8 +104,7 @@ mod tests {
     #[case(1)]
     #[case(utils::get_all_threads() / 2)]
     #[case(utils::get_all_threads())]
-    #[case(utils::get_all_threads() * 2)] // Causes random many runs test to fail
-                                          // -> only when this equals 16
+    #[case(utils::get_all_threads() * 2)]
     fn threads(#[case] n_threads: usize) {}
 
     #[test]
