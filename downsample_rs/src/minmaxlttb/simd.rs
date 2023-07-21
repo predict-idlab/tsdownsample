@@ -8,7 +8,6 @@ use super::super::types::Num;
 use ndarray::{Array1, ArrayView1};
 use num_traits::{AsPrimitive, FromPrimitive};
 
-extern crate argminmax;
 use argminmax::ArgMinMax;
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
@@ -117,7 +116,6 @@ mod tests {
     use super::{minmaxlttb_simd_with_x_parallel, minmaxlttb_simd_without_x_parallel};
     use ndarray::{array, Array1};
 
-    extern crate dev_utils;
     use dev_utils::utils;
 
     fn get_array_f32(n: usize) -> Array1<f32> {

@@ -1,5 +1,3 @@
-extern crate argminmax;
-
 use argminmax::ArgMinMax;
 
 use ndarray::{Array1, ArrayView1};
@@ -84,7 +82,6 @@ mod tests {
     use super::{m4_simd_with_x_parallel, m4_simd_without_x_parallel};
     use ndarray::Array1;
 
-    extern crate dev_utils;
     use dev_utils::utils;
 
     fn get_array_f32(n: usize) -> Array1<f32> {
