@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - main
+    paths: 
+      - "downsample_rs/**"
+      - "!downsample_rs/LICENSE"
+      - "!downsample_rs/README.md"
 
 defaults:
   run:
