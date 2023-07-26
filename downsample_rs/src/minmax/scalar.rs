@@ -1,4 +1,4 @@
-use argminmax::{ScalarArgMinMax, SCALAR};
+use argminmax::ArgMinMax;
 use num_traits::{AsPrimitive, FromPrimitive};
 
 use ndarray::{Array1, ArrayView1};
@@ -20,13 +20,13 @@ pub fn min_max_scalar_with_x<Tx, Ty>(
     n_out: usize,
 ) -> Array1<usize>
 where
-    SCALAR: ScalarArgMinMax<Ty>,
+    for<'a> &'a [Ty]: ArgMinMax,
     Tx: Num + FromPrimitive + AsPrimitive<f64>,
     Ty: Copy + PartialOrd,
 {
     assert_eq!(n_out % 2, 0);
     let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 2);
-    min_max_generic_with_x(arr, bin_idx_iterator, n_out, SCALAR::argminmax)
+    min_max_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
 // ----------- WITHOUT X
@@ -36,10 +36,10 @@ pub fn min_max_scalar_without_x<T: Copy + PartialOrd>(
     n_out: usize,
 ) -> Array1<usize>
 where
-    SCALAR: ScalarArgMinMax<T>,
+    for<'a> &'a [T]: ArgMinMax,
 {
     assert_eq!(n_out % 2, 0);
-    min_max_generic(arr, n_out, SCALAR::argminmax)
+    min_max_generic(arr, n_out, |arr| arr.argminmax())
 }
 
 // ------------------------------------- PARALLEL --------------------------------------
@@ -53,13 +53,15 @@ pub fn min_max_scalar_with_x_parallel<Tx, Ty>(
     n_threads: usize,
 ) -> Array1<usize>
 where
-    SCALAR: ScalarArgMinMax<Ty>,
+    for<'a> &'a [Ty]: ArgMinMax,
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 2, 0);
     let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2, n_threads);
-    min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, SCALAR::argminmax)
+    min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, |arr| {
+        arr.argminmax()
+    })
 }
 
 // ----------- WITHOUT X
@@ -70,10 +72,10 @@ pub fn min_max_scalar_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     n_threads: usize,
 ) -> Array1<usize>
 where
-    SCALAR: ScalarArgMinMax<T>,
+    for<'a> &'a [T]: ArgMinMax,
 {
     assert_eq!(n_out % 2, 0);
-    min_max_generic_parallel(arr, n_out, n_threads, SCALAR::argminmax)
+    min_max_generic_parallel(arr, n_out, n_threads, |arr| arr.argminmax())
 }
 
 // --------------------------------------- TESTS ---------------------------------------
