@@ -118,7 +118,7 @@ mod tests {
 
     use dev_utils::utils;
 
-    fn get_array_f32(n: usize) -> Array1<f32> {
+    fn get_array_f32(n: usize) -> Vec<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
 
@@ -169,6 +169,7 @@ mod tests {
         for _ in 0..100 {
             // TODO: test with x
             let arr = get_array_f32(n);
+            let arr = Array1::from(arr);
             let idxs1 = minmaxlttb_simd_without_x(arr.view(), n_out, minmax_ratio);
             let idxs2 =
                 minmaxlttb_simd_without_x_parallel(arr.view(), n_out, minmax_ratio, n_threads);

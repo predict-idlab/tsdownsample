@@ -25,7 +25,7 @@ where
     Ty: Copy + PartialOrd,
 {
     assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 4);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x.as_slice().unwrap(), n_out / 4);
     m4_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
@@ -55,7 +55,8 @@ where
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4, n_threads);
+    let bin_idx_iterator =
+        get_equidistant_bin_idx_iterator_parallel(x.as_slice().unwrap(), n_out / 4, n_threads);
     m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, |arr| {
         arr.argminmax()
     })
@@ -88,7 +89,7 @@ mod tests {
 
     use dev_utils::utils;
 
-    fn get_array_f32(n: usize) -> Array1<f32> {
+    fn get_array_f32(n: usize) -> Vec<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
 
@@ -253,6 +254,7 @@ mod tests {
         let x = Array1::from(x);
         for _ in 0..100 {
             let arr = get_array_f32(n);
+            let arr = Array1::from(arr);
             let idxs1 = m4_scalar_without_x(arr.view(), n_out);
             let idxs2 = m4_scalar_with_x(x.view(), arr.view(), n_out);
             assert_eq!(idxs1, idxs2);

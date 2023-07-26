@@ -25,7 +25,7 @@ where
     Ty: Copy + PartialOrd,
 {
     assert_eq!(n_out % 2, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 2);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x.as_slice().unwrap(), n_out / 2);
     min_max_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
@@ -58,7 +58,8 @@ where
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 2, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2, n_threads);
+    let bin_idx_iterator =
+        get_equidistant_bin_idx_iterator_parallel(x.as_slice().unwrap(), n_out / 2, n_threads);
     min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, |arr| {
         arr.argminmax()
     })
@@ -91,7 +92,7 @@ mod tests {
 
     use dev_utils::utils;
 
-    fn get_array_f32(n: usize) -> Array1<f32> {
+    fn get_array_f32(n: usize) -> Vec<f32> {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
 
@@ -253,6 +254,7 @@ mod tests {
         for _ in 0..100 {
             let mut arr = get_array_f32(n);
             arr[n - 1] = f32::INFINITY; // Make sure the last value is always the max
+            let arr = Array1::from(arr);
             let idxs1 = min_max_simd_without_x(arr.view(), n_out);
             let idxs2 = min_max_simd_without_x_parallel(arr.view(), n_out, n_threads);
             let idxs3 = min_max_simd_with_x(x.view(), arr.view(), n_out);

@@ -228,6 +228,7 @@ mod tests {
             let n = 5_000;
             let x: Array1<i32> = Array1::from((0..n).map(|i| i as i32).collect::<Vec<i32>>());
             let y = utils::get_random_array(n, f32::MIN, f32::MAX);
+            let y = Array1::from(y);
             let sampled_indices1 = lttb_with_x(x.view(), y.view(), 200);
             let sampled_indices2 = lttb_without_x(y.view(), 200);
             assert_eq!(sampled_indices1, sampled_indices2);
