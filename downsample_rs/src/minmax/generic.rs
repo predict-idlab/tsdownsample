@@ -8,20 +8,20 @@ use rayon::prelude::*;
 
 #[inline(always)]
 pub(crate) fn min_max_generic<T: Copy>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     n_out: usize,
-    f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
-) -> Array1<usize> {
+    f_argminmax: fn(&[T]) -> (usize, usize),
+) -> Vec<usize> {
     // Assumes n_out is a multiple of 2
     if n_out >= arr.len() {
-        return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+        return (0..arr.len()).collect::<Vec<usize>>();
     }
 
     // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
     let arr_ptr = arr.as_ptr();
 
-    let mut sampled_indices: Array1<usize> = Array1::<usize>::default(n_out);
+    let mut sampled_indices = vec![usize::default(); n_out];
 
     let mut start_idx: usize = 0;
     for i in 0..n_out / 2 {
@@ -30,9 +30,7 @@ pub(crate) fn min_max_generic<T: Copy>(
         let end: f64 = block_size * (i + 1) as f64;
         let end_idx: usize = end as usize + 1;
 
-        let (min_index, max_index) = f_argminmax(unsafe {
-            ArrayView1::from_shape_ptr((end_idx - start_idx,), arr_ptr.add(start_idx))
-        });
+        let (min_index, max_index) = f_argminmax(&arr[start_idx..end_idx]);
 
         // Add the indexes in sorted order
         if min_index < max_index {
@@ -51,14 +49,14 @@ pub(crate) fn min_max_generic<T: Copy>(
 
 #[inline(always)]
 pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     n_out: usize,
     n_threads: usize,
-    f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
-) -> Array1<usize> {
+    f_argminmax: fn(&[T]) -> (usize, usize),
+) -> Vec<usize> {
     // Assumes n_out is a multiple of 2
     if n_out >= arr.len() {
-        return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+        return (0..arr.len()).collect::<Vec<usize>>();
     }
 
     // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
@@ -74,15 +72,14 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         .num_threads(n_threads)
         .build();
 
+    // todo: remove ndarray dependency from this part
     let zip_func = || {
         Zip::from(sampled_indices.exact_chunks_mut(2)).par_for_each(|mut sampled_index| {
             let i: f64 = unsafe { *sampled_index.uget(0) >> 1 } as f64;
             let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
             let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
 
-            let (min_index, max_index) = f_argminmax(unsafe {
-                ArrayView1::from_shape_ptr((end_idx - start_idx,), arr.as_ptr().add(start_idx))
-            });
+            let (min_index, max_index) = f_argminmax(&arr[start_idx..end_idx]);
 
             // Add the indexes in sorted order
             if min_index < max_index {
@@ -97,21 +94,21 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 
     pool.unwrap().install(zip_func); // allow panic if pool could not be created
 
-    sampled_indices
+    sampled_indices.to_vec()
 }
 
 // --------------------- WITH X
 
 #[inline(always)]
 pub(crate) fn min_max_generic_with_x<T: Copy>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     bin_idx_iterator: impl Iterator<Item = Option<(usize, usize)>>,
     n_out: usize,
-    f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
-) -> Array1<usize> {
+    f_argminmax: fn(&[T]) -> (usize, usize),
+) -> Vec<usize> {
     // Assumes n_out is a multiple of 2
     if n_out >= arr.len() {
-        return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+        return (0..arr.len()).collect::<Vec<usize>>();
     }
 
     let ptr = arr.as_ptr();
@@ -126,7 +123,7 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
                 }
             } else {
                 // If the bin has at least two elements, add the argmin and argmax
-                let step = unsafe { ArrayView1::from_shape_ptr(end - start, ptr.add(start)) };
+                let step = &arr[start..end];
                 let (min_index, max_index) = f_argminmax(step);
 
                 // Add the indexes in sorted order
@@ -141,20 +138,20 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
         }
     });
 
-    Array1::from_vec(sampled_indices)
+    sampled_indices
 }
 
 #[inline(always)]
 pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>>>,
     n_out: usize,
     n_threads: usize,
-    f_argminmax: fn(ArrayView1<T>) -> (usize, usize),
-) -> Array1<usize> {
+    f_argminmax: fn(&[T]) -> (usize, usize),
+) -> Vec<usize> {
     // Assumes n_out is a multiple of 2
     if n_out >= arr.len() {
-        return Array1::from((0..arr.len()).collect::<Vec<usize>>());
+        return (0..arr.len()).collect::<Vec<usize>>();
     }
 
     // to limit the amounts of threads Rayon uses, an explicit threadpool needs to be created
@@ -165,44 +162,37 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
         .build();
 
     let iter_func = || {
-        Array1::from_vec(
-            bin_idx_iterator
-                .flat_map(|bin_idx_iterator| {
-                    bin_idx_iterator
-                        .map(|bin| {
-                            match bin {
-                                Some((start, end)) => {
-                                    if end <= start + 2 {
-                                        // If the bin has <= 2 elements, just return them all
-                                        return (start..end).collect::<Vec<usize>>();
-                                    }
-
-                                    // If the bin has at least two elements, return the argmin and argmax
-                                    let step = unsafe {
-                                        ArrayView1::from_shape_ptr(
-                                            end - start,
-                                            arr.as_ptr().add(start),
-                                        )
-                                    };
-                                    let (min_index, max_index) = f_argminmax(step);
-
-                                    // Return the indexes in sorted order
-                                    if min_index < max_index {
-                                        vec![min_index + start, max_index + start]
-                                    } else {
-                                        vec![max_index + start, min_index + start]
-                                    }
-                                } // If the bin is empty, return empty Vec
-                                None => {
-                                    vec![]
+        bin_idx_iterator
+            .flat_map(|bin_idx_iterator| {
+                bin_idx_iterator
+                    .map(|bin| {
+                        match bin {
+                            Some((start, end)) => {
+                                if end <= start + 2 {
+                                    // If the bin has <= 2 elements, just return them all
+                                    return (start..end).collect::<Vec<usize>>();
                                 }
+
+                                // If the bin has at least two elements, return the argmin and argmax
+                                let step = &arr[start..end];
+                                let (min_index, max_index) = f_argminmax(step);
+
+                                // Return the indexes in sorted order
+                                if min_index < max_index {
+                                    vec![min_index + start, max_index + start]
+                                } else {
+                                    vec![max_index + start, min_index + start]
+                                }
+                            } // If the bin is empty, return empty Vec
+                            None => {
+                                vec![]
                             }
-                        })
-                        .collect::<Vec<Vec<usize>>>()
-                })
-                .flatten()
-                .collect::<Vec<usize>>(),
-        )
+                        }
+                    })
+                    .collect::<Vec<Vec<usize>>>()
+            })
+            .flatten()
+            .collect::<Vec<usize>>()
     };
 
     pool.unwrap().install(iter_func) // allow panic if pool could not be created

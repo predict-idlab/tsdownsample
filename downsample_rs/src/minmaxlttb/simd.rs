@@ -34,7 +34,13 @@ where
         n_out,
         minmax_ratio,
         None,
-        MinMaxFunctionWithX::Serial(minmax::min_max_simd_with_x),
+        MinMaxFunctionWithX::Serial(|x, y, n_out| {
+            Array1::from(minmax::min_max_simd_with_x(
+                x.as_slice().unwrap(),
+                y.as_slice().unwrap(),
+                n_out,
+            ))
+        }),
     )
 }
 
@@ -55,7 +61,9 @@ where
         n_out,
         minmax_ratio,
         None,
-        MinMaxFunctionWithoutX::Serial(minmax::min_max_simd_without_x),
+        MinMaxFunctionWithoutX::Serial(|y, n_out| {
+            Array1::from(minmax::min_max_simd_without_x(y.as_slice().unwrap(), n_out))
+        }),
     )
 }
 
@@ -83,7 +91,14 @@ where
         n_out,
         minmax_ratio,
         Some(n_threads),
-        MinMaxFunctionWithX::Parallel(minmax::min_max_simd_with_x_parallel),
+        MinMaxFunctionWithX::Parallel(|x, y, n_out, n_threads| {
+            Array1::from(minmax::min_max_simd_with_x_parallel(
+                x.as_slice().unwrap(),
+                y.as_slice().unwrap(),
+                n_out,
+                n_threads,
+            ))
+        }),
     )
 }
 
@@ -105,7 +120,13 @@ where
         n_out,
         minmax_ratio,
         Some(n_threads),
-        MinMaxFunctionWithoutX::Parallel(minmax::min_max_simd_without_x_parallel),
+        MinMaxFunctionWithoutX::Parallel(|y, n_out, n_threads| {
+            Array1::from(minmax::min_max_simd_without_x_parallel(
+                y.as_slice().unwrap(),
+                n_out,
+                n_threads,
+            ))
+        }),
     )
 }
 
