@@ -1,7 +1,5 @@
 use argminmax::ArgMinMax;
-use ndarray::{s, Array1, ArrayView1};
 
-use super::super::helpers::Average;
 use super::super::lttb::{lttb_with_x, lttb_without_x};
 use super::super::types::Num;
 use num_traits::AsPrimitive;
@@ -11,26 +9,25 @@ type ThreadCount = usize;
 type OutputCount = usize;
 
 pub enum MinMaxFunctionWithX<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>> {
-    Serial(fn(ArrayView1<Tx>, ArrayView1<Ty>, OutputCount) -> Array1<usize>),
-    Parallel(fn(ArrayView1<Tx>, ArrayView1<Ty>, OutputCount, ThreadCount) -> Array1<usize>),
+    Serial(fn(&[Tx], &[Ty], OutputCount) -> Vec<usize>),
+    Parallel(fn(&[Tx], &[Ty], OutputCount, ThreadCount) -> Vec<usize>),
 }
 
 pub enum MinMaxFunctionWithoutX<Ty: Num + AsPrimitive<f64>> {
-    Serial(fn(ArrayView1<Ty>, OutputCount) -> Array1<usize>),
-    Parallel(fn(ArrayView1<Ty>, OutputCount, ThreadCount) -> Array1<usize>),
+    Serial(fn(&[Ty], OutputCount) -> Vec<usize>),
+    Parallel(fn(&[Ty], OutputCount, ThreadCount) -> Vec<usize>),
 }
 
 #[inline(always)]
 pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
-    x: ArrayView1<Tx>,
-    y: ArrayView1<Ty>,
+    x: &[Tx],
+    y: &[Ty],
     n_out: usize,
     minmax_ratio: usize,
     n_threads: Option<usize>,
     f_minmax: MinMaxFunctionWithX<Tx, Ty>,
 ) -> Vec<usize>
 where
-    for<'a> ArrayView1<'a, Ty>: Average,
     for<'a> &'a [Ty]: ArgMinMax,
 {
     assert_eq!(x.len(), y.len());
@@ -39,49 +36,57 @@ where
     if x.len() / n_out > minmax_ratio {
         // Get index of min max points
         let mut index = match f_minmax {
-            MinMaxFunctionWithX::Serial(func) => {
-                func(x.slice(s![1..-1]), y.slice(s![1..-1]), n_out * minmax_ratio)
-            }
+            MinMaxFunctionWithX::Serial(func) => func(
+                &x[1..(x.len() - 1)],
+                &y[1..(x.len() - 1)],
+                n_out * minmax_ratio,
+            ),
             MinMaxFunctionWithX::Parallel(func) => func(
-                x.slice(s![1..-1]),
-                y.slice(s![1..-1]),
+                &x[1..(x.len() - 1)],
+                &y[1..(x.len() - 1)],
                 n_out * minmax_ratio,
                 n_threads.unwrap(), // n_threads cannot be None
             ),
         };
         // inplace + 1
-        index.mapv_inplace(|i| i + 1);
-        let mut index: Vec<usize> = index.into_raw_vec();
+        index.iter_mut().for_each(|elem| *elem += 1);
         // Prepend first and last point
         index.insert(0, 0);
         index.push(x.len() - 1);
-        let index = Array1::from_vec(index);
         // Get x and y values at index
-        let x = unsafe { index.mapv(|i| *x.uget(i)) };
-        let y = unsafe { index.mapv(|i| *y.uget(i)) };
+        let x = unsafe {
+            index
+                .iter()
+                .map(|i| *x.get_unchecked(*i))
+                .collect::<Vec<Tx>>()
+        };
+        let y = unsafe {
+            index
+                .iter()
+                .map(|i| *y.get_unchecked(*i))
+                .collect::<Vec<Ty>>()
+        };
         // Apply lttb on the reduced data
-        let index_points_selected = Array1::from(lttb_with_x(
-            x.view().as_slice().unwrap(),
-            y.view().as_slice().unwrap(),
-            n_out,
-        ));
+        let index_points_selected = lttb_with_x(x.as_slice(), y.as_slice(), n_out);
         // Return the original index
-        return index_points_selected.mapv(|i| index[i]).to_vec();
+        return index_points_selected
+            .iter()
+            .map(|i| index[*i])
+            .collect::<Vec<usize>>();
     }
     // Apply lttb on all data when requirement is not met
-    lttb_with_x(x.as_slice().unwrap(), y.as_slice().unwrap(), n_out)
+    lttb_with_x(x, y, n_out)
 }
 
 #[inline(always)]
 pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
-    y: ArrayView1<Ty>,
+    y: &[Ty],
     n_out: usize,
     minmax_ratio: usize,
     n_threads: Option<usize>,
     f_minmax: MinMaxFunctionWithoutX<Ty>,
 ) -> Vec<usize>
 where
-    for<'a> ArrayView1<'a, Ty>: Average,
     for<'a> &'a [Ty]: ArgMinMax,
 {
     assert!(minmax_ratio > 1);
@@ -89,28 +94,35 @@ where
     if y.len() / n_out > minmax_ratio {
         // Get index of min max points
         let mut index = match f_minmax {
-            MinMaxFunctionWithoutX::Serial(func) => func(y.slice(s![1..-1]), n_out * minmax_ratio),
+            MinMaxFunctionWithoutX::Serial(func) => {
+                func(&y[1..(y.len() - 1)], n_out * minmax_ratio)
+            }
             MinMaxFunctionWithoutX::Parallel(func) => func(
-                y.slice(s![1..-1]),
+                &y[1..(y.len() - 1)],
                 n_out * minmax_ratio,
                 n_threads.unwrap(), // n_threads cannot be None
             ),
         };
         // inplace + 1
-        index.mapv_inplace(|i| i + 1);
-        let mut index: Vec<usize> = index.into_raw_vec();
+        index.iter_mut().for_each(|elem| *elem += 1);
         // Prepend first and last point
         index.insert(0, 0);
         index.push(y.len() - 1);
-        let index = Array1::from_vec(index);
         // Get y values at index
-        let y = unsafe { index.mapv(|i| *y.uget(i)) };
+        let y = unsafe {
+            index
+                .iter()
+                .map(|i| *y.get_unchecked(*i))
+                .collect::<Vec<Ty>>()
+        };
         // Apply lttb on the reduced data
-        let index_points_selected =
-            Array1::from(lttb_without_x(y.view().as_slice().unwrap(), n_out));
+        let index_points_selected = lttb_without_x(y.as_slice(), n_out);
         // Return the original index
-        return index_points_selected.mapv(|i| index[i]).to_vec();
+        return index_points_selected
+            .iter()
+            .map(|i| index[*i])
+            .collect::<Vec<usize>>();
     }
     // Apply lttb on all data when requirement is not met
-    lttb_without_x(y.view().as_slice().unwrap(), n_out).to_vec()
+    lttb_without_x(y, n_out).to_vec()
 }
