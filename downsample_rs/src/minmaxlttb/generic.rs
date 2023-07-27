@@ -1,3 +1,4 @@
+use argminmax::ArgMinMax;
 use ndarray::{s, Array1, ArrayView1};
 
 use super::super::helpers::Average;
@@ -27,9 +28,10 @@ pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimiti
     minmax_ratio: usize,
     n_threads: Option<usize>,
     f_minmax: MinMaxFunctionWithX<Tx, Ty>,
-) -> Array1<usize>
+) -> Vec<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
+    for<'a> &'a [Ty]: ArgMinMax,
 {
     assert_eq!(x.len(), y.len());
     assert!(minmax_ratio > 1);
@@ -58,12 +60,16 @@ where
         let x = unsafe { index.mapv(|i| *x.uget(i)) };
         let y = unsafe { index.mapv(|i| *y.uget(i)) };
         // Apply lttb on the reduced data
-        let index_points_selected = lttb_with_x(x.view(), y.view(), n_out);
+        let index_points_selected = Array1::from(lttb_with_x(
+            x.view().as_slice().unwrap(),
+            y.view().as_slice().unwrap(),
+            n_out,
+        ));
         // Return the original index
-        return index_points_selected.mapv(|i| index[i]);
+        return index_points_selected.mapv(|i| index[i]).to_vec();
     }
     // Apply lttb on all data when requirement is not met
-    lttb_with_x(x, y, n_out)
+    lttb_with_x(x.as_slice().unwrap(), y.as_slice().unwrap(), n_out)
 }
 
 #[inline(always)]
@@ -73,9 +79,10 @@ pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
     minmax_ratio: usize,
     n_threads: Option<usize>,
     f_minmax: MinMaxFunctionWithoutX<Ty>,
-) -> Array1<usize>
+) -> Vec<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
+    for<'a> &'a [Ty]: ArgMinMax,
 {
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
@@ -99,10 +106,11 @@ where
         // Get y values at index
         let y = unsafe { index.mapv(|i| *y.uget(i)) };
         // Apply lttb on the reduced data
-        let index_points_selected = lttb_without_x(y.view(), n_out);
+        let index_points_selected =
+            Array1::from(lttb_without_x(y.view().as_slice().unwrap(), n_out));
         // Return the original index
-        return index_points_selected.mapv(|i| index[i]);
+        return index_points_selected.mapv(|i| index[i]).to_vec();
     }
     // Apply lttb on all data when requirement is not met
-    lttb_without_x(y.view(), n_out)
+    lttb_without_x(y.view().as_slice().unwrap(), n_out).to_vec()
 }

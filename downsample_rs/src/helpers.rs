@@ -1,6 +1,9 @@
 #[cfg(feature = "half")]
 use half::f16;
 use ndarray::ArrayView1;
+use num_traits::AsPrimitive;
+
+use crate::types::Num;
 
 // ------------ AVERAGE
 
@@ -20,24 +23,33 @@ use ndarray::ArrayView1;
 // See more details: https://github.com/numpy/numpy/blob/8cec82012694571156e8d7696307c848a7603b4e/numpy/core/_methods.py#L164
 
 pub trait Average {
-    fn average(self) -> f64;
+    fn average(&self) -> f64;
+}
+
+impl<T> Average for [T]
+where
+    T: Num + AsPrimitive<f64>,
+{
+    fn average(&self) -> f64 {
+        self.iter().fold(0f64, |acc, &x| acc + x.as_()) as f64 / self.len() as f64
+    }
 }
 
 impl Average for ArrayView1<'_, f64> {
-    fn average(self) -> f64 {
+    fn average(&self) -> f64 {
         self.mean().unwrap()
     }
 }
 
 impl Average for ArrayView1<'_, f32> {
-    fn average(self) -> f64 {
+    fn average(&self) -> f64 {
         self.mean().unwrap() as f64
     }
 }
 
 #[cfg(feature = "half")]
 impl Average for ArrayView1<'_, f16> {
-    fn average(self) -> f64 {
+    fn average(&self) -> f64 {
         self.fold(0f32, |acc, &x| acc + x.to_f32()) as f64 / self.len() as f64
     }
 }
@@ -46,7 +58,7 @@ macro_rules! impl_average {
     ($($t:ty)*) => ($(
         impl Average for ArrayView1<'_, $t> {
             #[inline(always)]
-            fn average(self) -> f64 {
+            fn average(&self) -> f64 {
                 self.fold(0f64, |acc, &x| acc + x as f64) / self.len() as f64
             }
         }

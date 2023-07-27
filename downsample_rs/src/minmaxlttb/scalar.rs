@@ -20,7 +20,7 @@ pub fn minmaxlttb_scalar_with_x<
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
-) -> Array1<usize>
+) -> Vec<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
     for<'a> &'a [Ty]: ArgMinMax,
@@ -41,7 +41,7 @@ pub fn minmaxlttb_scalar_without_x<Ty: Num + AsPrimitive<f64>>(
     y: ArrayView1<Ty>,
     n_out: usize,
     minmax_ratio: usize,
-) -> Array1<usize>
+) -> Vec<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
     for<'a> &'a [Ty]: ArgMinMax,
@@ -68,7 +68,7 @@ pub fn minmaxlttb_scalar_with_x_parallel<
     n_out: usize,
     minmax_ratio: usize,
     n_threads: usize,
-) -> Array1<usize>
+) -> Vec<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
     for<'a> &'a [Ty]: ArgMinMax,
@@ -90,7 +90,7 @@ pub fn minmaxlttb_scalar_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + 
     n_out: usize,
     minmax_ratio: usize,
     n_threads: usize,
-) -> Array1<usize>
+) -> Vec<usize>
 where
     for<'a> ArrayView1<'a, Ty>: Average,
     for<'a> &'a [Ty]: ArgMinMax,
@@ -135,14 +135,14 @@ mod tests {
         let x = array![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let sampled_indices = minmaxlttb_scalar_with_x(x.view(), y.view(), 4, 2);
-        assert_eq!(sampled_indices, array![0, 1, 5, 9]);
+        assert_eq!(sampled_indices, vec![0, 1, 5, 9]);
     }
 
     #[test]
     fn test_minmaxlttb_without_x() {
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let sampled_indices = minmaxlttb_scalar_without_x(y.view(), 4, 2);
-        assert_eq!(sampled_indices, array![0, 1, 5, 9]);
+        assert_eq!(sampled_indices, vec![0, 1, 5, 9]);
     }
 
     #[apply(threads)]
@@ -151,14 +151,14 @@ mod tests {
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let sampled_indices =
             minmaxlttb_scalar_with_x_parallel(x.view(), y.view(), 4, 2, n_threads);
-        assert_eq!(sampled_indices, array![0, 1, 5, 9]);
+        assert_eq!(sampled_indices, vec![0, 1, 5, 9]);
     }
 
     #[apply(threads)]
     fn test_minmaxlttb_without_x_parallel(n_threads: usize) {
         let y = array![0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
         let sampled_indices = minmaxlttb_scalar_without_x_parallel(y.view(), 4, 2, n_threads);
-        assert_eq!(sampled_indices, array![0, 1, 5, 9]);
+        assert_eq!(sampled_indices, vec![0, 1, 5, 9]);
     }
 
     #[apply(threads)]
