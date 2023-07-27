@@ -1,6 +1,5 @@
 use argminmax::ArgMinMax;
 
-use ndarray::{Array1, ArrayView1};
 use num_traits::{AsPrimitive, FromPrimitive};
 
 use super::super::searchsorted::{
@@ -14,22 +13,22 @@ use super::generic::{m4_generic_with_x, m4_generic_with_x_parallel};
 
 // ----------- WITH X
 
-pub fn m4_simd_with_x<Tx, Ty>(x: ArrayView1<Tx>, arr: ArrayView1<Ty>, n_out: usize) -> Array1<usize>
+pub fn m4_simd_with_x<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
 where
-    for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    for<'a> &'a [Ty]: ArgMinMax,
     Tx: Num + FromPrimitive + AsPrimitive<f64>,
     Ty: Copy + PartialOrd,
 {
     assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x.as_slice().unwrap(), n_out / 4);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 4);
     m4_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
 // ----------- WITHOUT X
 
-pub fn m4_simd_without_x<T: Copy + PartialOrd>(arr: ArrayView1<T>, n_out: usize) -> Array1<usize>
+pub fn m4_simd_without_x<T: Copy + PartialOrd>(arr: &[T], n_out: usize) -> Vec<usize>
 where
-    for<'a> ArrayView1<'a, T>: ArgMinMax,
+    for<'a> &'a [T]: ArgMinMax,
 {
     assert_eq!(n_out % 4, 0);
     m4_generic(arr, n_out, |arr| arr.argminmax())
@@ -40,19 +39,18 @@ where
 // ----------- WITH X
 
 pub fn m4_simd_with_x_parallel<Tx, Ty>(
-    x: ArrayView1<Tx>,
-    arr: ArrayView1<Ty>,
+    x: &[Tx],
+    arr: &[Ty],
     n_out: usize,
     n_threads: usize,
-) -> Array1<usize>
+) -> Vec<usize>
 where
-    for<'a> ArrayView1<'a, Ty>: ArgMinMax,
+    for<'a> &'a [Ty]: ArgMinMax,
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator =
-        get_equidistant_bin_idx_iterator_parallel(x.as_slice().unwrap(), n_out / 4, n_threads);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4, n_threads);
     m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, |arr| {
         arr.argminmax()
     })
@@ -61,12 +59,12 @@ where
 // ----------- WITHOUT X
 
 pub fn m4_simd_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     n_out: usize,
     n_threads: usize,
-) -> Array1<usize>
+) -> Vec<usize>
 where
-    for<'a> ArrayView1<'a, T>: ArgMinMax,
+    for<'a> &'a [T]: ArgMinMax,
 {
     assert_eq!(n_out % 4, 0);
     m4_generic_parallel(arr, n_out, n_threads, |arr| arr.argminmax())
@@ -76,6 +74,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use num_traits::AsPrimitive;
     use rstest::rstest;
     use rstest_reuse::{self, *};
 
@@ -100,11 +99,13 @@ mod tests {
 
     #[test]
     fn test_m4_simd_without_x_correct() {
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
-        let arr = Array1::from(arr);
+        let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_simd_without_x(arr.view(), 12);
-        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+        let sampled_indices = m4_simd_without_x(&arr, 12);
+        let sampled_values = sampled_indices
+            .iter()
+            .map(|x| arr[*x])
+            .collect::<Vec<f32>>();
 
         let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
@@ -112,17 +113,19 @@ mod tests {
             .map(|x| *x as f32)
             .collect::<Vec<f32>>();
 
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
-        assert_eq!(sampled_values, Array1::from(expected_values));
+        assert_eq!(sampled_indices, expected_indices);
+        assert_eq!(sampled_values, expected_values);
     }
 
     #[apply(threads)]
     fn test_m4_simd_without_x_parallel_correct(n_threads: usize) {
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
-        let arr = Array1::from(arr);
+        let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_simd_without_x_parallel(arr.view(), 12, n_threads);
-        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+        let sampled_indices = m4_simd_without_x_parallel(&arr, 12, n_threads);
+        let sampled_values = sampled_indices
+            .iter()
+            .map(|x| arr[*x])
+            .collect::<Vec<f32>>();
 
         let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
@@ -130,19 +133,20 @@ mod tests {
             .map(|x| *x as f32)
             .collect::<Vec<f32>>();
 
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
-        assert_eq!(sampled_values, Array1::from(expected_values));
+        assert_eq!(sampled_indices, expected_indices);
+        assert_eq!(sampled_values, expected_values);
     }
 
     #[test]
     fn test_m4_simd_with_x_correct() {
-        let x = (0..100).collect::<Vec<i32>>();
-        let x = Array1::from(x);
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
-        let arr = Array1::from(arr);
+        let x: [i32; 100] = core::array::from_fn(|i| i.as_());
+        let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_simd_with_x(x.view(), arr.view(), 12);
-        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+        let sampled_indices = m4_simd_with_x(&x, &arr, 12);
+        let sampled_values = sampled_indices
+            .iter()
+            .map(|x| arr[*x])
+            .collect::<Vec<f32>>();
 
         let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
@@ -150,19 +154,20 @@ mod tests {
             .map(|x| *x as f32)
             .collect::<Vec<f32>>();
 
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
-        assert_eq!(sampled_values, Array1::from(expected_values));
+        assert_eq!(sampled_indices, expected_indices);
+        assert_eq!(sampled_values, expected_values);
     }
 
     #[apply(threads)]
     fn test_m4_simd_with_x_parallel_correct(n_threads: usize) {
-        let x = (0..100).collect::<Vec<i32>>();
-        let x = Array1::from(x);
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
-        let arr = Array1::from(arr);
+        let x: [i32; 100] = core::array::from_fn(|i| i.as_());
+        let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_simd_with_x_parallel(x.view(), arr.view(), 12, n_threads);
-        let sampled_values = sampled_indices.mapv(|x| arr[x]);
+        let sampled_indices = m4_simd_with_x_parallel(&x, &arr, 12, n_threads);
+        let sampled_values = sampled_indices
+            .iter()
+            .map(|x| arr[*x])
+            .collect::<Vec<f32>>();
 
         let expected_indices = vec![0, 0, 33, 33, 34, 34, 66, 66, 67, 67, 99, 99];
         let expected_values = expected_indices
@@ -170,91 +175,67 @@ mod tests {
             .map(|x| *x as f32)
             .collect::<Vec<f32>>();
 
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
-        assert_eq!(sampled_values, Array1::from(expected_values));
+        assert_eq!(sampled_indices, expected_indices);
+        assert_eq!(sampled_values, expected_values);
     }
 
     #[test]
     fn test_m4_simd_with_x_gap() {
         // We will create a gap in the middle of the array
-        let x = (0..100).collect::<Vec<i32>>();
-
         // Increment the second half of the array by 50
-        let x = x
-            .iter()
-            .map(|x| if *x > 50 { *x + 50 } else { *x })
-            .collect::<Vec<i32>>();
-        let x = Array1::from(x);
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
-        let arr = Array1::from(arr);
+        let x: [i32; 100] = core::array::from_fn(|i| if i > 50 { (i + 50).as_() } else { i.as_() });
+        let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_simd_with_x(x.view(), arr.view(), 20);
+        let sampled_indices = m4_simd_with_x(&x, &arr, 20);
         assert_eq!(sampled_indices.len(), 16); // One full gap
         let expected_indices = vec![0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99];
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
+        assert_eq!(sampled_indices, expected_indices);
 
         // Increment the second half of the array by 50 again
-        let x = x
-            .iter()
-            .map(|x| if *x > 101 { *x + 50 } else { *x })
-            .collect::<Vec<i32>>();
-        let x = Array1::from(x);
+        let x = x.map(|x| if x > 101 { x + 50 } else { x });
 
-        let sampled_indices = m4_simd_with_x(x.view(), arr.view(), 20);
+        let sampled_indices = m4_simd_with_x(&x, &arr, 20);
         assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
         let expected_indices = vec![
             0, 0, 39, 39, 40, 40, 50, 50, 51, 52, 52, 59, 59, 60, 60, 99, 99,
         ];
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
+        assert_eq!(sampled_indices, expected_indices);
     }
 
     #[apply(threads)]
     fn test_m4_simd_with_x_gap_parallel(n_threads: usize) {
         // We will create a gap in the middle of the array
-        let x = (0..100).collect::<Vec<i32>>();
-
         // Increment the second half of the array by 50
-        let x = x
-            .iter()
-            .map(|x| if *x > 50 { *x + 50 } else { *x })
-            .collect::<Vec<i32>>();
-        let x = Array1::from(x);
-        let arr = (0..100).map(|x| x as f32).collect::<Vec<f32>>();
-        let arr = Array1::from(arr);
+        let x: [i32; 100] = core::array::from_fn(|i| if i > 50 { (i + 50).as_() } else { i.as_() });
+        let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_simd_with_x_parallel(x.view(), arr.view(), 20, n_threads);
+        let sampled_indices = m4_simd_with_x_parallel(&x, &arr, 20, n_threads);
         assert_eq!(sampled_indices.len(), 16); // One full gap
         let expected_indices = vec![0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99];
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
+        assert_eq!(sampled_indices, expected_indices);
 
         // Increment the second half of the array by 50 again
-        let x = x
-            .iter()
-            .map(|x| if *x > 101 { *x + 50 } else { *x })
-            .collect::<Vec<i32>>();
-        let x = Array1::from(x);
+        let x = x.map(|x| if x > 101 { x + 50 } else { x });
 
-        let sampled_indices = m4_simd_with_x_parallel(x.view(), arr.view(), 20, n_threads);
+        let sampled_indices = m4_simd_with_x_parallel(&x, &arr, 20, n_threads);
         assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
         let expected_indices = vec![
             0, 0, 39, 39, 40, 40, 50, 50, 51, 52, 52, 59, 59, 60, 60, 99, 99,
         ];
-        assert_eq!(sampled_indices, Array1::from(expected_indices));
+        assert_eq!(sampled_indices, expected_indices);
     }
 
     #[apply(threads)]
     fn test_many_random_runs_correct(n_threads: usize) {
-        let n = 20_003;
-        let n_out = 204;
-        let x = (0..n).map(|x| x as i32).collect::<Vec<i32>>();
-        let x = Array1::from(x);
+        const N: usize = 20_003;
+        const N_OUT: usize = 204;
+        let x: [i32; N] = core::array::from_fn(|i| i.as_());
         for _ in 0..100 {
-            let arr = get_array_f32(n);
-            let arr = Array1::from(arr);
-            let idxs1 = m4_simd_without_x(arr.view(), n_out);
-            let idxs2 = m4_simd_without_x_parallel(arr.view(), n_out, n_threads);
-            let idxs3 = m4_simd_with_x(x.view(), arr.view(), n_out);
-            let idxs4 = m4_simd_with_x_parallel(x.view(), arr.view(), n_out, n_threads);
+            let arr = get_array_f32(N);
+            let idxs1 = m4_simd_without_x(arr.as_slice(), N_OUT);
+            let idxs2 = m4_simd_without_x_parallel(arr.as_slice(), N_OUT, n_threads);
+            let idxs3 = m4_simd_with_x(&x, arr.as_slice(), N_OUT);
+            let idxs4 = m4_simd_with_x_parallel(&x, arr.as_slice(), N_OUT, n_threads);
             assert_eq!(idxs1, idxs2);
             assert_eq!(idxs1, idxs3);
             assert_eq!(idxs1, idxs4); // TODO: this should not fail when n_threads = 16
