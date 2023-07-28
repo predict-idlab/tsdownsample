@@ -80,7 +80,6 @@ mod tests {
 
     use super::{m4_simd_with_x, m4_simd_without_x};
     use super::{m4_simd_with_x_parallel, m4_simd_without_x_parallel};
-    use ndarray::Array1;
 
     use dev_utils::utils;
 

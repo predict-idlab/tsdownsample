@@ -1,8 +1,6 @@
 use argminmax::ArgMinMax;
 use num_traits::{AsPrimitive, FromPrimitive};
 
-use ndarray::{Array1, ArrayView1};
-
 use super::super::searchsorted::{
     get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
@@ -81,7 +79,6 @@ mod tests {
 
     use super::{min_max_scalar_with_x, min_max_scalar_without_x};
     use super::{min_max_scalar_with_x_parallel, min_max_scalar_without_x_parallel};
-    use ndarray::Array1;
 
     use dev_utils::utils;
 

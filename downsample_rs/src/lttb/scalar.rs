@@ -1,7 +1,6 @@
 use super::super::helpers::Average;
 use super::super::types::Num;
 use argminmax::ArgMinMax;
-use ndarray::{Array1, ArrayView1};
 use num_traits::AsPrimitive;
 use std::cmp;
 
@@ -117,8 +116,6 @@ where
     let mut a: usize = 0;
 
     let mut sampled_indices: Vec<usize> = vec![usize::default(); n_out];
-
-    let y_ptr = y.as_ptr();
 
     // Always add the first point
     sampled_indices[0] = 0;

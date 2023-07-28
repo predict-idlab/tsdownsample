@@ -1,5 +1,5 @@
+use ndarray::Array1;
 use ndarray::Zip;
-use ndarray::{Array1, ArrayView1};
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
@@ -25,7 +25,6 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
 
     // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 4) as f64;
-    let arr_ptr = arr.as_ptr();
 
     let mut sampled_indices: Vec<usize> = vec![usize::default(); n_out];
 

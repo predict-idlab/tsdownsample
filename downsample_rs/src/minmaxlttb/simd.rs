@@ -3,7 +3,6 @@ use super::generic::{
     minmaxlttb_generic, minmaxlttb_generic_without_x, MinMaxFunctionWithX, MinMaxFunctionWithoutX,
 };
 
-use super::super::helpers::Average;
 use super::super::types::Num;
 use num_traits::{AsPrimitive, FromPrimitive};
 
@@ -109,7 +108,6 @@ mod tests {
 
     use super::{minmaxlttb_simd_with_x, minmaxlttb_simd_without_x};
     use super::{minmaxlttb_simd_with_x_parallel, minmaxlttb_simd_without_x_parallel};
-    use ndarray::{array, Array1};
 
     use dev_utils::utils;
 

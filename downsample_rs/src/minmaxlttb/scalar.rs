@@ -4,7 +4,6 @@ use super::generic::{
     minmaxlttb_generic, minmaxlttb_generic_without_x, MinMaxFunctionWithX, MinMaxFunctionWithoutX,
 };
 use argminmax::ArgMinMax;
-use ndarray::{Array1, ArrayView1};
 use num_traits::{AsPrimitive, FromPrimitive};
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
@@ -108,7 +107,6 @@ mod tests {
 
     use super::{minmaxlttb_scalar_with_x, minmaxlttb_scalar_without_x};
     use super::{minmaxlttb_scalar_with_x_parallel, minmaxlttb_scalar_without_x_parallel};
-    use ndarray::{array, Array1};
 
     use dev_utils::utils;
 

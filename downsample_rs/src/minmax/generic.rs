@@ -1,5 +1,5 @@
+use ndarray::Array1;
 use ndarray::Zip;
-use ndarray::{Array1, ArrayView1};
 
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
@@ -19,7 +19,6 @@ pub(crate) fn min_max_generic<T: Copy>(
 
     // arr.len() - 1 is used to match the delta of a range-index (0..arr.len()-1)
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
-    let arr_ptr = arr.as_ptr();
 
     let mut sampled_indices = vec![usize::default(); n_out];
 

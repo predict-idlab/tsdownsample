@@ -1,5 +1,3 @@
-use ndarray::ArrayView1;
-
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 

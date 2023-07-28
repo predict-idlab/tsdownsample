@@ -1,6 +1,5 @@
 use argminmax::ArgMinMax;
 
-use ndarray::{Array1, ArrayView1};
 use num_traits::{AsPrimitive, FromPrimitive};
 
 use super::super::searchsorted::{
@@ -30,7 +29,6 @@ where
 pub fn min_max_simd_without_x<T: Copy + PartialOrd>(arr: &[T], n_out: usize) -> Vec<usize>
 where
     for<'a> &'a [T]: ArgMinMax,
-    for<'a> ArrayView1<'a, T>: ArgMinMax,
 {
     assert_eq!(n_out % 2, 0);
     min_max_generic(arr, n_out, |arr| arr.argminmax())
@@ -82,7 +80,6 @@ mod tests {
 
     use super::{min_max_simd_with_x, min_max_simd_without_x};
     use super::{min_max_simd_with_x_parallel, min_max_simd_without_x_parallel};
-    use ndarray::Array1;
 
     use dev_utils::utils;
 
