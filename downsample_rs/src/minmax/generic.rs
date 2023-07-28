@@ -110,7 +110,6 @@ pub(crate) fn min_max_generic_with_x<T: Copy>(
         return (0..arr.len()).collect::<Vec<usize>>();
     }
 
-    let ptr = arr.as_ptr();
     let mut sampled_indices: Vec<usize> = Vec::with_capacity(n_out);
 
     bin_idx_iterator.for_each(|bin| {
