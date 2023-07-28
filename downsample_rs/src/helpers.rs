@@ -1,5 +1,3 @@
-#[cfg(feature = "half")]
-use half::f16;
 use num_traits::AsPrimitive;
 
 use crate::types::Num;
@@ -33,17 +31,3 @@ where
         self.iter().fold(0f64, |acc, &x| acc + x.as_()) as f64 / self.len() as f64
     }
 }
-
-// macro_rules! impl_average {
-//     ($($t:ty)*) => ($(
-//         impl Average for ArrayView1<'_, $t> {
-//             #[inline(always)]
-//             fn average(&self) -> f64 {
-//                 self.fold(0f64, |acc, &x| acc + x as f64) / self.len() as f64
-//             }
-//         }
-//     )*)
-// }
-//
-// // Implement for all signed and unsigned integers
-// impl_average!(i8 i16 i32 i64 u8 u16 u32 u64);
