@@ -34,13 +34,6 @@ where
     }
 }
 
-#[cfg(feature = "half")]
-impl Average for [f16] {
-    fn average(&self) -> f64 {
-        self.fold(0f32, |acc, &x| acc + x.to_f32()) as f64 / self.len() as f64
-    }
-}
-
 // macro_rules! impl_average {
 //     ($($t:ty)*) => ($(
 //         impl Average for ArrayView1<'_, $t> {
