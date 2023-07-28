@@ -23,7 +23,7 @@ macro_rules! _create_pyfunc_without_x {
             y: PyReadonlyArray1<$type>,
             n_out: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out);
             sampled_indices.into_pyarray(py)
         }
@@ -42,7 +42,7 @@ macro_rules! _create_pyfunc_without_x_multithreaded {
             n_out: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, n_threads);
             sampled_indices.into_pyarray(py)
         }
@@ -61,7 +61,7 @@ macro_rules! _create_pyfunc_without_x_with_ratio {
             n_out: usize,
             ratio: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio);
             sampled_indices.into_pyarray(py)
         }
@@ -81,7 +81,7 @@ macro_rules! _create_pyfunc_without_x_with_ratio_multithreaded {
             ratio: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio, n_threads);
             sampled_indices.into_pyarray(py)
         }
@@ -112,8 +112,8 @@ macro_rules! _create_pyfunc_with_x {
             y: PyReadonlyArray1<$type_y>,
             n_out: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out);
             sampled_indices.into_pyarray(py)
         }
@@ -133,8 +133,8 @@ macro_rules! _create_pyfunc_with_x_multithreaded {
             n_out: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, n_threads);
             sampled_indices.into_pyarray(py)
         }
@@ -154,8 +154,8 @@ macro_rules! _create_pyfunc_with_x_with_ratio {
             n_out: usize,
             ratio: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio);
             sampled_indices.into_pyarray(py)
         }
@@ -176,8 +176,8 @@ macro_rules! _create_pyfunc_with_x_with_ratio_multithreaded {
             ratio: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio, n_threads);
             sampled_indices.into_pyarray(py)
         }
