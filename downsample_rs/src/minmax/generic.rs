@@ -1,6 +1,3 @@
-use ndarray::Array1;
-use ndarray::Zip;
-
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
@@ -62,7 +59,8 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
 
     // Store the enumerated indexes in the output array
-    let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
+    // let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
+    let mut sampled_indices: Vec<usize> = (0..n_out).collect::<Vec<usize>>();
 
     // to limit the amounts of threads Rayon uses, an explicit threadpool needs to be created
     // in which the required code is "installed". This limits the amount of used threads.
@@ -71,10 +69,9 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
         .num_threads(n_threads)
         .build();
 
-    // todo: remove ndarray dependency from this part
-    let zip_func = || {
-        Zip::from(sampled_indices.exact_chunks_mut(2)).par_for_each(|mut sampled_index| {
-            let i: f64 = unsafe { *sampled_index.uget(0) >> 1 } as f64;
+    let func = || {
+        for chunk in sampled_indices.chunks_exact_mut(2) {
+            let i: f64 = unsafe { *chunk.get_unchecked(0) >> 1 } as f64;
             let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
             let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
 
@@ -82,16 +79,16 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
 
             // Add the indexes in sorted order
             if min_index < max_index {
-                sampled_index[0] = min_index + start_idx;
-                sampled_index[1] = max_index + start_idx;
+                chunk[0] = min_index + start_idx;
+                chunk[1] = max_index + start_idx;
             } else {
-                sampled_index[0] = max_index + start_idx;
-                sampled_index[1] = min_index + start_idx;
+                chunk[0] = max_index + start_idx;
+                chunk[1] = min_index + start_idx;
             }
-        });
+        }
     };
 
-    pool.unwrap().install(zip_func); // allow panic if pool could not be created
+    pool.unwrap().install(func); // allow panic if pool could not be created
 
     sampled_indices.to_vec()
 }
