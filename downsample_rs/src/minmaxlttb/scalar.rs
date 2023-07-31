@@ -28,7 +28,7 @@ where
         n_out,
         minmax_ratio,
         None,
-        MinMaxFunctionWithX::Serial(minmax::min_max_scalar_with_x),
+        MinMaxFunctionWithX::Serial(minmax::min_max_with_x),
     )
 }
 
@@ -47,7 +47,7 @@ where
         n_out,
         minmax_ratio,
         None,
-        MinMaxFunctionWithoutX::Serial(minmax::min_max_scalar_without_x),
+        MinMaxFunctionWithoutX::Serial(minmax::min_max_without_x),
     )
 }
 
@@ -74,7 +74,7 @@ where
         n_out,
         minmax_ratio,
         Some(n_threads),
-        MinMaxFunctionWithX::Parallel(minmax::min_max_scalar_with_x_parallel),
+        MinMaxFunctionWithX::Parallel(minmax::min_max_with_x_parallel),
     )
 }
 
@@ -94,7 +94,7 @@ where
         n_out,
         minmax_ratio,
         Some(n_threads),
-        MinMaxFunctionWithoutX::Parallel(minmax::min_max_scalar_without_x_parallel),
+        MinMaxFunctionWithoutX::Parallel(minmax::min_max_without_x_parallel),
     )
 }
 
