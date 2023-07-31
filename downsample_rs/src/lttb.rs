@@ -1,5 +1,5 @@
-use super::super::helpers::Average;
-use super::super::types::Num;
+use super::helpers::Average;
+use super::types::Num;
 use num_traits::AsPrimitive;
 use std::cmp;
 
