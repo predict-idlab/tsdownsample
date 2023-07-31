@@ -1,6 +1,5 @@
 use super::super::helpers::Average;
 use super::super::types::Num;
-use argminmax::ArgMinMax;
 use num_traits::AsPrimitive;
 use std::cmp;
 
@@ -19,10 +18,7 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
     x: &[Tx],
     y: &[Ty],
     n_out: usize,
-) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
+) -> Vec<usize> {
     assert_eq!(x.len(), y.len());
     if n_out >= x.len() {
         return (0..x.len()).collect::<Vec<usize>>();
@@ -101,10 +97,7 @@ where
 
 // ----------- WITHOUT X
 
-pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(y: &[Ty], n_out: usize) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
+pub fn lttb_without_x<Ty: Num + AsPrimitive<f64>>(y: &[Ty], n_out: usize) -> Vec<usize> {
     if n_out >= y.len() {
         return (0..y.len()).collect::<Vec<usize>>();
     }
