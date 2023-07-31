@@ -426,7 +426,7 @@ use downsample_rs::minmaxlttb as minmaxlttb_mod;
 fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
     // ----------------- SEQUENTIAL
 
-    let sequential_mod = PyModule::new(_py, "scalar")?;
+    let sequential_mod = PyModule::new(_py, "sequential")?;
 
     // ----- WITHOUT X
     {
