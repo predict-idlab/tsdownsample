@@ -396,23 +396,23 @@ use downsample_rs::lttb as lttb_mod;
 // Create a sub module for the LTTB algorithm
 #[pymodule]
 fn lttb(_py: Python, m: &PyModule) -> PyResult<()> {
-    // ----------------- SCALAR
+    // ----------------- SEQUENTIAL
 
-    let scalar_mod = PyModule::new(_py, "scalar")?;
+    let sequential_mod = PyModule::new(_py, "sequential")?;
 
     // Create the Python functions for the module
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(lttb_mod, lttb_without_x, scalar_mod);
+        create_pyfuncs_without_x!(lttb_mod, lttb_without_x, sequential_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(lttb_mod, lttb_with_x, scalar_mod);
+        create_pyfuncs_with_x!(lttb_mod, lttb_with_x, sequential_mod);
     }
 
     // Add the sub modules to the module
-    m.add_submodule(scalar_mod)?;
+    m.add_submodule(sequential_mod)?;
 
     Ok(())
 }
