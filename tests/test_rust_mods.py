@@ -23,23 +23,23 @@ def _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
 
 def test_minmax_rust_mod_correctly_build():
     mod = tsds_rs.minmax
-    sub_mods = ["simd", "simd_parallel", "scalar", "scalar_parallel"]
+    sub_mods = ["sequential", "parallel"]
     _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl=False)
 
 
 def test_m4_rust_mod_correctly_build():
     mod = tsds_rs.m4
-    sub_mods = ["simd", "simd_parallel", "scalar", "scalar_parallel"]
+    sub_mods = ["sequential", "parallel"]
     _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl=False)
 
 
 def test_lttb_rust_mod_correctly_build():
     mod = tsds_rs.lttb
-    sub_mods = ["scalar"]
+    sub_mods = ["sequential"]
     _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl=True)
 
 
 def test_minmaxlttb_rust_mod_correctly_build():
     mod = tsds_rs.minmaxlttb
-    sub_mods = ["simd", "simd_parallel", "scalar", "scalar_parallel"]
+    sub_mods = ["sequential", "parallel"]
     _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl=True)
