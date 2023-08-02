@@ -62,12 +62,8 @@ pub fn lttb_with_x<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimitive<f64>>(
         let d2 = avg_y - point_ay;
         let offset: f64 = d1 * point_ay + d2 * point_ax;
 
-        let x_slice = unsafe {
-            std::slice::from_raw_parts(x.as_ptr().add(range_offs), range_to - range_offs)
-        };
-        let y_slice = unsafe {
-            std::slice::from_raw_parts(y.as_ptr().add(range_offs), range_to - range_offs)
-        };
+        let x_slice = &x[range_offs..range_to];
+        let y_slice = &y[range_offs..range_to];
         (_, a) = y_slice.iter().zip(x_slice.iter()).enumerate().fold(
             (-1i64, a),
             |(max_area, a), (i, (y_, x_))| {
