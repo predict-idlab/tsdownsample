@@ -8,8 +8,7 @@ license = "MIT"
 
 [dependencies]
 # TODO: perhaps use polars?
-ndarray = {version = "0.15.6", default-features = false, features = ["rayon"] }
-argminmax = { version = "0.3.1", features = ["half"] }
+argminmax = { version = "0.6.1", features = ["half"] }
 # argminmax = { path = "../../argminmax" , features = ["half", "ndarray"] }
 half = { version = "2.1", default-features = false , features=["num-traits"], optional = true}
 num-traits = { version = "0.2.15", default-features = false }

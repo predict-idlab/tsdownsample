@@ -1,23 +1,21 @@
-use ndarray::Array1;
-
 use std::ops::{Add, Sub};
 
 use rand::{thread_rng, Rng};
 use rand_distr::Uniform;
 
 // random array that samples between min and max of T
-pub fn get_random_array<T>(n: usize, min_value: T, max_value: T) -> Array1<T>
+pub fn get_random_array<T>(n: usize, min_value: T, max_value: T) -> Vec<T>
 where
     T: Copy + rand::distributions::uniform::SampleUniform,
 {
     let rng = thread_rng();
     let uni = Uniform::new_inclusive(min_value, max_value);
     let arr: Vec<T> = rng.sample_iter(uni).take(n).collect();
-    Array1::from(arr)
+    arr
 }
 
 // worst case array that alternates between increasing max and decreasing min values
-pub fn get_worst_case_array<T>(n: usize, step: T) -> Array1<T>
+pub fn get_worst_case_array<T>(n: usize, step: T) -> Vec<T>
 where
     T: Copy + Default + Sub<Output = T> + Add<Output = T>,
 {
@@ -33,7 +31,7 @@ where
             max_value = max_value + step;
         }
     }
-    Array1::from(arr)
+    arr
 }
 
 // ------------- Multi-threading -------------

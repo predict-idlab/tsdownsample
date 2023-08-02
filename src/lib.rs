@@ -23,7 +23,7 @@ macro_rules! _create_pyfunc_without_x {
             y: PyReadonlyArray1<$type>,
             n_out: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out);
             sampled_indices.into_pyarray(py)
         }
@@ -42,7 +42,7 @@ macro_rules! _create_pyfunc_without_x_multithreaded {
             n_out: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, n_threads);
             sampled_indices.into_pyarray(py)
         }
@@ -61,7 +61,7 @@ macro_rules! _create_pyfunc_without_x_with_ratio {
             n_out: usize,
             ratio: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio);
             sampled_indices.into_pyarray(py)
         }
@@ -81,7 +81,7 @@ macro_rules! _create_pyfunc_without_x_with_ratio_multithreaded {
             ratio: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let y = y.as_array();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio, n_threads);
             sampled_indices.into_pyarray(py)
         }
@@ -112,8 +112,8 @@ macro_rules! _create_pyfunc_with_x {
             y: PyReadonlyArray1<$type_y>,
             n_out: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out);
             sampled_indices.into_pyarray(py)
         }
@@ -133,8 +133,8 @@ macro_rules! _create_pyfunc_with_x_multithreaded {
             n_out: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, n_threads);
             sampled_indices.into_pyarray(py)
         }
@@ -154,8 +154,8 @@ macro_rules! _create_pyfunc_with_x_with_ratio {
             n_out: usize,
             ratio: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio);
             sampled_indices.into_pyarray(py)
         }
@@ -176,8 +176,8 @@ macro_rules! _create_pyfunc_with_x_with_ratio_multithreaded {
             ratio: usize,
             n_threads: usize,
         ) -> &'py PyArray1<usize> {
-            let x = x.as_array();
-            let y = y.as_array();
+            let x = x.as_slice().unwrap();
+            let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio, n_threads);
             sampled_indices.into_pyarray(py)
         }
@@ -312,71 +312,37 @@ use downsample_rs::minmax as minmax_mod;
 // Create a sub module for the minmax algorithm
 #[pymodule]
 fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    // ----------------- SCALAR
+    // ----------------- SEQUENTIAL
 
-    let scalar_mod = PyModule::new(_py, "scalar")?;
+    let sequential_mod = PyModule::new(_py, "sequential")?;
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(minmax_mod, min_max_scalar_without_x, scalar_mod);
+        create_pyfuncs_without_x!(minmax_mod, min_max_without_x, sequential_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(minmax_mod, min_max_scalar_with_x, scalar_mod);
+        create_pyfuncs_with_x!(minmax_mod, min_max_with_x, sequential_mod);
     }
 
-    // ----------------- SCALAR PARALLEL
+    // ----------------- PARALLEL
 
-    let scalar_parallel_mod = PyModule::new(_py, "scalar_parallel")?;
+    let parallel_mod = PyModule::new(_py, "parallel")?;
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(@threaded minmax_mod, min_max_scalar_without_x_parallel, scalar_parallel_mod);
+        create_pyfuncs_without_x!(@threaded minmax_mod, min_max_without_x_parallel, parallel_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(@threaded minmax_mod, min_max_scalar_with_x_parallel, scalar_parallel_mod);
-    }
-
-    // ----------------- SIMD
-
-    let simd_mod = PyModule::new(_py, "simd")?;
-
-    // ----- WITHOUT X
-    {
-        create_pyfuncs_without_x!(minmax_mod, min_max_simd_without_x, simd_mod);
-    }
-
-    // ----- WITH X
-    {
-        create_pyfuncs_with_x!(minmax_mod, min_max_simd_with_x, simd_mod);
-    }
-
-    // ----------------- SIMD PARALLEL
-
-    let simd_parallel_mod = PyModule::new(_py, "simd_parallel")?;
-
-    // ----- WITHOUT X
-    {
-        create_pyfuncs_without_x!(@threaded
-            minmax_mod,
-            min_max_simd_without_x_parallel,
-            simd_parallel_mod
-        );
-    }
-
-    // ----- WITH X
-    {
-        create_pyfuncs_with_x!(@threaded minmax_mod, min_max_simd_with_x_parallel, simd_parallel_mod);
+        create_pyfuncs_with_x!(@threaded minmax_mod, min_max_with_x_parallel, parallel_mod);
     }
 
     // Add the sub modules to the module
-    m.add_submodule(scalar_mod)?;
-    m.add_submodule(scalar_parallel_mod)?;
-    m.add_submodule(simd_mod)?;
-    m.add_submodule(simd_parallel_mod)?;
+    m.add_submodule(sequential_mod)?;
+    m.add_submodule(parallel_mod)?;
 
     Ok(())
 }
@@ -388,67 +354,37 @@ use downsample_rs::m4 as m4_mod;
 // Create a sub module for the M4 algorithm
 #[pymodule]
 fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
-    // ----------------- SCALAR
+    // ----------------- SEQUENTIAL
 
-    let scalar_mod = PyModule::new(_py, "scalar")?;
+    let sequential_mod = PyModule::new(_py, "sequential")?;
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(m4_mod, m4_scalar_without_x, scalar_mod);
+        create_pyfuncs_without_x!(m4_mod, m4_without_x, sequential_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(m4_mod, m4_scalar_with_x, scalar_mod);
+        create_pyfuncs_with_x!(m4_mod, m4_with_x, sequential_mod);
     }
 
-    // ----------------- SCALAR PARALLEL
+    // ----------------- PARALLEL
 
-    let scalar_parallel_mod = PyModule::new(_py, "scalar_parallel")?;
+    let parallel_mod = PyModule::new(_py, "parallel")?;
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(@threaded m4_mod, m4_scalar_without_x_parallel, scalar_parallel_mod);
+        create_pyfuncs_without_x!(@threaded m4_mod, m4_without_x_parallel, parallel_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(@threaded m4_mod, m4_scalar_with_x_parallel, scalar_parallel_mod);
-    }
-
-    // ----------------- SIMD
-
-    let simd_mod = PyModule::new(_py, "simd")?;
-
-    // ----- WITHOUT X
-    {
-        create_pyfuncs_without_x!(m4_mod, m4_simd_without_x, simd_mod);
-    }
-
-    // ----- WITH X
-    {
-        create_pyfuncs_with_x!(m4_mod, m4_simd_with_x, simd_mod);
-    }
-
-    // ----------------- SIMD PARALLEL
-
-    let simd_parallel_mod = PyModule::new(_py, "simd_parallel")?;
-
-    // ----- WITHOUT X
-    {
-        create_pyfuncs_without_x!(@threaded m4_mod, m4_simd_without_x_parallel, simd_parallel_mod);
-    }
-
-    // ----- WITH X
-    {
-        create_pyfuncs_with_x!(@threaded m4_mod, m4_simd_with_x_parallel, simd_parallel_mod);
+        create_pyfuncs_with_x!(@threaded m4_mod, m4_with_x_parallel, parallel_mod);
     }
 
     // Add the sub modules to the module
-    m.add_submodule(scalar_mod)?;
-    m.add_submodule(scalar_parallel_mod)?;
-    m.add_submodule(simd_mod)?;
-    m.add_submodule(simd_parallel_mod)?;
+    m.add_submodule(sequential_mod)?;
+    m.add_submodule(parallel_mod)?;
 
     Ok(())
 }
@@ -460,23 +396,23 @@ use downsample_rs::lttb as lttb_mod;
 // Create a sub module for the LTTB algorithm
 #[pymodule]
 fn lttb(_py: Python, m: &PyModule) -> PyResult<()> {
-    // ----------------- SCALAR
+    // ----------------- SEQUENTIAL
 
-    let scalar_mod = PyModule::new(_py, "scalar")?;
+    let sequential_mod = PyModule::new(_py, "sequential")?;
 
     // Create the Python functions for the module
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(lttb_mod, lttb_without_x, scalar_mod);
+        create_pyfuncs_without_x!(lttb_mod, lttb_without_x, sequential_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(lttb_mod, lttb_with_x, scalar_mod);
+        create_pyfuncs_with_x!(lttb_mod, lttb_with_x, sequential_mod);
     }
 
     // Add the sub modules to the module
-    m.add_submodule(scalar_mod)?;
+    m.add_submodule(sequential_mod)?;
 
     Ok(())
 }
@@ -488,34 +424,30 @@ use downsample_rs::minmaxlttb as minmaxlttb_mod;
 // Create a sub module for the MINMAXLTTB algorithm
 #[pymodule]
 fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
-    // ----------------- SCALAR
+    // ----------------- SEQUENTIAL
 
-    let scalar_mod = PyModule::new(_py, "scalar")?;
+    let sequential_mod = PyModule::new(_py, "sequential")?;
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x_with_ratio!(
-            minmaxlttb_mod,
-            minmaxlttb_scalar_without_x,
-            scalar_mod
-        );
+        create_pyfuncs_without_x_with_ratio!(minmaxlttb_mod, minmaxlttb_without_x, sequential_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_scalar_with_x, scalar_mod);
+        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_with_x, sequential_mod);
     }
 
-    // ----------------- SCALAR PARALLEL
+    // ----------------- PARALLEL
 
-    let scalar_parallel_mod = PyModule::new(_py, "scalar_parallel")?;
+    let parallel_mod = PyModule::new(_py, "parallel")?;
 
     // ----- WITHOUT X
     {
         create_pyfuncs_without_x_with_ratio!(@threaded
             minmaxlttb_mod,
-            minmaxlttb_scalar_without_x_parallel,
-            scalar_parallel_mod
+            minmaxlttb_without_x_parallel,
+            parallel_mod
         );
     }
 
@@ -523,52 +455,14 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
     {
         create_pyfuncs_with_x_with_ratio!(@threaded
             minmaxlttb_mod,
-            minmaxlttb_scalar_with_x_parallel,
-            scalar_parallel_mod
-        );
-    }
-
-    // ----------------- SIMD
-
-    let simd_mod = PyModule::new(_py, "simd")?;
-
-    // ----- WITHOUT X
-    {
-        create_pyfuncs_without_x_with_ratio!(minmaxlttb_mod, minmaxlttb_simd_without_x, simd_mod);
-    }
-
-    // ----- WITH X
-    {
-        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_simd_with_x, simd_mod);
-    }
-
-    // ----------------- SIMD PARALLEL
-
-    let simd_parallel_mod = PyModule::new(_py, "simd_parallel")?;
-
-    // ----- WITHOUT X
-    {
-        create_pyfuncs_without_x_with_ratio!(@threaded
-            minmaxlttb_mod,
-            minmaxlttb_simd_without_x_parallel,
-            simd_parallel_mod
-        );
-    }
-
-    // ----- WITH X
-    {
-        create_pyfuncs_with_x_with_ratio!(@threaded
-            minmaxlttb_mod,
-            minmaxlttb_simd_with_x_parallel,
-            simd_parallel_mod
+            minmaxlttb_with_x_parallel,
+            parallel_mod
         );
     }
 
     // Add the submodules to the module
-    m.add_submodule(scalar_mod)?;
-    m.add_submodule(scalar_parallel_mod)?;
-    m.add_submodule(simd_mod)?;
-    m.add_submodule(simd_parallel_mod)?;
+    m.add_submodule(sequential_mod)?;
+    m.add_submodule(parallel_mod)?;
 
     Ok(())
 }

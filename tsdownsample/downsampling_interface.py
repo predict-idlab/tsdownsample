@@ -161,10 +161,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             If SIMD compiled module is available, that one is returned. Otherwise, the
             scalar compiled module is returned.
         """
-        if hasattr(self.rust_mod, "simd"):
-            # use SIMD implementation if available
-            return self.rust_mod.simd
-        return self.rust_mod.scalar
+        return self.rust_mod.sequential
 
     @property
     def mod_multi_core(self) -> Union[ModuleType, None]:
@@ -177,12 +174,9 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             Otherwise, the scalar parallel compiled module is returned.
             If no parallel compiled module is available, None is returned.
         """
-        if hasattr(self.rust_mod, "simd_parallel"):
+        if hasattr(self.rust_mod, "parallel"):
             # use SIMD implementation if available
-            return self.rust_mod.simd_parallel
-        elif hasattr(self.rust_mod, "scalar_parallel"):
-            # use scalar implementation if available (when no SIMD available)
-            return self.rust_mod.scalar_parallel
+            return self.rust_mod.parallel
         return None  # no parallel compiled module available
 
     @staticmethod

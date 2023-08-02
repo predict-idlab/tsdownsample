@@ -1,5 +1,3 @@
-use ndarray::ArrayView1;
-
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
@@ -15,12 +13,7 @@ use num_traits::{AsPrimitive, FromPrimitive};
 /// https://docs.python.org/3/library/bisect.html#bisect.bisect
 ///
 // #[inline(always)]
-fn binary_search<T: Copy + PartialOrd>(
-    arr: ArrayView1<T>,
-    value: T,
-    left: usize,
-    right: usize,
-) -> usize {
+fn binary_search<T: Copy + PartialOrd>(arr: &[T], value: T, left: usize, right: usize) -> usize {
     let mut size: usize = right - left;
     let mut left: usize = left;
     let mut right: usize = right;
@@ -51,7 +44,7 @@ fn binary_search<T: Copy + PartialOrd>(
 ///
 // #[inline(always)]
 fn binary_search_with_mid<T: Copy + PartialOrd>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     value: T,
     left: usize,
     right: usize,
@@ -83,7 +76,7 @@ fn binary_search_with_mid<T: Copy + PartialOrd>(
 // --- Sequential version
 
 pub(crate) fn get_equidistant_bin_idx_iterator<T>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     nb_bins: usize,
 ) -> impl Iterator<Item = Option<(usize, usize)>> + '_
 where
@@ -133,7 +126,7 @@ fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
 }
 
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
-    arr: ArrayView1<T>,
+    arr: &[T],
     nb_bins: usize,
     n_threads: usize,
 ) -> impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>> + '_> + '_
@@ -194,7 +187,6 @@ mod tests {
     use rstest_reuse::{self, *};
 
     use super::*;
-    use ndarray::Array1;
 
     use dev_utils::utils::{get_all_threads, get_random_array};
 
@@ -210,9 +202,9 @@ mod tests {
     #[test]
     fn test_search_sorted_identicial_to_np_linspace_searchsorted() {
         // Create a 0..9999 array
-        let arr = Array1::from((0..10_000).collect::<Vec<usize>>());
+        let arr: [u32; 10_000] = core::array::from_fn(|i| i.as_());
         assert!(arr.len() == 10_000);
-        let iterator = get_equidistant_bin_idx_iterator(arr.view(), 4);
+        let iterator = get_equidistant_bin_idx_iterator(&arr, 4);
         // Check the iterator
         let mut idx: usize = 0;
         for bin in iterator {
@@ -225,82 +217,49 @@ mod tests {
 
     #[test]
     fn test_binary_search() {
-        let arr = Array1::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        assert_eq!(binary_search(arr.view(), 0, 0, arr.len() - 1), 0);
-        assert_eq!(binary_search(arr.view(), 1, 0, arr.len() - 1), 1);
-        assert_eq!(binary_search(arr.view(), 2, 0, arr.len() - 1), 2);
-        assert_eq!(binary_search(arr.view(), 3, 0, arr.len() - 1), 3);
-        assert_eq!(binary_search(arr.view(), 4, 0, arr.len() - 1), 4);
-        assert_eq!(binary_search(arr.view(), 5, 0, arr.len() - 1), 5);
-        assert_eq!(binary_search(arr.view(), 6, 0, arr.len() - 1), 6);
-        assert_eq!(binary_search(arr.view(), 7, 0, arr.len() - 1), 7);
-        assert_eq!(binary_search(arr.view(), 8, 0, arr.len() - 1), 8);
-        assert_eq!(binary_search(arr.view(), 9, 0, arr.len() - 1), 9);
-        assert_eq!(binary_search(arr.view(), 10, 0, arr.len() - 1), 10);
-        assert_eq!(binary_search(arr.view(), 11, 0, arr.len() - 1), 10);
+        let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        assert_eq!(binary_search(&arr, 0, 0, arr.len() - 1), 0);
+        assert_eq!(binary_search(&arr, 1, 0, arr.len() - 1), 1);
+        assert_eq!(binary_search(&arr, 2, 0, arr.len() - 1), 2);
+        assert_eq!(binary_search(&arr, 3, 0, arr.len() - 1), 3);
+        assert_eq!(binary_search(&arr, 4, 0, arr.len() - 1), 4);
+        assert_eq!(binary_search(&arr, 5, 0, arr.len() - 1), 5);
+        assert_eq!(binary_search(&arr, 6, 0, arr.len() - 1), 6);
+        assert_eq!(binary_search(&arr, 7, 0, arr.len() - 1), 7);
+        assert_eq!(binary_search(&arr, 8, 0, arr.len() - 1), 8);
+        assert_eq!(binary_search(&arr, 9, 0, arr.len() - 1), 9);
+        assert_eq!(binary_search(&arr, 10, 0, arr.len() - 1), 10);
+        assert_eq!(binary_search(&arr, 11, 0, arr.len() - 1), 10);
     }
 
     #[test]
     fn test_binary_search_with_mid() {
-        let arr = Array1::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 0, 0, arr.len() - 1, 0),
-            0
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 1, 0, arr.len() - 1, 0),
-            1
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 2, 0, arr.len() - 1, 1),
-            2
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 3, 0, arr.len() - 1, 2),
-            3
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 4, 0, arr.len() - 1, 3),
-            4
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 5, 0, arr.len() - 1, 4),
-            5
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 6, 0, arr.len() - 1, 5),
-            6
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 7, 0, arr.len() - 1, 6),
-            7
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 8, 0, arr.len() - 1, 7),
-            8
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 9, 0, arr.len() - 1, 8),
-            9
-        );
-        assert_eq!(
-            binary_search_with_mid(arr.view(), 10, 0, arr.len() - 1, 9),
-            10
-        );
-        // This line causes the code to crash -> because value higher than arr[mid]
-        // assert_eq!(binary_search_with_mid(arr.view(), 11, 0, arr.len() - 1, 9), 10);
+        let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        assert_eq!(binary_search_with_mid(&arr, 0, 0, arr.len() - 1, 0), 0);
+        assert_eq!(binary_search_with_mid(&arr, 1, 0, arr.len() - 1, 0), 1);
+        assert_eq!(binary_search_with_mid(&arr, 2, 0, arr.len() - 1, 1), 2);
+        assert_eq!(binary_search_with_mid(&arr, 3, 0, arr.len() - 1, 2), 3);
+        assert_eq!(binary_search_with_mid(&arr, 4, 0, arr.len() - 1, 3), 4);
+        assert_eq!(binary_search_with_mid(&arr, 5, 0, arr.len() - 1, 4), 5);
+        assert_eq!(binary_search_with_mid(&arr, 6, 0, arr.len() - 1, 5), 6);
+        assert_eq!(binary_search_with_mid(&arr, 7, 0, arr.len() - 1, 6), 7);
+        assert_eq!(binary_search_with_mid(&arr, 8, 0, arr.len() - 1, 7), 8);
+        assert_eq!(binary_search_with_mid(&arr, 9, 0, arr.len() - 1, 8), 9);
+        assert_eq!(binary_search_with_mid(&arr, 10, 0, arr.len() - 1, 9), 10);
+        // this line causes the code to crash -> because value higher than arr[mid]
+        // assert_eq!(binary_search_with_mid(&arr, 11, 0, arr.len() - 1, 9), 10);
     }
 
     #[apply(threads)]
     fn test_get_equidistant_bin_idxs(n_threads: usize) {
         let expected_indices = vec![0, 4, 7];
 
-        let arr = Array1::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), 3);
+        let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let bin_idxs_iter = get_equidistant_bin_idx_iterator(&arr, 3);
         let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
         assert_eq!(bin_idxs, expected_indices);
 
-        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(arr.view(), 3, n_threads);
+        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(&arr, 3, n_threads);
         let bin_idxs = bin_idxs_iter
             .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
             .flatten()
@@ -314,19 +273,17 @@ mod tests {
         let nb_bins = 100;
 
         for _ in 0..100 {
-            let arr = get_random_array::<i32>(n, i32::MIN, i32::MAX);
+            let mut arr = get_random_array::<i32>(n, i32::MIN, i32::MAX);
             // Sort the array
-            let mut arr = arr.to_vec();
             arr.sort_by(|a, b| a.partial_cmp(b).unwrap());
-            let arr = Array1::from(arr);
 
             // Calculate the bin indexes
-            let bin_idxs_iter = get_equidistant_bin_idx_iterator(arr.view(), nb_bins);
+            let bin_idxs_iter = get_equidistant_bin_idx_iterator(&arr[..], nb_bins);
             let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
 
             // Calculate the bin indexes in parallel
             let bin_idxs_iter =
-                get_equidistant_bin_idx_iterator_parallel(arr.view(), nb_bins, n_threads);
+                get_equidistant_bin_idx_iterator_parallel(&arr[..], nb_bins, n_threads);
             let bin_idxs_parallel = bin_idxs_iter
                 .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
                 .flatten()
