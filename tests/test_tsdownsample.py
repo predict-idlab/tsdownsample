@@ -14,7 +14,10 @@ from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     NanMinMaxDownsampler,
     NaNMinMaxLTTBDownsampler,
 )
-from tsdownsample.downsampling_interface import AbstractDownsampler
+from tsdownsample.downsampling_interface import (
+    AbstractDownsampler,
+    AbstractRustNaNDownsampler,
+)
 
 # TODO: Improve tests
 #   - compare implementations with existing plotly_resampler implementations
@@ -41,6 +44,11 @@ def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
         yield downsampler
 
 
+def generate_rust_nan_downsamplers() -> Iterable[AbstractDownsampler]:
+    for downsampler in RUST_NAN_DOWNSAMPLERS:
+        yield downsampler
+
+
 def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS + RUST_NAN_DOWNSAMPLERS + OTHER_DOWNSAMPLERS:
         yield downsampler
@@ -58,6 +66,14 @@ def generate_datapoints(obj):
         return np.arange(N_DATAPOINTS, dtype=np.float64)
     else:
         return np.arange(N_DATAPOINTS)
+
+
+def generate_nan_datapoints():
+    N_DATAPOINTS = 10_000
+    datapoints = np.arange(N_DATAPOINTS, dtype=np.float64)
+    datapoints[0] = np.nan
+    datapoints[9960] = np.nan
+    return datapoints
 
 
 @pytest.mark.parametrize("downsampler", generate_all_downsamplers())
@@ -97,6 +113,17 @@ def test_rust_downsampler(downsampler: AbstractDownsampler):
     s_downsampled = downsampler.downsample(arr, n_out=100)
     assert s_downsampled[0] == 0
     assert s_downsampled[-1] == len(arr) - 1
+
+
+@pytest.mark.parametrize("downsampler", generate_rust_nan_downsamplers())
+def test_rust_nan_downsampler(downsampler: AbstractRustNaNDownsampler):
+    """Test the Rust NaN downsamplers."""
+    datapoints = generate_nan_datapoints()
+    s_downsampled = downsampler.downsample(datapoints, n_out=100)
+    print(s_downsampled)
+    assert s_downsampled[0] == 0
+    assert s_downsampled[-2] == 9960
+    assert s_downsampled[50] != np.nan
 
 
 def test_everynth_downsampler():
