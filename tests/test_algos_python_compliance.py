@@ -5,9 +5,16 @@ from tsdownsample import (
     LTTBDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
+    NaNM4Downsampler,
     NanMinMaxDownsampler,
 )
-from tsdownsample._python.downsamplers import LTTB_py, M4_py, MinMax_py, NaNMinMax_py
+from tsdownsample._python.downsamplers import (
+    LTTB_py,
+    M4_py,
+    MinMax_py,
+    NaNM4_py,
+    NaNMinMax_py,
+)
 
 
 @pytest.mark.parametrize(
@@ -40,7 +47,7 @@ def test_resampler_accordance(rust_python_pair, n, n_out):
     "rust_python_pair",
     [
         (NanMinMaxDownsampler(), NaNMinMax_py()),
-        # (NaNM4Downsampler(), NaNM4_py())
+        (NaNM4Downsampler(), NaNM4_py())
     ],
 )
 @pytest.mark.parametrize("n", [10_000, 10_032, 20_321, 23_489])
@@ -54,8 +61,6 @@ def test_nan_resampler_accordance(rust_python_pair, n, n_random_nans, n_out):
     # Without x passed to the rust downsampler
     rust_result = rust_downsampler.downsample(y, n_out=n_out)
     python_result = python_downsampler.downsample(x, y, n_out=n_out)
-    print("rust", rust_result)
-    print("python", python_result)
     assert np.allclose(rust_result, python_result)
     # With x passed to the rust downsampler
     assert np.allclose(
