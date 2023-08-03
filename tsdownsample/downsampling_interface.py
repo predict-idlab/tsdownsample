@@ -363,8 +363,10 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                 setattr(result, k, deepcopy(v, memo))
         return result
 
+
 _nan_y_rust_dtypes = ["float16", "float32", "float64"]
 NAN_DOWNSAMPLE_F = "downsample_nan"
+
 
 class AbstractRustNaNDownsampler(AbstractRustDownsampler, ABC):
     """RustNaNDownsampler interface-class, subclassed by concrete downsamplers."""

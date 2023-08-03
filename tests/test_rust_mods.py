@@ -24,6 +24,7 @@ def _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
             for ty in rust_primitive_types_y:
                 assert hasattr(m, f"downsample_{tx}_{ty}")
 
+
 def _test_rust_nan_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
     # without x
     for sub_mod in sub_mods:
@@ -41,6 +42,7 @@ def _test_rust_nan_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
         for tx in rust_primitive_types_x:
             for ty in rust_primitive_types_y_nan:
                 assert hasattr(m, f"downsample_{tx}_{ty}")
+
 
 def test_minmax_rust_mod_correctly_build():
     mod = tsds_rs.minmax
