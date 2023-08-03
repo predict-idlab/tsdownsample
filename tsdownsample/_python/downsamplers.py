@@ -25,7 +25,8 @@ def _get_bin_idxs(x: np.ndarray, nb_bins: int) -> np.ndarray:
     bins = np.searchsorted(x, np.linspace(x[0], x[-1], nb_bins + 1), side="right")
     bins[0] = 0
     bins[-1] = len(x)
-    return np.unique(bins)
+    return np.array(bins)
+    # return np.unique(bins)
 
 
 class LTTB_py(AbstractDownsampler):
@@ -144,9 +145,38 @@ class MinMax_py(AbstractDownsampler):
             if not len(y_slice):
                 continue
             # calculate the argmin(slice) & argmax(slice)
-            rel_idxs.append(lower + y_slice.argmin())
-            rel_idxs.append(lower + y_slice.argmax())
+            rel_idxs.append(lower + np.nanargmin(y_slice))
+            rel_idxs.append(lower + np.nanargmax(y_slice))
         return np.unique(rel_idxs)
+
+
+class NaNMinMax_py(AbstractDownsampler):
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        assert n_out % 2 == 0, "n_out must be a multiple of 2"
+
+    def _downsample(
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
+    ) -> np.ndarray:
+        if x is None:
+            # Is fine for this implementation as this is only used for testing
+            x = np.arange(y.shape[0])
+
+        xdt = x.dtype
+        if np.issubdtype(xdt, np.datetime64) or np.issubdtype(xdt, np.timedelta64):
+            x = x.view(np.int64)
+
+        bins = _get_bin_idxs(x, n_out // 2)
+
+        rel_idxs = []
+        for lower, upper in zip(bins, bins[1:]):
+            y_slice = y[lower:upper]
+            if not len(y_slice):
+                continue
+            # calculate the argmin(slice) & argmax(slice)
+            rel_idxs.append(lower + np.argmin(y_slice))
+            rel_idxs.append(lower + np.argmax(y_slice))
+        return np.array(sorted(rel_idxs))
 
 
 class M4_py(AbstractDownsampler):
@@ -159,6 +189,41 @@ class M4_py(AbstractDownsampler):
 
     """
 
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        assert n_out % 4 == 0, "n_out must be a multiple of 4"
+
+    def _downsample(
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
+    ) -> np.ndarray:
+        """TODO complete docs"""
+        if x is None:
+            # Is fine for this implementation as this is only used for testing
+            x = np.arange(y.shape[0])
+
+        xdt = x.dtype
+        if np.issubdtype(xdt, np.datetime64) or np.issubdtype(xdt, np.timedelta64):
+            x = x.view(np.int64)
+
+        bins = _get_bin_idxs(x, n_out // 4)
+
+        rel_idxs = []
+        for lower, upper in zip(bins, bins[1:]):
+            y_slice = y[lower:upper]
+            if not len(y_slice):
+                continue
+
+            # calculate the min(idx), argmin(slice), argmax(slice), max(idx)
+            rel_idxs.append(lower)
+            rel_idxs.append(lower + np.nanargmin(y_slice))
+            rel_idxs.append(lower + np.nanargmax(y_slice))
+            rel_idxs.append(upper - 1)
+
+        # NOTE: we do not use the np.unique so that all indices are retained
+        return np.array(sorted(rel_idxs))
+
+
+class NaNM4_py(AbstractDownsampler):
     @staticmethod
     def _check_valid_n_out(n_out: int):
         assert n_out % 4 == 0, "n_out must be a multiple of 4"
