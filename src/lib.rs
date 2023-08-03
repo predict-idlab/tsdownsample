@@ -98,6 +98,14 @@ macro_rules! _create_pyfuncs_without_x_generic {
             }
         )*
     };
+
+    (@nan $create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)*) => {
+        $(
+            paste! {
+                $create_macro!([<downsample_nan_ $t>], $resample_mod, $resample_fn, $t, $mod);
+            }
+        )*
+    };
 }
 
 // With x-range
@@ -216,11 +224,45 @@ macro_rules! _create_pyfuncs_with_x_generic {
     // and https://users.rust-lang.org/t/tail-recursive-macros/905/3
 }
 
+// TODO: there must be a better way to combine normal and nan macros
+macro_rules! _create_nan_pyfuncs_with_x_generic {
+    // ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
+    //     // The macro will implement the function for all combinations of $t (for type x and y).
+    //     // (duplicate the list of types to iterate over all combinations)
+    //     _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
+    // };
+
+    ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+, $($ty:ty)+) => {
+        // The macro will implement the function for all combinations of $tx and $ty (for respectively type x and y).
+        _create_nan_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($tx)+; $($ty),+);
+    };
+
+    // Base case: there is only one type (for y) left
+    (@inner $create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty:ty) => {
+        $(
+            paste! {
+                $create_macro!([<downsample_nan_ $tx _ $ty>], $resample_mod, $resample_fn, $tx, $ty, $mod);
+            }
+        )*
+    };
+    // The head/tail recursion: pick the first element -> apply the base case, and recurse over the rest.
+    (@inner $create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+; $ty_head:ty, $($ty_rest:ty),+) => {
+        _create_nan_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($tx)+; $ty_head);
+        _create_nan_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($tx)+; $($ty_rest),+);
+    };
+
+    // Huge thx to https://stackoverflow.com/a/54552848
+    // and https://users.rust-lang.org/t/tail-recursive-macros/905/3
+}
 // ------ Main macros ------
 
 macro_rules! _create_pyfuncs_without_x_helper {
     ($pyfunc_fn:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_without_x_generic!($pyfunc_fn, $resample_mod, $resample_fn, $mod, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
+    };
+
+    (@nan $pyfunc_fn:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_without_x_generic!(@nan $pyfunc_fn, $resample_mod, $resample_fn, $mod, f16 f32 f64);
     };
 }
 
@@ -234,8 +276,24 @@ macro_rules! create_pyfuncs_without_x {
             $mod
         );
     };
+    (@nan $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_without_x_helper!(@nan
+            _create_pyfunc_without_x,
+            $resample_mod,
+            $resample_fn,
+            $mod
+        );
+    };
     (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_without_x_helper!(
+            _create_pyfunc_without_x_multithreaded,
+            $resample_mod,
+            $resample_fn,
+            $mod
+        );
+    };
+    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_without_x_helper!(@nan
             _create_pyfunc_without_x_multithreaded,
             $resample_mod,
             $resample_fn,
@@ -254,8 +312,24 @@ macro_rules! create_pyfuncs_without_x_with_ratio {
             $mod
         );
     };
+    (@nan $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_without_x_helper!(@nan
+            _create_pyfunc_without_x_with_ratio,
+            $resample_mod,
+            $resample_fn,
+            $mod
+        );
+    };
     (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_without_x_helper!(
+            _create_pyfunc_without_x_with_ratio_multithreaded,
+            $resample_mod,
+            $resample_fn,
+            $mod
+        );
+    };
+    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_without_x_helper!(@nan
             _create_pyfunc_without_x_with_ratio_multithreaded,
             $resample_mod,
             $resample_fn,
@@ -268,6 +342,9 @@ macro_rules! _create_pyfuncs_with_x_helper {
     ($pyfunc_fn:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_generic!($pyfunc_fn, $resample_mod, $resample_fn, $mod, f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64 i8 i16 i32 i64 u8 u16 u32 u64);
     };
+    (@nan $pyfunc_fn:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_nan_pyfuncs_with_x_generic!($pyfunc_fn, $resample_mod, $resample_fn, $mod, f32 f64 i16 i32 i64 u16 u32 u64, f16 f32 f64);
+    };
 }
 
 macro_rules! create_pyfuncs_with_x {
@@ -275,8 +352,19 @@ macro_rules! create_pyfuncs_with_x {
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_helper!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod);
     };
+    (@nan $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_with_x_helper!(@nan _create_pyfunc_with_x, $resample_mod, $resample_fn, $mod);
+    };
     (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_helper!(
+            _create_pyfunc_with_x_multithreaded,
+            $resample_mod,
+            $resample_fn,
+            $mod
+        );
+    };
+    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_with_x_helper!(@nan
             _create_pyfunc_with_x_multithreaded,
             $resample_mod,
             $resample_fn,
@@ -295,8 +383,24 @@ macro_rules! create_pyfuncs_with_x_with_ratio {
             $mod
         );
     };
+    (@nan $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_with_x_helper!(@nan
+            _create_pyfunc_with_x_with_ratio,
+            $resample_mod,
+            $resample_fn,
+            $mod
+        );
+    };
     (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_helper!(
+            _create_pyfunc_with_x_with_ratio_multithreaded,
+            $resample_mod,
+            $resample_fn,
+            $mod
+        );
+    };
+    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
+        _create_pyfuncs_with_x_helper!(@nan
             _create_pyfunc_with_x_with_ratio_multithreaded,
             $resample_mod,
             $resample_fn,
@@ -319,11 +423,13 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // ----- WITHOUT X
     {
         create_pyfuncs_without_x!(minmax_mod, min_max_without_x, sequential_mod);
+        create_pyfuncs_without_x!(@nan minmax_mod, min_max_without_x_nan, sequential_mod);
     }
 
     // ----- WITH X
     {
         create_pyfuncs_with_x!(minmax_mod, min_max_with_x, sequential_mod);
+        create_pyfuncs_with_x!(@nan minmax_mod, min_max_with_x_nan, sequential_mod);
     }
 
     // ----------------- PARALLEL
@@ -333,11 +439,13 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     // ----- WITHOUT X
     {
         create_pyfuncs_without_x!(@threaded minmax_mod, min_max_without_x_parallel, parallel_mod);
+        create_pyfuncs_without_x!(@nan @threaded minmax_mod, min_max_without_x_parallel_nan, parallel_mod);
     }
 
     // ----- WITH X
     {
         create_pyfuncs_with_x!(@threaded minmax_mod, min_max_with_x_parallel, parallel_mod);
+        create_pyfuncs_with_x!(@nan @threaded minmax_mod, min_max_with_x_parallel_nan, parallel_mod);
     }
 
     // Add the sub modules to the module
@@ -361,11 +469,13 @@ fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
     // ----- WITHOUT X
     {
         create_pyfuncs_without_x!(m4_mod, m4_without_x, sequential_mod);
+        create_pyfuncs_without_x!(@nan m4_mod, m4_without_x_nan, sequential_mod);
     }
 
     // ----- WITH X
     {
         create_pyfuncs_with_x!(m4_mod, m4_with_x, sequential_mod);
+        create_pyfuncs_with_x!(@nan m4_mod, m4_with_x_nan, sequential_mod);
     }
 
     // ----------------- PARALLEL
@@ -375,11 +485,13 @@ fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
     // ----- WITHOUT X
     {
         create_pyfuncs_without_x!(@threaded m4_mod, m4_without_x_parallel, parallel_mod);
+        create_pyfuncs_without_x!(@nan @threaded m4_mod, m4_without_x_parallel, parallel_mod);
     }
 
     // ----- WITH X
     {
         create_pyfuncs_with_x!(@threaded m4_mod, m4_with_x_parallel, parallel_mod);
+        create_pyfuncs_with_x!(@nan @threaded m4_mod, m4_with_x_parallel, parallel_mod);
     }
 
     // Add the sub modules to the module
@@ -431,11 +543,13 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
     // ----- WITHOUT X
     {
         create_pyfuncs_without_x_with_ratio!(minmaxlttb_mod, minmaxlttb_without_x, sequential_mod);
+        create_pyfuncs_without_x_with_ratio!(@nan minmaxlttb_mod, minmaxlttb_without_x_nan, sequential_mod);
     }
 
     // ----- WITH X
     {
         create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_with_x, sequential_mod);
+        create_pyfuncs_with_x_with_ratio!(@nan minmaxlttb_mod, minmaxlttb_with_x_nan, sequential_mod);
     }
 
     // ----------------- PARALLEL
@@ -449,11 +563,21 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
             minmaxlttb_without_x_parallel,
             parallel_mod
         );
+        create_pyfuncs_without_x_with_ratio!(@nan @threaded
+            minmaxlttb_mod,
+            minmaxlttb_without_x_parallel,
+            parallel_mod
+        );
     }
 
     // ----- WITH X
     {
         create_pyfuncs_with_x_with_ratio!(@threaded
+            minmaxlttb_mod,
+            minmaxlttb_with_x_parallel,
+            parallel_mod
+        );
+        create_pyfuncs_with_x_with_ratio!(@nan @threaded
             minmaxlttb_mod,
             minmaxlttb_with_x_parallel,
             parallel_mod
