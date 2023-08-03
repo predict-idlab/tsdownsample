@@ -45,10 +45,7 @@ def test_resampler_accordance(rust_python_pair, n, n_out):
 
 @pytest.mark.parametrize(
     "rust_python_pair",
-    [
-        (NanMinMaxDownsampler(), NaNMinMax_py()),
-        (NaNM4Downsampler(), NaNM4_py())
-    ],
+    [(NanMinMaxDownsampler(), NaNMinMax_py()), (NaNM4Downsampler(), NaNM4_py())],
 )
 @pytest.mark.parametrize("n", [10_000, 10_032, 20_321, 23_489])
 @pytest.mark.parametrize("n_random_nans", [100, 200, 500, 2000, 5000])
