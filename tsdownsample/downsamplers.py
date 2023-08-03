@@ -6,10 +6,25 @@ import numpy as np
 # ------------------ Rust Downsamplers ------------------
 from tsdownsample._rust import _tsdownsample_rs  # type: ignore[attr-defined]
 
-from .downsampling_interface import AbstractDownsampler, AbstractRustDownsampler
+from .downsampling_interface import (
+    AbstractDownsampler,
+    AbstractRustDownsampler,
+    AbstractRustNaNDownsampler,
+)
 
 
 class MinMaxDownsampler(AbstractRustDownsampler):
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.minmax
+
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        AbstractRustDownsampler._check_valid_n_out(n_out)
+        if n_out % 2 != 0:
+            raise ValueError("n_out must be even")
+
+class NanMinMaxDownsampler(AbstractRustNaNDownsampler):
     @property
     def rust_mod(self):
         return _tsdownsample_rs.minmax
@@ -32,6 +47,16 @@ class M4Downsampler(AbstractRustDownsampler):
         if n_out % 4 != 0:
             raise ValueError("n_out must be a multiple of 4")
 
+class NaNM4Downsampler(AbstractRustNaNDownsampler):
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.m4
+
+    @staticmethod
+    def _check_valid_n_out(n_out: int):
+        AbstractRustDownsampler._check_valid_n_out(n_out)
+        if n_out % 4 != 0:
+            raise ValueError("n_out must be a multiple of 4")
 
 class LTTBDownsampler(AbstractRustDownsampler):
     @property
@@ -52,6 +77,18 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
             *args, n_out=n_out, n_threads=n_threads, ratio=minmax_ratio
         )
 
+class NaNMinMaxLTTBDownsampler(AbstractRustNaNDownsampler):
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.minmaxlttb
+
+    def downsample(
+        self, *args, n_out: int, minmax_ratio: int = 30, n_threads: int = 1, **_
+    ):
+        assert minmax_ratio > 0, "minmax_ratio must be greater than 0"
+        return super().downsample(
+            *args, n_out=n_out, n_threads=n_threads, ratio=minmax_ratio
+        )
 
 # ------------------ EveryNth Downsampler ------------------
 
