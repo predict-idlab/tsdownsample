@@ -24,6 +24,7 @@ class MinMaxDownsampler(AbstractRustDownsampler):
         if n_out % 2 != 0:
             raise ValueError("n_out must be even")
 
+
 class NanMinMaxDownsampler(AbstractRustNaNDownsampler):
     @property
     def rust_mod(self):
@@ -47,6 +48,7 @@ class M4Downsampler(AbstractRustDownsampler):
         if n_out % 4 != 0:
             raise ValueError("n_out must be a multiple of 4")
 
+
 class NaNM4Downsampler(AbstractRustNaNDownsampler):
     @property
     def rust_mod(self):
@@ -57,6 +59,7 @@ class NaNM4Downsampler(AbstractRustNaNDownsampler):
         AbstractRustDownsampler._check_valid_n_out(n_out)
         if n_out % 4 != 0:
             raise ValueError("n_out must be a multiple of 4")
+
 
 class LTTBDownsampler(AbstractRustDownsampler):
     @property
@@ -77,6 +80,7 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
             *args, n_out=n_out, n_threads=n_threads, ratio=minmax_ratio
         )
 
+
 class NaNMinMaxLTTBDownsampler(AbstractRustNaNDownsampler):
     @property
     def rust_mod(self):
@@ -89,6 +93,7 @@ class NaNMinMaxLTTBDownsampler(AbstractRustNaNDownsampler):
         return super().downsample(
             *args, n_out=n_out, n_threads=n_threads, ratio=minmax_ratio
         )
+
 
 # ------------------ EveryNth Downsampler ------------------
 

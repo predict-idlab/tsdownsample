@@ -22,5 +22,5 @@ __all__ = [
     "MinMaxLTTBDownsampler",
     "NanMinMaxDownsampler",
     "NaNM4Downsampler",
-    "NaNMinMaxLTTBDownsampler"
+    "NaNMinMaxLTTBDownsampler",
 ]

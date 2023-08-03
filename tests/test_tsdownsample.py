@@ -30,10 +30,11 @@ RUST_DOWNSAMPLERS = [
 RUST_NAN_DOWNSAMPLERS = [
     NanMinMaxDownsampler(),
     NaNM4Downsampler(),
-    NaNMinMaxLTTBDownsampler()
+    NaNMinMaxLTTBDownsampler(),
 ]
 
 OTHER_DOWNSAMPLERS = [EveryNthDownsampler()]
+
 
 def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS + RUST_NAN_DOWNSAMPLERS:
@@ -44,8 +45,12 @@ def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS + RUST_NAN_DOWNSAMPLERS + OTHER_DOWNSAMPLERS:
         yield downsampler
 
+
 def is_nan_downsampler(obj):
-    return obj.__class__.__name__ in [x.__class__.__name__ for x in RUST_NAN_DOWNSAMPLERS]
+    return obj.__class__.__name__ in [
+        x.__class__.__name__ for x in RUST_NAN_DOWNSAMPLERS
+    ]
+
 
 def generate_datapoints(obj):
     N_DATAPOINTS = 10_000
@@ -53,6 +58,7 @@ def generate_datapoints(obj):
         return np.arange(N_DATAPOINTS, dtype=np.float64)
     else:
         return np.arange(N_DATAPOINTS)
+
 
 @pytest.mark.parametrize("downsampler", generate_all_downsamplers())
 def test_serialization_copy(downsampler: AbstractDownsampler):
@@ -152,7 +158,11 @@ def test_downsampling_different_dtypes(downsampler: AbstractDownsampler):
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     res = []
-    y_dtypes = supported_dtypes_y_nan if is_nan_downsampler(downsampler) else supported_dtypes_y
+    y_dtypes = (
+        supported_dtypes_y_nan
+        if is_nan_downsampler(downsampler)
+        else supported_dtypes_y
+    )
     for dtype_y in y_dtypes:
         arr = arr_orig.astype(dtype_y)
         s_downsampled = downsampler.downsample(arr, n_out=100)
@@ -167,7 +177,11 @@ def test_downsampling_different_dtypes_with_x(downsampler: AbstractDownsampler):
     """Test downsampling with x with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     idx_orig = np.arange(len(arr_orig))
-    y_dtypes = supported_dtypes_y_nan if is_nan_downsampler(downsampler) else supported_dtypes_y
+    y_dtypes = (
+        supported_dtypes_y_nan
+        if is_nan_downsampler(downsampler)
+        else supported_dtypes_y
+    )
     for dtype_x in supported_dtypes_x:
         res = []
         idx = idx_orig.astype(dtype_x)
@@ -187,7 +201,11 @@ def test_downsampling_no_out_of_bounds_different_dtypes(
     """Test no out of bounds issues when downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=100)
     res = []
-    y_dtypes = supported_dtypes_y_nan if is_nan_downsampler(downsampler) else supported_dtypes_y
+    y_dtypes = (
+        supported_dtypes_y_nan
+        if is_nan_downsampler(downsampler)
+        else supported_dtypes_y
+    )
     for dtype in y_dtypes:
         arr = arr_orig.astype(dtype)
         s_downsampled = downsampler.downsample(arr, n_out=76)
@@ -206,7 +224,11 @@ def test_downsampling_no_out_of_bounds_different_dtypes_with_x(
     """Test no out of bounds issues when downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=100)
     idx_orig = np.arange(len(arr_orig))
-    y_dtypes = supported_dtypes_y_nan if is_nan_downsampler(downsampler) else supported_dtypes_y
+    y_dtypes = (
+        supported_dtypes_y_nan
+        if is_nan_downsampler(downsampler)
+        else supported_dtypes_y
+    )
     for dtype_x in supported_dtypes_x:
         res = []
         idx = idx_orig.astype(dtype_x)
