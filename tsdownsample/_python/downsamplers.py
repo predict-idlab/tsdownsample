@@ -26,7 +26,6 @@ def _get_bin_idxs(x: np.ndarray, nb_bins: int) -> np.ndarray:
     bins[0] = 0
     bins[-1] = len(x)
     return np.array(bins)
-    # return np.unique(bins)
 
 
 class LTTB_py(AbstractDownsampler):
