@@ -116,7 +116,7 @@ The following downsampling algorithms (classes) are implemented:
 This library supports two `NaN`-policies:
 
 1. Omit `NaN`s (`NaN`s are ignored during downsampling).
-2. Return `NaN` once there is one present in the bin of the considered data.
+2. Return index of first `NaN` once there is at least one present in the bin of the considered data.
 
 |             Omit `NaN`s | Return `NaN`s              |
 | ----------------------: | :------------------------- |
