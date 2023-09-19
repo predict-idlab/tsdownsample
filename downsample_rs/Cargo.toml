@@ -9,9 +9,12 @@ license = "MIT"
 [dependencies]
 # TODO: perhaps use polars?
 argminmax = { version = "0.6.1", features = ["half"] }
+# For some reason we need to explicitely add chrono, otherwise polars refuses to compile?
+chrono = "0.4.31"
 # argminmax = { path = "../../argminmax" , features = ["half", "ndarray"] }
 half = { version = "2.1", default-features = false , features=["num-traits"], optional = true}
 num-traits = { version = "0.2.15", default-features = false }
+polars = { version = "0.33.2", features = ["lazy", "streaming", "zip_with"] }
 rayon = { version = "1.6.0", default-features = false }
 
 [dev-dependencies]
