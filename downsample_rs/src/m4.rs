@@ -263,51 +263,6 @@ pub(crate) fn m4_generic_with_x<I: Copy, T: M4Param + ?Sized>(
     sampled_indices
 }
 
-// #[inline(always)]
-// pub(crate) fn m4_generic_with_x<T: Copy>(
-//     arr: &[T],
-//     bin_idx_iterator: impl Iterator<Item = Option<(usize, usize)>>,
-//     n_out: usize,
-//     f_argminmax: fn(&[T]) -> (usize, usize),
-// ) -> Vec<usize> {
-//     // Assumes n_out is a multiple of 4
-//     if n_out >= arr.len() {
-//         return (0..arr.len()).collect::<Vec<usize>>();
-//     }
-//
-//     let mut sampled_indices: Vec<usize> = Vec::with_capacity(n_out);
-//
-//     bin_idx_iterator.for_each(|bin| {
-//         if let Some((start, end)) = bin {
-//             if end <= start + 4 {
-//                 // If the bin has <= 4 elements, just add them all
-//                 for i in start..end {
-//                     sampled_indices.push(i);
-//                 }
-//             } else {
-//                 // If the bin has > 4 elements, add the first and last + argmin and argmax
-//                 let step = &arr[start..end];
-//                 let (min_index, max_index) = f_argminmax(step);
-//
-//                 sampled_indices.push(start);
-//
-//                 // Add the indexes in sorted order
-//                 if min_index < max_index {
-//                     sampled_indices.push(min_index + start);
-//                     sampled_indices.push(max_index + start);
-//                 } else {
-//                     sampled_indices.push(max_index + start);
-//                     sampled_indices.push(min_index + start);
-//                 }
-//
-//                 sampled_indices.push(end - 1);
-//             }
-//         }
-//     });
-//
-//     sampled_indices
-// }
-
 #[inline(always)]
 pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: &[T],

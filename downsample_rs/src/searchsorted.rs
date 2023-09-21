@@ -1,25 +1,22 @@
-use polars::prelude::{ChunkedArray, PolarsNumericType};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
+
+use crate::types::{BinSearchParam, Indexable};
 
 use super::types::Num;
 use num_traits::{AsPrimitive, FromPrimitive};
 
 // ---------------------- Binary search ----------------------
 
-pub trait BinSearchParam<T: Copy + PartialOrd> {
-    fn get(&self, index: usize) -> T;
-}
-
-impl<T: Copy + PartialOrd> BinSearchParam<T> for [T] {
+impl<T: Copy + PartialOrd> Indexable<T> for Vec<T> {
     fn get(&self, index: usize) -> T {
-        self[index]
+        self[index].clone()
     }
 }
 
-impl<T: Copy + PartialOrd> BinSearchParam<T> for Vec<T> {
+impl<T: Copy + PartialOrd> Indexable<T> for [T] {
     fn get(&self, index: usize) -> T {
-        self[index]
+        self[index].clone()
     }
 }
 
