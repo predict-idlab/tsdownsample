@@ -10,6 +10,54 @@ use crate::types::Num;
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
+pub trait M4Param {
+    type SliceType: M4Param;
+
+    fn len(&self) -> usize;
+
+    fn argminmax(&self) -> (usize, usize);
+
+    fn slice(&self, start_idx: usize, end_idx: usize) -> Self::SliceType;
+}
+
+impl<T: Clone> M4Param for Vec<T>
+where
+    Vec<T>: ArgMinMax,
+{
+    type SliceType = std::vec::Vec<T>;
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn slice(&self, start_idx: usize, end_idx: usize) -> Self::SliceType {
+        self[start_idx..end_idx].to_vec()
+    }
+
+    fn argminmax(&self) -> (usize, usize) {
+        ArgMinMax::argminmax(self)
+    }
+}
+
+impl<T: Clone> M4Param for [T]
+where
+    for<'a> &'a [T]: ArgMinMax,
+{
+    type SliceType = std::vec::Vec<T>;
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn slice(&self, start_idx: usize, end_idx: usize) -> Self::SliceType {
+        self[start_idx..end_idx].to_vec()
+    }
+
+    fn argminmax(&self) -> (usize, usize) {
+        ArgMinMax::argminmax(&self)
+    }
+}
+
 // ----------- WITH X
 
 pub fn m4_with_x<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
@@ -30,7 +78,7 @@ where
     for<'a> &'a [T]: ArgMinMax,
 {
     assert_eq!(n_out % 4, 0);
-    m4_generic(arr, n_out, |arr| arr.argminmax())
+    m4_generic(arr, n_out)
 }
 
 // ------------------------------------- PARALLEL --------------------------------------
@@ -80,11 +128,7 @@ where
 // --------------------- WITHOUT X
 
 #[inline(always)]
-pub(crate) fn m4_generic<T: Copy + PartialOrd>(
-    arr: &[T],
-    n_out: usize,
-    f_argminmax: fn(&[T]) -> (usize, usize),
-) -> Vec<usize> {
+pub(crate) fn m4_generic<T: M4Param + ?Sized>(arr: &T, n_out: usize) -> Vec<usize> {
     // Assumes n_out is a multiple of 4
     if n_out >= arr.len() {
         return (0..arr.len()).collect();
@@ -96,13 +140,14 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
     let mut sampled_indices: Vec<usize> = vec![usize::default(); n_out];
 
     let mut start_idx: usize = 0;
+
     for i in 0..n_out / 4 {
         // Decided to use multiplication instead of adding to the accumulator (end)
         // as multiplication seems to be less prone to rounding errors.
         let end: f64 = block_size * (i + 1) as f64;
         let end_idx: usize = end as usize + 1;
 
-        let (min_index, max_index) = f_argminmax(&arr[start_idx..end_idx]);
+        let (min_index, max_index) = arr.slice(start_idx, end_idx).argminmax();
 
         // Add the indexes in sorted order
         sampled_indices[4 * i] = start_idx;

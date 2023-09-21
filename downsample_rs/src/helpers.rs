@@ -1,5 +1,5 @@
 use num_traits::AsPrimitive;
-use polars::prelude::{ChunkAgg, ChunkAnyValue, ChunkedArray, Float64Type, TakeRandom};
+use polars::prelude::{ChunkAgg, ChunkAnyValue, ChunkedArray, Float64Type};
 
 use crate::types::Num;
 
@@ -129,7 +129,7 @@ impl LttbParam for ChunkedArray<Float64Type> {
             .unwrap()
         {
             polars::prelude::AnyValue::Float64(x) => x,
-            _ => panic!(""), // this can never be reached, as it should have panicked when casting
+            _ => unreachable!(), // this can never be reached, as it should have panicked when casting
         }
     }
 
