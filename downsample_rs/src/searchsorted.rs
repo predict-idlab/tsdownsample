@@ -6,6 +6,22 @@ use num_traits::{AsPrimitive, FromPrimitive};
 
 // ---------------------- Binary search ----------------------
 
+pub trait BinSearchParam<T: Copy + PartialOrd> {
+    fn get(&self, index: usize) -> T;
+}
+
+impl<T: Copy + PartialOrd> BinSearchParam<T> for [T] {
+    fn get(&self, index: usize) -> T {
+        self[index]
+    }
+}
+
+impl<T: Copy + PartialOrd> BinSearchParam<T> for Vec<T> {
+    fn get(&self, index: usize) -> T {
+        self[index]
+    }
+}
+
 /// Binary search for the index position of the given value in the given array.
 /// The array must be sorted in ascending order and contain no duplicates.
 ///
@@ -13,26 +29,52 @@ use num_traits::{AsPrimitive, FromPrimitive};
 /// https://docs.python.org/3/library/bisect.html#bisect.bisect
 ///
 // #[inline(always)]
-fn binary_search<T: Copy + PartialOrd>(arr: &[T], value: T, left: usize, right: usize) -> usize {
+
+fn binary_search<I: Copy + PartialOrd, T: BinSearchParam<I> + ?Sized>(
+    arr: &T,
+    value: I,
+    left: usize,
+    right: usize,
+) -> usize {
     let mut size: usize = right - left;
     let mut left: usize = left;
     let mut right: usize = right;
-    // Return the index where the value is >= arr[index] and arr[index-1] < value
     while left < right {
         let mid = left + size / 2;
-        if arr[mid] < value {
+        if arr.get(mid) < value {
             left = mid + 1;
         } else {
             right = mid;
         }
         size = right - left;
     }
-    if arr[left] <= value {
+    if arr.get(left) <= value {
         left + 1
     } else {
         left
     }
 }
+
+// fn binary_search<T: Copy + PartialOrd>(arr: &[T], value: T, left: usize, right: usize) -> usize {
+//     let mut size: usize = right - left;
+//     let mut left: usize = left;
+//     let mut right: usize = right;
+//     // Return the index where the value is >= arr[index] and arr[index-1] < value
+//     while left < right {
+//         let mid = left + size / 2;
+//         if arr[mid] < value {
+//             left = mid + 1;
+//         } else {
+//             right = mid;
+//         }
+//         size = right - left;
+//     }
+//     if arr[left] <= value {
+//         left + 1
+//     } else {
+//         left
+//     }
+// }
 
 /// Binary search for the index position of the given value in the given array.
 /// The array must be sorted in ascending order and contain no duplicates.
@@ -43,9 +85,9 @@ fn binary_search<T: Copy + PartialOrd>(arr: &[T], value: T, left: usize, right: 
 /// https://docs.python.org/3/library/bisect.html#bisect.bisect
 ///
 // #[inline(always)]
-fn binary_search_with_mid<T: Copy + PartialOrd>(
-    arr: &[T],
-    value: T,
+fn binary_search_with_mid<I: Copy + PartialOrd, T: BinSearchParam<I> + ?Sized>(
+    arr: &T,
+    value: I,
     left: usize,
     right: usize,
     mid: usize,
@@ -56,7 +98,7 @@ fn binary_search_with_mid<T: Copy + PartialOrd>(
     let mut mid: usize = mid;
     // Return the index where the value is <= arr[index] and arr[index+1] < value
     while left < right {
-        if arr[mid] < value {
+        if arr.get(mid) < value {
             left = mid + 1;
         } else {
             right = mid;
@@ -64,7 +106,7 @@ fn binary_search_with_mid<T: Copy + PartialOrd>(
         let size = right - left;
         mid = left + size / 2;
     }
-    if arr[left] <= value {
+    if arr.get(left) <= value {
         left + 1
     } else {
         left
@@ -132,6 +174,7 @@ pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
 ) -> impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>> + '_> + '_
 where
     T: Num + FromPrimitive + AsPrimitive<f64> + Sync + Send,
+    [T]: BinSearchParam<T>,
 {
     assert!(nb_bins >= 2);
     // 1. Compute the step between each bin
@@ -217,7 +260,8 @@ mod tests {
 
     #[test]
     fn test_binary_search() {
-        let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        // https://rust-lang.github.io/rfcs/2000-const-generics.html
+        let arr = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         assert_eq!(binary_search(&arr, 0, 0, arr.len() - 1), 0);
         assert_eq!(binary_search(&arr, 1, 0, arr.len() - 1), 1);
         assert_eq!(binary_search(&arr, 2, 0, arr.len() - 1), 2);
@@ -234,7 +278,8 @@ mod tests {
 
     #[test]
     fn test_binary_search_with_mid() {
-        let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        // https://rust-lang.github.io/rfcs/2000-const-generics.html
+        let arr = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         assert_eq!(binary_search_with_mid(&arr, 0, 0, arr.len() - 1, 0), 0);
         assert_eq!(binary_search_with_mid(&arr, 1, 0, arr.len() - 1, 0), 1);
         assert_eq!(binary_search_with_mid(&arr, 2, 0, arr.len() - 1, 1), 2);
