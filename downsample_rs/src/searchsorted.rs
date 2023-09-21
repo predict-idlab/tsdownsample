@@ -1,3 +1,4 @@
+use polars::prelude::{ChunkedArray, PolarsNumericType};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
@@ -55,27 +56,6 @@ fn binary_search<I: Copy + PartialOrd, T: BinSearchParam<I> + ?Sized>(
     }
 }
 
-// fn binary_search<T: Copy + PartialOrd>(arr: &[T], value: T, left: usize, right: usize) -> usize {
-//     let mut size: usize = right - left;
-//     let mut left: usize = left;
-//     let mut right: usize = right;
-//     // Return the index where the value is >= arr[index] and arr[index-1] < value
-//     while left < right {
-//         let mid = left + size / 2;
-//         if arr[mid] < value {
-//             left = mid + 1;
-//         } else {
-//             right = mid;
-//         }
-//         size = right - left;
-//     }
-//     if arr[left] <= value {
-//         left + 1
-//     } else {
-//         left
-//     }
-// }
-
 /// Binary search for the index position of the given value in the given array.
 /// The array must be sorted in ascending order and contain no duplicates.
 ///
@@ -117,23 +97,52 @@ fn binary_search_with_mid<I: Copy + PartialOrd, T: BinSearchParam<I> + ?Sized>(
 
 // --- Sequential version
 
-pub(crate) fn get_equidistant_bin_idx_iterator<T>(
-    arr: &[T],
+pub trait EqBinIdxIteratorParam<T> {
+    fn get(&self, index: usize) -> T;
+
+    fn len(&self) -> usize;
+}
+
+impl<T: Clone> EqBinIdxIteratorParam<T> for Vec<T> {
+    fn get(&self, index: usize) -> T {
+        self[index].clone()
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+}
+
+impl<T: Clone> EqBinIdxIteratorParam<T> for [T] {
+    fn get(&self, index: usize) -> T {
+        self[index].clone()
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+}
+
+pub(crate) fn get_equidistant_bin_idx_iterator<
+    I,
+    T: EqBinIdxIteratorParam<I> + BinSearchParam<I> + ?Sized,
+>(
+    arr: &T,
     nb_bins: usize,
 ) -> impl Iterator<Item = Option<(usize, usize)>> + '_
 where
-    T: Num + FromPrimitive + AsPrimitive<f64>,
+    I: Num + FromPrimitive + AsPrimitive<f64>,
 {
     assert!(nb_bins >= 2);
     // 1. Compute the step between each bin
     // Divide by nb_bins to avoid overflow!
-    let val_step: f64 =
-        (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
+    let val_step: f64 = (EqBinIdxIteratorParam::get(arr, arr.len() - 1).as_() / nb_bins as f64)
+        - (EqBinIdxIteratorParam::get(arr, 0).as_() / nb_bins as f64);
     // Estimate the step between each index (used to pre-guess the mid index)
     let idx_step: usize = arr.len() / nb_bins;
 
     // 2. The moving index & value
-    let arr0: f64 = arr[0].as_(); // The first value of the array
+    let arr0: f64 = EqBinIdxIteratorParam::get(arr, 0).as_(); // The first value of the array
     let mut idx: usize = 0; // Index of the search value
 
     // 3. Iterate over the bins
@@ -141,8 +150,8 @@ where
         let start_idx: usize = idx; // Start index of the bin (previous end index)
 
         // Update the search value
-        let search_value: T = T::from_f64(arr0 + val_step * (i + 1) as f64).unwrap();
-        if arr[start_idx] >= search_value {
+        let search_value: I = I::from_f64(arr0 + val_step * (i + 1) as f64).unwrap();
+        if EqBinIdxIteratorParam::get(arr, start_idx) >= search_value {
             // If the first value of the bin is already >= the search value,
             // then the bin is empty.
             return None;
@@ -246,6 +255,7 @@ mod tests {
     fn test_search_sorted_identicial_to_np_linspace_searchsorted() {
         // Create a 0..9999 array
         let arr: [u32; 10_000] = core::array::from_fn(|i| i.as_());
+        let arr = Vec::from(arr);
         assert!(arr.len() == 10_000);
         let iterator = get_equidistant_bin_idx_iterator(&arr, 4);
         // Check the iterator
@@ -300,6 +310,7 @@ mod tests {
         let expected_indices = vec![0, 4, 7];
 
         let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let arr = Vec::from(arr);
         let bin_idxs_iter = get_equidistant_bin_idx_iterator(&arr, 3);
         let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
         assert_eq!(bin_idxs, expected_indices);
@@ -323,7 +334,7 @@ mod tests {
             arr.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
             // Calculate the bin indexes
-            let bin_idxs_iter = get_equidistant_bin_idx_iterator(&arr[..], nb_bins);
+            let bin_idxs_iter = get_equidistant_bin_idx_iterator(&arr, nb_bins);
             let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
 
             // Calculate the bin indexes in parallel
