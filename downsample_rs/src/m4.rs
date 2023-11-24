@@ -75,7 +75,7 @@ where
 //    be the start and end of the bin, which would result in duplicate data in
 //    the output array. (this is for example the case for monotonic data).
 
-// ----------------- GENERICS
+// ----------------------------------- GENERICS ------------------------------------
 
 // --------------------- WITHOUT X
 

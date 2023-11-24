@@ -104,7 +104,7 @@ The following downsampling algorithms (classes) are implemented:
 | `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm | `n_threads` |
 | `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `n_threads`, `minmax_ratio`<sup>*</sup> |
 
-<sup>*</sup><i>Default value for `minmax_ratio` is 30, which is empirically proven to be a good default. (More details in our upcomming paper)</i>
+<sup>*</sup><i>Default value for `minmax_ratio` is 4, which is empirically proven to be a good default. More details here: https://arxiv.org/abs/2305.00332</i>
 
 
 ## Limitations & assumptions 🚨
