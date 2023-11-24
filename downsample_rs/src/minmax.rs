@@ -69,8 +69,9 @@ where
     assert_eq!(n_out % 2, 0);
     min_max_generic_parallel(arr, n_out, n_threads, |arr| arr.argminmax())
 }
-// ----------------- GENERICS
-//
+
+// ----------------------------------- GENERICS ------------------------------------
+
 // --------------------- WITHOUT X
 
 #[inline(always)]
