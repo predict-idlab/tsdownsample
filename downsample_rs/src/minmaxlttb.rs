@@ -260,8 +260,8 @@ where
                 .map(|i| *y.get_unchecked(*i))
                 .collect::<Vec<Ty>>()
         };
-        // Apply lttb on the reduced data
-        let index_points_selected = lttb_without_x(y.as_slice(), n_out);
+        // Apply lttb on the reduced data (using the preselect data its index)
+        let index_points_selected = lttb_with_x(index.as_slice(), y.as_slice(), n_out);
         // Return the original index
         return index_points_selected
             .iter()

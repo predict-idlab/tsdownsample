@@ -104,7 +104,7 @@ m4_without_x_parallel!(m4_without_x_parallel_nan, NaNArgMinMax, |arr| arr
 //    be the start and end of the bin, which would result in duplicate data in
 //    the output array. (this is for example the case for monotonic data).
 
-// ----------------- GENERICS
+// ----------------------------------- GENERICS ------------------------------------
 
 // --------------------- WITHOUT X
 

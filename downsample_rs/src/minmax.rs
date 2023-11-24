@@ -100,8 +100,8 @@ min_max_without_x_parallel!(min_max_without_x_parallel, ArgMinMax, |arr| arr.arg
 min_max_without_x_parallel!(min_max_without_x_parallel_nan, NaNArgMinMax, |arr| arr
     .nanargminmax());
 
-// ----------------- GENERICS
-//
+// ----------------------------------- GENERICS ------------------------------------
+
 // --------------------- WITHOUT X
 
 #[inline(always)]
