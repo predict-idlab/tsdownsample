@@ -17,11 +17,25 @@ class AbstractDownsampler(ABC):
 
     def __init__(
         self,
+        check_contiguous: bool = True,
         x_dtype_regex_list: Optional[List[str]] = None,
         y_dtype_regex_list: Optional[List[str]] = None,
     ):
+        self.check_contiguous = check_contiguous
         self.x_dtype_regex_list = x_dtype_regex_list
         self.y_dtype_regex_list = y_dtype_regex_list
+
+    def _check_contiguous(self, arr: np.ndarray, y: bool = True):
+        # necessary for rust downsamplers as they don't support non-contiguous arrays
+        # (we call .as_slice().unwrap() on the array) in the lib.rs file
+        # which will panic if the array is not contiguous
+        if not self.check_contiguous:
+            return
+
+        if arr.flags["C_CONTIGUOUS"]:
+            return
+
+        raise ValueError(f"{'y' if y else 'x'} array must be contiguous.")
 
     def _supports_dtype(self, arr: np.ndarray, y: bool = True):
         dtype_regex_list = self.y_dtype_regex_list if y else self.x_dtype_regex_list
@@ -66,6 +80,7 @@ class AbstractDownsampler(ABC):
                 raise ValueError("x must be 1D array")
             if len(x) != len(y):
                 raise ValueError("x and y must have the same length")
+
         return x, y
 
     @staticmethod
@@ -113,8 +128,10 @@ class AbstractDownsampler(ABC):
         self._check_valid_n_out(n_out)
         x, y = self._check_valid_downsample_args(*args)
         self._supports_dtype(y, y=True)
+        self._check_contiguous(y, y=True)
         if x is not None:
             self._supports_dtype(x, y=False)
+            self._check_contiguous(x, y=False)
         return self._downsample(x, y, n_out, **kwargs)
 
 
