@@ -57,6 +57,9 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
 
 
 class EveryNthDownsampler(AbstractDownsampler):
+    def __init__(self, **kwargs):
+        super().__init__(check_contiguous=False, **kwargs)
+
     def _downsample(
         self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **_
     ) -> np.ndarray:

@@ -268,3 +268,25 @@ def test_error_invalid_args():
     with pytest.raises(ValueError) as e_msg:
         MinMaxDownsampler().downsample(arr, arr[:-1], n_out=100, n_threads=2)
     assert "x and y must have the same length" in str(e_msg.value)
+
+
+@pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
+def test_non_contiguous_array(downsampler: AbstractDownsampler):
+    """Test non contiguous array."""
+    arr = np.random.randint(0, 100, size=10_000)
+    arr = arr[::2]
+    assert not arr.flags["C_CONTIGUOUS"]
+    with pytest.raises(ValueError) as e_msg:
+        downsampler.downsample(arr, n_out=100)
+    assert "must be contiguous" in str(e_msg.value)
+
+
+def test_everynth_non_contiguous_array():
+    """Test non contiguous array."""
+    arr = np.random.randint(0, 100, size=10_000)
+    arr = arr[::2]
+    assert not arr.flags["C_CONTIGUOUS"]
+    downsampler = EveryNthDownsampler()
+    s_downsampled = downsampler.downsample(arr, n_out=100)
+    assert s_downsampled[0] == 0
+    assert s_downsampled[-1] == 4950
