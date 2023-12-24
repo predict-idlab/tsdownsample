@@ -161,7 +161,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
     """RustDownsampler interface-class, subclassed by concrete downsamplers."""
 
     def __init__(self):
-        super().__init__(_rust_dtypes, _y_rust_dtypes)  # same for x and y
+        super().__init__(True, _rust_dtypes, _y_rust_dtypes)  # same for x and y
 
     @property
     def rust_mod(self) -> ModuleType:
