@@ -3,10 +3,11 @@ use num_traits::{AsPrimitive, FromPrimitive};
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
-use crate::searchsorted::{
+use super::searchsorted::{
     get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
-use crate::types::Num;
+use super::types::Num;
+use super::POOL;
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
@@ -137,39 +138,34 @@ pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 4) as f64;
 
     // Store the enumerated indexes in the output array
+    // These indexes are used to calculate the start and end indexes of each bin in
+    // the multi-threaded execution
     let mut sampled_indices: Vec<usize> = (0..n_out).collect::<Vec<usize>>();
 
-    // to limit the amounts of threads Rayon uses, an explicit threadpool needs to be created
-    // in which the required code is "installed". This limits the amount of used threads.
-    // https://docs.rs/rayon/latest/rayon/struct.ThreadPool.html#method.install
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(n_threads)
-        .build();
+    POOL.install(|| {
+        sampled_indices
+            .par_chunks_exact_mut(4)
+            .for_each(|sampled_index_chunk| {
+                let i: f64 = unsafe { *sampled_index_chunk.get_unchecked(0) >> 2 } as f64;
+                let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
+                let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
 
-    let func = || {
-        for chunk in sampled_indices.chunks_exact_mut(4) {
-            let i: f64 = unsafe { *chunk.get_unchecked(0) >> 2 } as f64;
-            let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
-            let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
+                let (min_index, max_index) = f_argminmax(&arr[start_idx..end_idx]);
 
-            let (min_index, max_index) = f_argminmax(&arr[start_idx..end_idx]);
+                sampled_index_chunk[0] = start_idx;
+                // Add the indexes in sorted order
+                if min_index < max_index {
+                    sampled_index_chunk[1] = min_index + start_idx;
+                    sampled_index_chunk[2] = max_index + start_idx;
+                } else {
+                    sampled_index_chunk[1] = max_index + start_idx;
+                    sampled_index_chunk[2] = min_index + start_idx;
+                }
+                sampled_index_chunk[3] = end_idx - 1;
+            })
+    });
 
-            chunk[0] = start_idx;
-            // Add the indexes in sorted order
-            if min_index < max_index {
-                chunk[1] = min_index + start_idx;
-                chunk[2] = max_index + start_idx;
-            } else {
-                chunk[1] = max_index + start_idx;
-                chunk[2] = min_index + start_idx;
-            }
-            chunk[3] = end_idx - 1;
-        }
-    };
-
-    pool.unwrap().install(func); // allow panic if pool could not be created
-
-    sampled_indices.to_vec()
+    sampled_indices
 }
 
 // --------------------- WITH X
@@ -232,14 +228,7 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
         return (0..arr.len()).collect::<Vec<usize>>();
     }
 
-    // to limit the amounts of threads Rayon uses, an explicit threadpool needs to be created
-    // in which the required code is "installed". This limits the amount of used threads.
-    // https://docs.rs/rayon/latest/rayon/struct.ThreadPool.html#method.install
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(n_threads)
-        .build();
-
-    let iter_func = || {
+    POOL.install(|| {
         bin_idx_iterator
             .flat_map(|bin_idx_iterator| {
                 bin_idx_iterator
@@ -275,10 +264,7 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
             })
             .flatten()
             .collect::<Vec<usize>>()
-    };
-
-    let result = pool.unwrap().install(iter_func); // allow panic if pool could not be created
-    result
+    })
 }
 
 #[cfg(test)]

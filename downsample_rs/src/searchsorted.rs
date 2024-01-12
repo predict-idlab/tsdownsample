@@ -2,6 +2,7 @@ use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
 use super::types::Num;
+use super::POOL;
 use num_traits::{AsPrimitive, FromPrimitive};
 
 // ---------------------- Binary search ----------------------
@@ -140,7 +141,7 @@ where
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let arr0: f64 = arr[0].as_(); // The first value of the array
                                   // 2. Compute the number of threads & bins per thread
-    let n_threads = std::cmp::min(n_threads, nb_bins);
+    let n_threads = std::cmp::min(POOL.current_num_threads(), nb_bins);
     let nb_bins_per_thread = nb_bins / n_threads;
     let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (n_threads - 1);
     // 3. Iterate over the number of threads
