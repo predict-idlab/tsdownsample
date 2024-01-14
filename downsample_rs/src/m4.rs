@@ -38,22 +38,15 @@ where
 
 // ----------- WITH X
 
-pub fn m4_with_x_parallel<Tx, Ty>(
-    x: &[Tx],
-    arr: &[Ty],
-    n_out: usize,
-    n_threads: usize,
-) -> Vec<usize>
+pub fn m4_with_x_parallel<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
 where
     for<'a> &'a [Ty]: ArgMinMax,
     Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
     Ty: Copy + PartialOrd + Send + Sync,
 {
     assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4, n_threads);
-    m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, |arr| {
-        arr.argminmax()
-    })
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4);
+    m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
 // ----------- WITHOUT X
@@ -61,13 +54,12 @@ where
 pub fn m4_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: &[T],
     n_out: usize,
-    n_threads: usize,
 ) -> Vec<usize>
 where
     for<'a> &'a [T]: ArgMinMax,
 {
     assert_eq!(n_out % 4, 0);
-    m4_generic_parallel(arr, n_out, n_threads, |arr| arr.argminmax())
+    m4_generic_parallel(arr, n_out, |arr| arr.argminmax())
 }
 
 // TODO: check for duplicate data in the output array
@@ -126,7 +118,6 @@ pub(crate) fn m4_generic<T: Copy + PartialOrd>(
 pub(crate) fn m4_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: &[T],
     n_out: usize,
-    n_threads: usize,
     f_argminmax: fn(&[T]) -> (usize, usize),
 ) -> Vec<usize> {
     // Assumes n_out is a multiple of 4
@@ -220,7 +211,6 @@ pub(crate) fn m4_generic_with_x_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: &[T],
     bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>>>,
     n_out: usize,
-    n_threads: usize,
     f_argminmax: fn(&[T]) -> (usize, usize),
 ) -> Vec<usize> {
     // Assumes n_out is a multiple of 4
@@ -282,14 +272,13 @@ mod tests {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
 
-    // Template for the n_threads matrix
+    // Template for n_out
     #[template]
     #[rstest]
-    #[case(1)]
-    #[case(utils::get_all_threads() / 2)]
-    #[case(utils::get_all_threads())]
-    #[case(utils::get_all_threads() * 2)]
-    fn threads(#[case] n_threads: usize) {}
+    #[case(196)]
+    #[case(200)]
+    #[case(204)]
+    fn n_outs(#[case] n_out: usize) {}
 
     #[test]
     fn test_m4_scalar_without_x_correct() {
@@ -311,11 +300,11 @@ mod tests {
         assert_eq!(sampled_values, expected_values);
     }
 
-    #[apply(threads)]
-    fn test_m4_scalar_without_x_parallel_correct(n_threads: usize) {
+    #[test]
+    fn test_m4_scalar_without_x_parallel_correct() {
         let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_without_x_parallel(&arr, 12, n_threads);
+        let sampled_indices = m4_without_x_parallel(&arr, 12);
         let sampled_values = sampled_indices
             .iter()
             .map(|x| arr[*x])
@@ -352,12 +341,12 @@ mod tests {
         assert_eq!(sampled_values, expected_values);
     }
 
-    #[apply(threads)]
-    fn test_m4_scalar_with_x_parallel_correct(n_threads: usize) {
+    #[test]
+    fn test_m4_scalar_with_x_parallel_correct() {
         let x: [i32; 100] = core::array::from_fn(|i| i.as_());
         let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_with_x_parallel(&x, &arr, 12, n_threads);
+        let sampled_indices = m4_with_x_parallel(&x, &arr, 12);
         let sampled_values = sampled_indices
             .iter()
             .map(|x| arr[*x])
@@ -396,14 +385,14 @@ mod tests {
         assert_eq!(sampled_indices, expected_indices);
     }
 
-    #[apply(threads)]
-    fn test_m4_scalar_with_x_gap_parallel(n_threads: usize) {
+    #[test]
+    fn test_m4_scalar_with_x_gap_parallel() {
         // We will create a gap in the middle of the array
         // Increment the second half of the array by 50
         let x: [i32; 100] = core::array::from_fn(|i| if i > 50 { (i + 50).as_() } else { i.as_() });
         let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = m4_with_x_parallel(&x, &arr, 20, n_threads);
+        let sampled_indices = m4_with_x_parallel(&x, &arr, 20);
         assert_eq!(sampled_indices.len(), 16); // One full gap
         let expected_indices = vec![0, 0, 29, 29, 30, 30, 50, 50, 51, 51, 69, 69, 70, 70, 99, 99];
         assert_eq!(sampled_indices, expected_indices);
@@ -411,7 +400,7 @@ mod tests {
         // Increment the second half of the array by 50 again
         let x = x.map(|x| if x > 101 { x + 50 } else { x });
 
-        let sampled_indices = m4_with_x_parallel(&x, &arr, 20, n_threads);
+        let sampled_indices = m4_with_x_parallel(&x, &arr, 20);
         assert_eq!(sampled_indices.len(), 17); // Gap with 1 value
         let expected_indices = vec![
             0, 0, 39, 39, 40, 40, 50, 50, 51, 52, 52, 59, 59, 60, 60, 99, 99,
@@ -419,18 +408,17 @@ mod tests {
         assert_eq!(sampled_indices, expected_indices);
     }
 
-    #[apply(threads)]
-    fn test_many_random_runs_correct(n_threads: usize) {
+    #[apply(n_outs)]
+    fn test_many_random_runs_correct(n_out: usize) {
         const N: usize = 20_003;
-        const N_OUT: usize = 204;
         let x: [i32; N] = core::array::from_fn(|i| i.as_());
         for _ in 0..100 {
             let arr = get_array_f32(N);
-            let idxs1 = m4_without_x(arr.as_slice(), N_OUT);
-            let idxs2 = m4_with_x(&x, arr.as_slice(), N_OUT);
+            let idxs1 = m4_without_x(arr.as_slice(), n_out);
+            let idxs2 = m4_with_x(&x, arr.as_slice(), n_out);
             assert_eq!(idxs1, idxs2);
-            let idxs3 = m4_without_x_parallel(arr.as_slice(), N_OUT, n_threads);
-            let idxs4 = m4_with_x_parallel(&x, arr.as_slice(), N_OUT, n_threads);
+            let idxs3 = m4_without_x_parallel(arr.as_slice(), n_out);
+            let idxs4 = m4_with_x_parallel(&x, arr.as_slice(), n_out);
             assert_eq!(idxs1, idxs3);
             assert_eq!(idxs1, idxs4); // TODO: this should not fail when n_threads = 16
         }

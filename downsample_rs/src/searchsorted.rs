@@ -129,7 +129,6 @@ fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     arr: &[T],
     nb_bins: usize,
-    n_threads: usize,
 ) -> impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>> + '_> + '_
 where
     T: Num + FromPrimitive + AsPrimitive<f64> + Sync + Send,
@@ -189,16 +188,15 @@ mod tests {
 
     use super::*;
 
-    use dev_utils::utils::{get_all_threads, get_random_array};
+    use dev_utils::utils::get_random_array;
 
-    // Template for the n_threads matrix
+    // Template for nb_bins
     #[template]
     #[rstest]
-    #[case(1)]
-    #[case(get_all_threads() / 2)]
-    #[case(get_all_threads())]
-    #[case(get_all_threads() * 2)]
-    fn threads(#[case] n_threads: usize) {}
+    #[case(99)]
+    #[case(100)]
+    #[case(101)]
+    fn nb_bins(#[case] nb_bins: usize) {}
 
     #[test]
     fn test_search_sorted_identicial_to_np_linspace_searchsorted() {
@@ -251,8 +249,8 @@ mod tests {
         // assert_eq!(binary_search_with_mid(&arr, 11, 0, arr.len() - 1, 9), 10);
     }
 
-    #[apply(threads)]
-    fn test_get_equidistant_bin_idxs(n_threads: usize) {
+    #[test]
+    fn test_get_equidistant_bin_idxs() {
         let expected_indices = vec![0, 4, 7];
 
         let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -260,7 +258,7 @@ mod tests {
         let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
         assert_eq!(bin_idxs, expected_indices);
 
-        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(&arr, 3, n_threads);
+        let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(&arr, 3);
         let bin_idxs = bin_idxs_iter
             .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
             .flatten()
@@ -268,10 +266,9 @@ mod tests {
         assert_eq!(bin_idxs, expected_indices);
     }
 
-    #[apply(threads)]
-    fn test_many_random_same_result(n_threads: usize) {
+    #[apply(nb_bins)]
+    fn test_many_random_same_result(nb_bins: usize) {
         let n = 5_000;
-        let nb_bins = 100;
 
         for _ in 0..100 {
             let mut arr = get_random_array::<i32>(n, i32::MIN, i32::MAX);
@@ -283,8 +280,7 @@ mod tests {
             let bin_idxs = bin_idxs_iter.map(|x| x.unwrap().0).collect::<Vec<usize>>();
 
             // Calculate the bin indexes in parallel
-            let bin_idxs_iter =
-                get_equidistant_bin_idx_iterator_parallel(&arr[..], nb_bins, n_threads);
+            let bin_idxs_iter = get_equidistant_bin_idx_iterator_parallel(&arr[..], nb_bins);
             let bin_idxs_parallel = bin_idxs_iter
                 .map(|x| x.map(|x| x.unwrap().0).collect::<Vec<usize>>())
                 .flatten()
