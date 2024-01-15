@@ -314,13 +314,11 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         x: Union[np.ndarray, None],
         y: np.ndarray,
         n_out: int,
-        n_threads: int = 1,
+        parallel: bool = False,
         **kwargs,
     ) -> np.ndarray:
         """Downsample the data in x and y."""
         mod = self.mod_single_core
-        is_multi_core = False
-        parallel = n_threads > 1
         if parallel:
             if self.mod_multi_core is None:
                 name = self.__class__.__name__
@@ -330,7 +328,6 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
                 )
             else:
                 mod = self.mod_multi_core
-                is_multi_core = True
         ## Viewing the y-data as different dtype (if necessary)
         if y.dtype == "bool":
             # bool is viewed as int8
@@ -344,10 +341,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         ## Viewing the x-data as different dtype (if necessary)
         if x is None:
             downsample_f = self._switch_mod_with_y(y.dtype, mod)
-            if is_multi_core:
-                return downsample_f(y, n_out, n_threads=n_threads, **kwargs)
-            else:
-                return downsample_f(y, n_out, **kwargs)
+            return downsample_f(y, n_out, **kwargs)
         elif np.issubdtype(x.dtype, np.datetime64):
             # datetime64 is viewed as int64
             x = x.view(dtype=np.int64)
@@ -356,16 +350,17 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             x = x.view(dtype=np.int64)
         ## Getting the appropriate downsample function
         downsample_f = self._switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
-        if is_multi_core:
-            return downsample_f(x, y, n_out, n_threads=n_threads, **kwargs)
-        else:
-            return downsample_f(x, y, n_out, **kwargs)
+        return downsample_f(x, y, n_out, **kwargs)
 
-    def downsample(
-        self, *args, n_out: int, n_threads: int = 1, **kwargs  # x and y are optional
-    ):
-        """Downsample the data in x and y."""
-        return super().downsample(*args, n_out=n_out, n_threads=n_threads, **kwargs)
+    def downsample(self, *args, n_out: int, parallel: bool = False, **kwargs):
+        """Downsample the data in x and y.
+
+        The x and y arguments are positional-only arguments. If only one argument is
+        passed, it is considered to be the y-data. If two arguments are passed, the
+        first argument is considered to be the x-data and the second argument is
+        considered to be the y-data.
+        """
+        return super().downsample(*args, n_out=n_out, parallel=parallel, **kwargs)
 
     def __deepcopy__(self, memo):
         """Deepcopy the object."""
