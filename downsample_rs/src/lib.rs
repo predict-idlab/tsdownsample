@@ -18,6 +18,7 @@ pub(crate) mod types;
 use once_cell::sync::Lazy;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 
+// Inspired by: https://github.com/pola-rs/polars/blob/9a69062aa0beb2a1bc5d57294cac49961fc91058/crates/polars-core/src/lib.rs#L49
 pub static POOL: Lazy<ThreadPool> = Lazy::new(|| {
     ThreadPoolBuilder::new()
         .num_threads(
