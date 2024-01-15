@@ -420,7 +420,7 @@ mod tests {
             let idxs3 = m4_without_x_parallel(arr.as_slice(), n_out);
             let idxs4 = m4_with_x_parallel(&x, arr.as_slice(), n_out);
             assert_eq!(idxs1, idxs3);
-            assert_eq!(idxs1, idxs4); // TODO: this should not fail when n_threads = 16
+            assert_eq!(idxs1, idxs4); // TODO: this fails when nb. of threads = 16
         }
     }
 }
