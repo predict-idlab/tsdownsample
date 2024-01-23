@@ -185,7 +185,6 @@ macro_rules! _create_pyfuncs_without_x_helper {
 }
 
 macro_rules! create_pyfuncs_without_x {
-    // Use @threaded to differentiate between the single and multithreaded versions
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_without_x_helper!(
             _create_pyfunc_without_x,
@@ -205,7 +204,6 @@ macro_rules! create_pyfuncs_without_x {
 }
 
 macro_rules! create_pyfuncs_without_x_with_ratio {
-    // Use @threaded to differentiate between the single and multithreaded versions
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_without_x_helper!(
             _create_pyfunc_without_x_with_ratio,
@@ -234,7 +232,6 @@ macro_rules! _create_pyfuncs_with_x_helper {
 }
 
 macro_rules! create_pyfuncs_with_x {
-    // Use @threaded to differentiate between the single and multithreaded versions
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_helper!(_create_pyfunc_with_x, $resample_mod, $resample_fn, $mod);
     };
@@ -244,7 +241,6 @@ macro_rules! create_pyfuncs_with_x {
 }
 
 macro_rules! create_pyfuncs_with_x_with_ratio {
-    // Use @threaded to differentiate between the single and multithreaded versions
     ($resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_helper!(
             _create_pyfunc_with_x_with_ratio,
@@ -417,7 +413,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
             minmaxlttb_without_x_parallel,
             parallel_mod
         );
-        create_pyfuncs_without_x_with_ratio!(@nan @threaded
+        create_pyfuncs_without_x_with_ratio!(@nan
             minmaxlttb_mod,
             minmaxlttb_without_x_parallel,
             parallel_mod

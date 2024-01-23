@@ -14,7 +14,7 @@ use super::POOL;
 // ----------- WITH X
 
 macro_rules! m4_with_x {
-    ($func_name:ident, $trait:path, $func:expr) => {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
         pub fn $func_name<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
         where
             for<'a> &'a [Ty]: $trait,
@@ -23,7 +23,7 @@ macro_rules! m4_with_x {
         {
             assert_eq!(n_out % 4, 0);
             let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 4);
-            m4_generic_with_x(arr, bin_idx_iterator, n_out, $func)
+            m4_generic_with_x(arr, bin_idx_iterator, n_out, $f_argminmax)
         }
     };
 }
@@ -34,13 +34,13 @@ m4_with_x!(m4_with_x_nan, NaNArgMinMax, |arr| arr.nanargminmax());
 // ----------- WITHOUT X
 
 macro_rules! m4_without_x {
-    ($func_name:ident, $trait:path, $func:expr) => {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
         pub fn $func_name<T: Copy + PartialOrd>(arr: &[T], n_out: usize) -> Vec<usize>
         where
             for<'a> &'a [T]: $trait,
         {
             assert_eq!(n_out % 4, 0);
-            m4_generic(arr, n_out, $func)
+            m4_generic(arr, n_out, $f_argminmax)
         }
     };
 }
@@ -52,15 +52,19 @@ m4_without_x!(m4_without_x_nan, NaNArgMinMax, |arr| arr.nanargminmax());
 
 // ----------- WITH X
 
-pub fn m4_with_x_parallel<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-    Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
-    Ty: Copy + PartialOrd + Send + Sync,
-{
-    assert_eq!(n_out % 4, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4);
-    m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
+macro_rules! m4_with_x_parallel {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
+        pub fn $func_name<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
+        where
+            for<'a> &'a [Ty]: $trait,
+            Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+            Ty: Copy + PartialOrd + Send + Sync,
+        {
+            assert_eq!(n_out % 4, 0);
+            let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 4);
+            m4_generic_with_x_parallel(arr, bin_idx_iterator, n_out, $f_argminmax)
+        }
+    };
 }
 
 m4_with_x_parallel!(m4_with_x_parallel, ArgMinMax, |arr| arr.argminmax());
@@ -69,15 +73,16 @@ m4_with_x_parallel!(m4_with_x_parallel_nan, NaNArgMinMax, |arr| arr
 
 // ----------- WITHOUT X
 
-pub fn m4_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
-    arr: &[T],
-    n_out: usize,
-) -> Vec<usize>
-where
-    for<'a> &'a [T]: ArgMinMax,
-{
-    assert_eq!(n_out % 4, 0);
-    m4_generic_parallel(arr, n_out, |arr| arr.argminmax())
+macro_rules! m4_without_x_parallel {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
+        pub fn $func_name<T: Copy + PartialOrd + Send + Sync>(arr: &[T], n_out: usize) -> Vec<usize>
+        where
+            for<'a> &'a [T]: $trait,
+        {
+            assert_eq!(n_out % 4, 0);
+            m4_generic_parallel(arr, n_out, $f_argminmax)
+        }
+    };
 }
 
 m4_without_x_parallel!(m4_without_x_parallel, ArgMinMax, |arr| arr.argminmax());
