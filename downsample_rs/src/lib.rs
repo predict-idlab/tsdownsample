@@ -14,3 +14,22 @@ pub use m4::*;
 pub(crate) mod helpers;
 pub(crate) mod searchsorted;
 pub(crate) mod types;
+
+use once_cell::sync::Lazy;
+use rayon::{ThreadPool, ThreadPoolBuilder};
+
+// Inspired by: https://github.com/pola-rs/polars/blob/9a69062aa0beb2a1bc5d57294cac49961fc91058/crates/polars-core/src/lib.rs#L49
+pub static POOL: Lazy<ThreadPool> = Lazy::new(|| {
+    ThreadPoolBuilder::new()
+        .num_threads(
+            std::env::var("TSDOWNSAMPLE_MAX_THREADS")
+                .map(|s| s.parse::<usize>().expect("integer"))
+                .unwrap_or_else(|_| {
+                    std::thread::available_parallelism()
+                        .unwrap_or(std::num::NonZeroUsize::new(1).unwrap())
+                        .get()
+                }),
+        )
+        .build()
+        .expect("could not spawn threads")
+});

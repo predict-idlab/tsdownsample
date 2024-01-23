@@ -8,6 +8,7 @@ use super::searchsorted::{
     get_equidistant_bin_idx_iterator, get_equidistant_bin_idx_iterator_parallel,
 };
 use super::types::Num;
+use super::POOL;
 
 // ----------------------------------- NON-PARALLEL ------------------------------------
 
@@ -53,25 +54,15 @@ min_max_without_x!(min_max_without_x_nan, NaNArgMinMax, |arr| arr
 
 // ----------- WITH X
 
-macro_rules! min_max_with_x_parallel {
-    ($func_name:ident, $trait:path, $func:expr) => {
-        pub fn $func_name<Tx, Ty>(
-            x: &[Tx],
-            arr: &[Ty],
-            n_out: usize,
-            n_threads: usize,
-        ) -> Vec<usize>
-        where
-            for<'a> &'a [Ty]: $trait,
-            Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
-            Ty: Copy + PartialOrd + Send + Sync,
-        {
-            assert_eq!(n_out % 2, 0);
-            let bin_idx_iterator =
-                get_equidistant_bin_idx_iterator_parallel(x, n_out / 2, n_threads);
-            min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, n_threads, $func)
-        }
-    };
+pub fn min_max_with_x_parallel<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
+where
+    for<'a> &'a [Ty]: ArgMinMax,
+    Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+    Ty: Copy + PartialOrd + Send + Sync,
+{
+    assert_eq!(n_out % 2, 0);
+    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
+    min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
 }
 
 min_max_with_x_parallel!(min_max_with_x_parallel, ArgMinMax, |arr| arr.argminmax());
@@ -80,20 +71,15 @@ min_max_with_x_parallel!(min_max_with_x_parallel_nan, NaNArgMinMax, |arr| arr
 
 // ----------- WITHOUT X
 
-macro_rules! min_max_without_x_parallel {
-    ($func_name:ident, $trait:path, $func:expr) => {
-        pub fn $func_name<T: Copy + PartialOrd + Send + Sync>(
-            arr: &[T],
-            n_out: usize,
-            n_threads: usize,
-        ) -> Vec<usize>
-        where
-            for<'a> &'a [T]: $trait,
-        {
-            assert_eq!(n_out % 2, 0);
-            min_max_generic_parallel(arr, n_out, n_threads, $func)
-        }
-    };
+pub fn min_max_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
+    arr: &[T],
+    n_out: usize,
+) -> Vec<usize>
+where
+    for<'a> &'a [T]: ArgMinMax,
+{
+    assert_eq!(n_out % 2, 0);
+    min_max_generic_parallel(arr, n_out, |arr| arr.argminmax())
 }
 
 min_max_without_x_parallel!(min_max_without_x_parallel, ArgMinMax, |arr| arr.argminmax());
@@ -148,7 +134,6 @@ pub(crate) fn min_max_generic<T: Copy>(
 pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     arr: &[T],
     n_out: usize,
-    n_threads: usize,
     f_argminmax: fn(&[T]) -> (usize, usize),
 ) -> Vec<usize> {
     // Assumes n_out is a multiple of 2
@@ -160,38 +145,32 @@ pub(crate) fn min_max_generic_parallel<T: Copy + PartialOrd + Send + Sync>(
     let block_size: f64 = (arr.len() - 1) as f64 / (n_out / 2) as f64;
 
     // Store the enumerated indexes in the output array
-    // let mut sampled_indices: Array1<usize> = Array1::from_vec((0..n_out).collect::<Vec<usize>>());
+    // These indexes are used to calculate the start and end indexes of each bin in
+    // the multi-threaded execution
     let mut sampled_indices: Vec<usize> = (0..n_out).collect::<Vec<usize>>();
 
-    // to limit the amounts of threads Rayon uses, an explicit threadpool needs to be created
-    // in which the required code is "installed". This limits the amount of used threads.
-    // https://docs.rs/rayon/latest/rayon/struct.ThreadPool.html#method.install
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(n_threads)
-        .build();
+    POOL.install(|| {
+        sampled_indices
+            .par_chunks_exact_mut(2)
+            .for_each(|sampled_index_chunk| {
+                let i: f64 = unsafe { *sampled_index_chunk.get_unchecked(0) >> 1 } as f64;
+                let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
+                let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
 
-    let func = || {
-        for chunk in sampled_indices.chunks_exact_mut(2) {
-            let i: f64 = unsafe { *chunk.get_unchecked(0) >> 1 } as f64;
-            let start_idx: usize = (block_size * i) as usize + (i != 0.0) as usize;
-            let end_idx: usize = (block_size * (i + 1.0)) as usize + 1;
+                let (min_index, max_index) = f_argminmax(&arr[start_idx..end_idx]);
 
-            let (min_index, max_index) = f_argminmax(&arr[start_idx..end_idx]);
+                // Add the indexes in sorted order
+                if min_index < max_index {
+                    sampled_index_chunk[0] = min_index + start_idx;
+                    sampled_index_chunk[1] = max_index + start_idx;
+                } else {
+                    sampled_index_chunk[0] = max_index + start_idx;
+                    sampled_index_chunk[1] = min_index + start_idx;
+                }
+            })
+    });
 
-            // Add the indexes in sorted order
-            if min_index < max_index {
-                chunk[0] = min_index + start_idx;
-                chunk[1] = max_index + start_idx;
-            } else {
-                chunk[0] = max_index + start_idx;
-                chunk[1] = min_index + start_idx;
-            }
-        }
-    };
-
-    pool.unwrap().install(func); // allow panic if pool could not be created
-
-    sampled_indices.to_vec()
+    sampled_indices
 }
 
 // --------------------- WITH X
@@ -242,7 +221,6 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
     arr: &[T],
     bin_idx_iterator: impl IndexedParallelIterator<Item = impl Iterator<Item = Option<(usize, usize)>>>,
     n_out: usize,
-    n_threads: usize,
     f_argminmax: fn(&[T]) -> (usize, usize),
 ) -> Vec<usize> {
     // Assumes n_out is a multiple of 2
@@ -250,14 +228,7 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
         return (0..arr.len()).collect::<Vec<usize>>();
     }
 
-    // to limit the amounts of threads Rayon uses, an explicit threadpool needs to be created
-    // in which the required code is "installed". This limits the amount of used threads.
-    // https://docs.rs/rayon/latest/rayon/struct.ThreadPool.html#method.install
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(n_threads)
-        .build();
-
-    let iter_func = || {
+    POOL.install(|| {
         bin_idx_iterator
             .flat_map(|bin_idx_iterator| {
                 bin_idx_iterator
@@ -289,9 +260,7 @@ pub(crate) fn min_max_generic_with_x_parallel<T: Copy + Send + Sync>(
             })
             .flatten()
             .collect::<Vec<usize>>()
-    };
-
-    pool.unwrap().install(iter_func) // allow panic if pool could not be created
+    })
 }
 
 #[cfg(test)]
@@ -309,14 +278,13 @@ mod tests {
         utils::get_random_array(n, f32::MIN, f32::MAX)
     }
 
-    // Template for the n_threads matrix
+    // Template for n_out
     #[template]
     #[rstest]
-    #[case(1)]
-    #[case(utils::get_all_threads() / 2)]
-    #[case(utils::get_all_threads())]
-    #[case(utils::get_all_threads() * 2)]
-    fn threads(#[case] n_threads: usize) {}
+    #[case(198)]
+    #[case(200)]
+    #[case(202)]
+    fn n_outs(#[case] n_out: usize) {}
 
     #[test]
     fn test_min_max_scalar_without_x_correct() {
@@ -338,11 +306,11 @@ mod tests {
         assert_eq!(sampled_values, expected_values);
     }
 
-    #[apply(threads)]
-    fn test_min_max_scalar_without_x_parallel_correct(n_threads: usize) {
+    #[test]
+    fn test_min_max_scalar_without_x_parallel_correct() {
         let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = min_max_without_x_parallel(&arr, 10, n_threads);
+        let sampled_indices = min_max_without_x_parallel(&arr, 10);
         let sampled_values = sampled_indices
             .iter()
             .map(|x| arr[*x])
@@ -379,12 +347,12 @@ mod tests {
         assert_eq!(sampled_values, expected_values);
     }
 
-    #[apply(threads)]
-    fn test_min_max_scalar_with_x_parallel_correct(n_threads: usize) {
+    #[test]
+    fn test_min_max_scalar_with_x_parallel_correct() {
         let x: [i32; 100] = core::array::from_fn(|i| i.as_());
         let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = min_max_with_x_parallel(&x, &arr, 10, n_threads);
+        let sampled_indices = min_max_with_x_parallel(&x, &arr, 10);
         let sampled_values = sampled_indices
             .iter()
             .map(|x| arr[*x])
@@ -421,14 +389,14 @@ mod tests {
         assert_eq!(sampled_indices, expected_indices);
     }
 
-    #[apply(threads)]
-    fn test_min_max_scalar_with_x_parallel_gap(n_threads: usize) {
+    #[test]
+    fn test_min_max_scalar_with_x_parallel_gap() {
         // Create a gap in the middle of the array
         // Increment the second half of the array by 50
         let x: [i32; 100] = core::array::from_fn(|i| if i > 50 { (i + 50).as_() } else { i.as_() });
         let arr: [f32; 100] = core::array::from_fn(|i| i.as_());
 
-        let sampled_indices = min_max_with_x_parallel(&x, &arr, 10, n_threads);
+        let sampled_indices = min_max_with_x_parallel(&x, &arr, 10);
         assert_eq!(sampled_indices.len(), 8); // One full gap
         let expected_indices = vec![0, 29, 30, 50, 51, 69, 70, 99];
         assert_eq!(sampled_indices, expected_indices);
@@ -436,24 +404,23 @@ mod tests {
         // Increment the second half of the array by 50 again
         let x = x.map(|i| if i > 101 { i + 50 } else { i });
 
-        let sampled_indices = min_max_with_x_parallel(&x, &arr, 10, n_threads);
+        let sampled_indices = min_max_with_x_parallel(&x, &arr, 10);
         assert_eq!(sampled_indices.len(), 9); // Gap with 1 value
         let expected_indices = vec![0, 39, 40, 50, 51, 52, 59, 60, 99];
         assert_eq!(sampled_indices, expected_indices);
     }
 
-    #[apply(threads)]
-    fn test_many_random_runs_same_output(n_threads: usize) {
+    #[apply(n_outs)]
+    fn test_many_random_runs_same_output(n_out: usize) {
         const N: usize = 20_003;
-        const N_OUT: usize = 202;
         let x: [i32; N] = core::array::from_fn(|i| i.as_());
         for _ in 0..100 {
             let mut arr = get_array_f32(N);
             arr[N - 1] = f32::INFINITY; // Make sure the last value is always the max
-            let idxs1 = min_max_without_x(arr.as_slice(), N_OUT);
-            let idxs2 = min_max_without_x_parallel(arr.as_slice(), N_OUT, n_threads);
-            let idxs3 = min_max_with_x(&x, arr.as_slice(), N_OUT);
-            let idxs4 = min_max_with_x_parallel(&x, arr.as_slice(), N_OUT, n_threads);
+            let idxs1 = min_max_without_x(arr.as_slice(), n_out);
+            let idxs2 = min_max_without_x_parallel(arr.as_slice(), n_out);
+            let idxs3 = min_max_with_x(&x, arr.as_slice(), n_out);
+            let idxs4 = min_max_with_x_parallel(&x, arr.as_slice(), n_out);
             assert_eq!(idxs1, idxs2);
             assert_eq!(idxs1, idxs3);
             assert_eq!(idxs1, idxs4);

@@ -73,11 +73,11 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
         return _tsdownsample_rs.minmaxlttb
 
     def downsample(
-        self, *args, n_out: int, minmax_ratio: int = 4, n_threads: int = 1, **_
+        self, *args, n_out: int, minmax_ratio: int = 4, parallel: bool = False, **_
     ):
         assert minmax_ratio > 0, "minmax_ratio must be greater than 0"
         return super().downsample(
-            *args, n_out=n_out, n_threads=n_threads, ratio=minmax_ratio
+            *args, n_out=n_out, parallel=parallel, ratio=minmax_ratio
         )
 
 
@@ -99,6 +99,9 @@ class NaNMinMaxLTTBDownsampler(AbstractRustNaNDownsampler):
 
 
 class EveryNthDownsampler(AbstractDownsampler):
+    def __init__(self, **kwargs):
+        super().__init__(check_contiguous=False, **kwargs)
+
     def _downsample(
         self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **_
     ) -> np.ndarray:

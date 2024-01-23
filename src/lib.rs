@@ -32,25 +32,6 @@ macro_rules! _create_pyfunc_without_x {
     };
 }
 
-macro_rules! _create_pyfunc_without_x_multithreaded {
-    ($name:ident, $resample_mod:ident, $resample_fn:ident, $type:ty, $mod:ident) => {
-        // Create the Python function
-        #[pyfunction]
-        fn $name<'py>(
-            py: Python<'py>,
-            y: PyReadonlyArray1<$type>,
-            n_out: usize,
-            n_threads: usize,
-        ) -> &'py PyArray1<usize> {
-            let y = y.as_slice().unwrap();
-            let sampled_indices = $resample_mod::$resample_fn(y, n_out, n_threads);
-            sampled_indices.into_pyarray(py)
-        }
-        // Add the function to the module
-        $mod.add_wrapped(wrap_pyfunction!($name))?;
-    };
-}
-
 macro_rules! _create_pyfunc_without_x_with_ratio {
     ($name:ident, $resample_mod:ident, $resample_fn:ident, $type:ty, $mod:ident) => {
         // Create the Python function
@@ -63,26 +44,6 @@ macro_rules! _create_pyfunc_without_x_with_ratio {
         ) -> &'py PyArray1<usize> {
             let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio);
-            sampled_indices.into_pyarray(py)
-        }
-        // Add the function to the module
-        $mod.add_wrapped(wrap_pyfunction!($name))?;
-    };
-}
-
-macro_rules! _create_pyfunc_without_x_with_ratio_multithreaded {
-    ($name:ident, $resample_mod:ident, $resample_fn:ident, $type:ty, $mod:ident) => {
-        // Create the Python function
-        #[pyfunction]
-        fn $name<'py>(
-            py: Python<'py>,
-            y: PyReadonlyArray1<$type>,
-            n_out: usize,
-            ratio: usize,
-            n_threads: usize,
-        ) -> &'py PyArray1<usize> {
-            let y = y.as_slice().unwrap();
-            let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio, n_threads);
             sampled_indices.into_pyarray(py)
         }
         // Add the function to the module
@@ -130,27 +91,6 @@ macro_rules! _create_pyfunc_with_x {
     };
 }
 
-macro_rules! _create_pyfunc_with_x_multithreaded {
-    ($name:ident, $resample_mod:ident, $resample_fn:ident, $type_x:ty, $type_y:ty, $mod:ident) => {
-        // Create the Python function
-        #[pyfunction]
-        fn $name<'py>(
-            py: Python<'py>,
-            x: PyReadonlyArray1<$type_x>,
-            y: PyReadonlyArray1<$type_y>,
-            n_out: usize,
-            n_threads: usize,
-        ) -> &'py PyArray1<usize> {
-            let x = x.as_slice().unwrap();
-            let y = y.as_slice().unwrap();
-            let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, n_threads);
-            sampled_indices.into_pyarray(py)
-        }
-        // Add the function to the module
-        $mod.add_wrapped(wrap_pyfunction!($name))?;
-    };
-}
-
 macro_rules! _create_pyfunc_with_x_with_ratio {
     ($name:ident, $resample_mod:ident, $resample_fn:ident, $type_x:ty, $type_y:ty, $mod:ident) => {
         // Create the Python function
@@ -165,28 +105,6 @@ macro_rules! _create_pyfunc_with_x_with_ratio {
             let x = x.as_slice().unwrap();
             let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio);
-            sampled_indices.into_pyarray(py)
-        }
-        // Add the function to the module
-        $mod.add_wrapped(wrap_pyfunction!($name))?;
-    };
-}
-
-macro_rules! _create_pyfunc_with_x_with_ratio_multithreaded {
-    ($name:ident, $resample_mod:ident, $resample_fn:ident, $type_x:ty, $type_y:ty, $mod:ident) => {
-        // Create the Python function
-        #[pyfunction]
-        fn $name<'py>(
-            py: Python<'py>,
-            x: PyReadonlyArray1<$type_x>,
-            y: PyReadonlyArray1<$type_y>,
-            n_out: usize,
-            ratio: usize,
-            n_threads: usize,
-        ) -> &'py PyArray1<usize> {
-            let x = x.as_slice().unwrap();
-            let y = y.as_slice().unwrap();
-            let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio, n_threads);
             sampled_indices.into_pyarray(py)
         }
         // Add the function to the module
@@ -284,22 +202,6 @@ macro_rules! create_pyfuncs_without_x {
             $mod
         );
     };
-    (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_without_x_helper!(
-            _create_pyfunc_without_x_multithreaded,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
-    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_without_x_helper!(@nan
-            _create_pyfunc_without_x_multithreaded,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
 }
 
 macro_rules! create_pyfuncs_without_x_with_ratio {
@@ -315,22 +217,6 @@ macro_rules! create_pyfuncs_without_x_with_ratio {
     (@nan $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_without_x_helper!(@nan
             _create_pyfunc_without_x_with_ratio,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
-    (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_without_x_helper!(
-            _create_pyfunc_without_x_with_ratio_multithreaded,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
-    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_without_x_helper!(@nan
-            _create_pyfunc_without_x_with_ratio_multithreaded,
             $resample_mod,
             $resample_fn,
             $mod
@@ -355,22 +241,6 @@ macro_rules! create_pyfuncs_with_x {
     (@nan $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_helper!(@nan _create_pyfunc_with_x, $resample_mod, $resample_fn, $mod);
     };
-    (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_helper!(
-            _create_pyfunc_with_x_multithreaded,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
-    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_helper!(@nan
-            _create_pyfunc_with_x_multithreaded,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
 }
 
 macro_rules! create_pyfuncs_with_x_with_ratio {
@@ -386,22 +256,6 @@ macro_rules! create_pyfuncs_with_x_with_ratio {
     (@nan $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
         _create_pyfuncs_with_x_helper!(@nan
             _create_pyfunc_with_x_with_ratio,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
-    (@threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_helper!(
-            _create_pyfunc_with_x_with_ratio_multithreaded,
-            $resample_mod,
-            $resample_fn,
-            $mod
-        );
-    };
-    (@nan @threaded $resample_mod:ident, $resample_fn:ident, $mod:ident) => {
-        _create_pyfuncs_with_x_helper!(@nan
-            _create_pyfunc_with_x_with_ratio_multithreaded,
             $resample_mod,
             $resample_fn,
             $mod
@@ -438,14 +292,14 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(@threaded minmax_mod, min_max_without_x_parallel, parallel_mod);
-        create_pyfuncs_without_x!(@nan @threaded minmax_mod, min_max_without_x_parallel_nan, parallel_mod);
+        create_pyfuncs_without_x!(minmax_mod, min_max_without_x_parallel, parallel_mod);
+        create_pyfuncs_without_x!(@nan minmax_mod, min_max_without_x_parallel, parallel_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(@threaded minmax_mod, min_max_with_x_parallel, parallel_mod);
-        create_pyfuncs_with_x!(@nan @threaded minmax_mod, min_max_with_x_parallel_nan, parallel_mod);
+        create_pyfuncs_with_x!(minmax_mod, min_max_with_x_parallel, parallel_mod);
+        create_pyfuncs_with_x!(@nan minmax_mod, min_max_with_x_parallel, parallel_mod);
     }
 
     // Add the sub modules to the module
@@ -484,14 +338,14 @@ fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x!(@threaded m4_mod, m4_without_x_parallel, parallel_mod);
-        create_pyfuncs_without_x!(@nan @threaded m4_mod, m4_without_x_parallel, parallel_mod);
+        create_pyfuncs_without_x!(m4_mod, m4_without_x_parallel, parallel_mod);
+        create_pyfuncs_without_x!(@nan m4_mod, m4_without_x_parallel, parallel_mod);
     }
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x!(@threaded m4_mod, m4_with_x_parallel, parallel_mod);
-        create_pyfuncs_with_x!(@nan @threaded m4_mod, m4_with_x_parallel, parallel_mod);
+        create_pyfuncs_with_x!(m4_mod, m4_with_x_parallel, parallel_mod);
+        create_pyfuncs_with_x!(@nan m4_mod, m4_with_x_parallel, parallel_mod);
     }
 
     // Add the sub modules to the module
@@ -558,7 +412,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITHOUT X
     {
-        create_pyfuncs_without_x_with_ratio!(@threaded
+        create_pyfuncs_without_x_with_ratio!(
             minmaxlttb_mod,
             minmaxlttb_without_x_parallel,
             parallel_mod
@@ -572,16 +426,8 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----- WITH X
     {
-        create_pyfuncs_with_x_with_ratio!(@threaded
-            minmaxlttb_mod,
-            minmaxlttb_with_x_parallel,
-            parallel_mod
-        );
-        create_pyfuncs_with_x_with_ratio!(@nan @threaded
-            minmaxlttb_mod,
-            minmaxlttb_with_x_parallel,
-            parallel_mod
-        );
+        create_pyfuncs_with_x_with_ratio!(minmaxlttb_mod, minmaxlttb_with_x_parallel, parallel_mod);
+        create_pyfuncs_with_x_with_ratio!(@nan minmaxlttb_mod, minmaxlttb_with_x_parallel, parallel_mod);
     }
 
     // Add the submodules to the module

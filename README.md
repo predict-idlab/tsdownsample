@@ -89,9 +89,10 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 
 - `x` is optional
 - `x` and `y` are both positional arguments
-- `n_out` is a mandatory keyword argument that defines the number of output values<sup>\*</sup>
-- `**kwargs` are optional keyword arguments _(see [table below](#downsampling-algorithms-📈))_:
-  - `n_threads`: how many threads to use for multi-threading (default `1`, so no multi-threading)
+- `n_out` is a mandatory keyword argument that defines the number of output values<sup>*</sup>
+- `**kwargs` are optional keyword arguments *(see [table below](#downsampling-algorithms-📈))*:
+  - `parallel`: whether to use multi-threading (default: `False`)  
+     ❗ The max number of threads can be configured with the `TSDOWNSAMPLE_MAX_THREADS` ENV var (e.g. `os.environ["TSDOWNSAMPLE_MAX_THREADS"] = "4"`)
   - ...
 
 **Returns**: a `ndarray[uint64]` of indices that can be used to index the original data.
@@ -102,13 +103,12 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 
 The following downsampling algorithms (classes) are implemented:
 
-|             Downsampler | Description                                                                                                                                                                                       | `**kwargs`                               |
-| ----------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-|     `MinMaxDownsampler` | selects the **min and max** value in each bin                                                                                                                                                     | `n_threads`                              |
-|         `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin                                                                                 | `n_threads`                              |
-|       `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm                                                                            | `n_threads`                              |
-| `MinMaxLTTBDownsampler` | (_new two-step algorithm 🎉_) first selects `n_out` \* `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `n_threads`, `minmax_ratio`<sup>\*</sup> |
-
+| Downsampler | Description | `**kwargs` |
+| ---:| --- |--- |
+| `MinMaxDownsampler` | selects the **min and max** value in each bin | `parallel` |
+| `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `parallel` |
+| `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm | `parallel` |
+| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `parallel`, `minmax_ratio`<sup>*</sup> |
 
 <sup>*</sup><i>Default value for `minmax_ratio` is 4, which is empirically proven to be a good default. More details here: https://arxiv.org/abs/2305.00332</i>
 
