@@ -7,7 +7,7 @@ from .downsamplers import (
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
     NaNM4Downsampler,
-    NanMinMaxDownsampler,
+    NaNMinMaxDownsampler,
     NaNMinMaxLTTBDownsampler,
 )
 
@@ -20,7 +20,7 @@ __all__ = [
     "M4Downsampler",
     "LTTBDownsampler",
     "MinMaxLTTBDownsampler",
-    "NanMinMaxDownsampler",
+    "NaNMinMaxDownsampler",
     "NaNM4Downsampler",
     "NaNMinMaxLTTBDownsampler",
 ]

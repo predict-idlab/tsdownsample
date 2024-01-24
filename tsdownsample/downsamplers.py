@@ -31,7 +31,7 @@ class MinMaxDownsampler(AbstractRustDownsampler):
             raise ValueError("n_out must be even")
 
 
-class NanMinMaxDownsampler(AbstractRustNaNDownsampler):
+class NaNMinMaxDownsampler(AbstractRustNaNDownsampler):
     """Downsampler that uses the MinMax algorithm. If the y data contains NaNs, the
     indices of these NaNs are returned.
 

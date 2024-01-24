@@ -11,7 +11,7 @@ from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
     NaNM4Downsampler,
-    NanMinMaxDownsampler,
+    NaNMinMaxDownsampler,
     NaNMinMaxLTTBDownsampler,
 )
 from tsdownsample.downsampling_interface import (
@@ -31,7 +31,7 @@ RUST_DOWNSAMPLERS = [
 ]
 
 RUST_NAN_DOWNSAMPLERS = [
-    NanMinMaxDownsampler(),
+    NaNMinMaxDownsampler(),
     NaNM4Downsampler(),
     NaNMinMaxLTTBDownsampler(),
 ]
@@ -367,7 +367,7 @@ def test_nan_minmax_downsampler():
     """Test NaN downsamplers."""
     arr = np.random.randn(50_000)
     arr[::5] = np.nan
-    s_downsampled = NanMinMaxDownsampler().downsample(arr, n_out=100)
+    s_downsampled = NaNMinMaxDownsampler().downsample(arr, n_out=100)
     arr_downsampled = arr[s_downsampled]
     assert np.all(np.isnan(arr_downsampled))
 

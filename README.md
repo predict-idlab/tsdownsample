@@ -32,7 +32,7 @@ Extremely fast **time series downsampling 📈** for visualization, written in R
 - **Flexible**: works on any type of data
   - supported datatypes are
     - for `x`: `f32`, `f64`, `i16`, `i32`, `i64`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`
-    - for `y`: `f16`, `f32`, `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`, `bool`<sup>\*</sup>
+    - for `y`: `f16`, `f32`, `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`, `bool`
     <details>
       <summary><i>!! 🚀 <code>f16</code> <a href="https://github.com/jvdd/argminmax">argminmax</a> is 200-300x faster than numpy</i></summary>
       In contrast with all other data types above, <code>f16</code> is *not* hardware supported (i.e., no instructions for f16) by most modern CPUs!! <br>
@@ -41,8 +41,6 @@ Extremely fast **time series downsampling 📈** for visualization, written in R
       <i>More details are described in <a href="https://github.com/jvdd/argminmax/pull/1">argminmax PR #1</a>.</i>
     </details>
 - **Easy to use**: simple & flexible API
-
-<sup>\*</sup><i>When `NaN`s need to be retained in the downsampling, the only supported datatypes for `y` are `f16`, `f32` and `f64`</i>
 
 ## Install
 
@@ -126,11 +124,14 @@ This library supports two `NaN`-policies:
 | `MinMaxLTTBDownsampler` | `NaNMinMaxLTTBDownsampler` |
 |       `LTTBDownsampler` |                            |
 
+> Note that NaNs are not supported for `x`-data.
+
 ## Limitations & assumptions 🚨
 
 Assumes;
 
 1. `x`-data is (non-strictly) monotonic increasing (i.e., sorted)
+2. no `NaN`s in `x`-data
 
 ---
 
