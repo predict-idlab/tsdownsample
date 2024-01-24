@@ -344,7 +344,7 @@ def test_error_invalid_args():
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
 def test_non_contiguous_array(downsampler: AbstractDownsampler):
     """Test non contiguous array."""
-    arr = np.random.randint(0, 100, size=10_000)
+    arr = np.random.randint(0, 100, size=10_000).astype(np.float32)
     arr = arr[::2]
     assert not arr.flags["C_CONTIGUOUS"]
     with pytest.raises(ValueError) as e_msg:
@@ -361,3 +361,31 @@ def test_everynth_non_contiguous_array():
     s_downsampled = downsampler.downsample(arr, n_out=100)
     assert s_downsampled[0] == 0
     assert s_downsampled[-1] == 4950
+
+
+def test_nan_minmax_downsampler():
+    """Test NaN downsamplers."""
+    arr = np.random.randn(50_000)
+    arr[::5] = np.nan
+    s_downsampled = NanMinMaxDownsampler().downsample(arr, n_out=100)
+    arr_downsampled = arr[s_downsampled]
+    assert np.all(np.isnan(arr_downsampled))
+
+
+def test_nan_m4_downsampler():
+    """Test NaN downsamplers."""
+    arr = np.random.randn(50_000)
+    arr[::5] = np.nan
+    s_downsampled = NaNM4Downsampler().downsample(arr, n_out=100)
+    arr_downsampled = arr[s_downsampled]
+    assert np.all(np.isnan(arr_downsampled[1::4]))  # min is NaN
+    assert np.all(np.isnan(arr_downsampled[2::4]))  # max is NaN
+
+
+def test_nan_minmaxlttb_downsampler():
+    """Test NaN downsamplers."""
+    arr = np.random.randn(50_000)
+    arr[::5] = np.nan
+    s_downsampled = NaNMinMaxLTTBDownsampler().downsample(arr, n_out=100)
+    arr_downsampled = arr[s_downsampled]
+    assert np.all(np.isnan(arr_downsampled[1:-1]))  # first and last are not NaN

@@ -14,6 +14,12 @@ from .downsampling_interface import (
 
 
 class MinMaxDownsampler(AbstractRustDownsampler):
+    """Downsampler that uses the MinMax algorithm. If the y data contains NaNs, these
+    ignored (i.e. the NaNs are not taken into account when selecting data points).
+
+    For each bin, the indices of the minimum and maximum values are selected.
+    """
+
     @property
     def rust_mod(self):
         return _tsdownsample_rs.minmax
@@ -26,6 +32,12 @@ class MinMaxDownsampler(AbstractRustDownsampler):
 
 
 class NanMinMaxDownsampler(AbstractRustNaNDownsampler):
+    """Downsampler that uses the MinMax algorithm. If the y data contains NaNs, the
+    indices of these NaNs are returned.
+
+    For each bin, the indices of the minimum and maximum values are selected.
+    """
+
     @property
     def rust_mod(self):
         return _tsdownsample_rs.minmax
@@ -38,6 +50,13 @@ class NanMinMaxDownsampler(AbstractRustNaNDownsampler):
 
 
 class M4Downsampler(AbstractRustDownsampler):
+    """Downsampler that uses the M4 algorithm. If the y data contains NaNs, these are
+    ignored (i.e. the NaNs are not taken into account when selecting data points).
+
+    For each bin, the indices of the first, last, minimum and maximum values are
+    selected.
+    """
+
     @property
     def rust_mod(self):
         return _tsdownsample_rs.m4
@@ -50,6 +69,13 @@ class M4Downsampler(AbstractRustDownsampler):
 
 
 class NaNM4Downsampler(AbstractRustNaNDownsampler):
+    """Downsampler that uses the M4 algorithm. If the y data contains NaNs, the indices
+    of these NaNs are returned.
+
+    For each bin, the indices of the first, last, minimum and maximum values are
+    selected.
+    """
+
     @property
     def rust_mod(self):
         return _tsdownsample_rs.m4
@@ -62,12 +88,21 @@ class NaNM4Downsampler(AbstractRustNaNDownsampler):
 
 
 class LTTBDownsampler(AbstractRustDownsampler):
+    """Downsampler that uses the LTTB algorithm."""
+
     @property
     def rust_mod(self):
         return _tsdownsample_rs.lttb
 
 
 class MinMaxLTTBDownsampler(AbstractRustDownsampler):
+    """Downsampler that uses the MinMaxLTTB algorithm. If the y data contains NaNs,
+    these are ignored (i.e. the NaNs are not taken into account when selecting data
+    points).
+
+    MinMaxLTTB paper: https://arxiv.org/abs/2305.00332
+    """
+
     @property
     def rust_mod(self):
         return _tsdownsample_rs.minmaxlttb
@@ -82,16 +117,22 @@ class MinMaxLTTBDownsampler(AbstractRustDownsampler):
 
 
 class NaNMinMaxLTTBDownsampler(AbstractRustNaNDownsampler):
+    """Downsampler that uses the MinMaxLTTB algorithm. If the y data contains NaNs, the
+    indices of these NaNs are returned.
+
+    MinMaxLTTB paper: https://arxiv.org/abs/2305.00332
+    """
+
     @property
     def rust_mod(self):
         return _tsdownsample_rs.minmaxlttb
 
     def downsample(
-        self, *args, n_out: int, minmax_ratio: int = 30, n_threads: int = 1, **_
+        self, *args, n_out: int, minmax_ratio: int = 4, parallel: bool = False, **_
     ):
         assert minmax_ratio > 0, "minmax_ratio must be greater than 0"
         return super().downsample(
-            *args, n_out=n_out, n_threads=n_threads, ratio=minmax_ratio
+            *args, n_out=n_out, parallel=parallel, ratio=minmax_ratio
         )
 
 
@@ -99,6 +140,8 @@ class NaNMinMaxLTTBDownsampler(AbstractRustNaNDownsampler):
 
 
 class EveryNthDownsampler(AbstractDownsampler):
+    """Downsampler that selects every nth data point"""
+
     def __init__(self, **kwargs):
         super().__init__(check_contiguous=False, **kwargs)
 

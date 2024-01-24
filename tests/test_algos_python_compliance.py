@@ -23,6 +23,9 @@ from tsdownsample._python.downsamplers import (
         (MinMaxDownsampler(), MinMax_py()),
         (M4Downsampler(), M4_py()),
         (LTTBDownsampler(), LTTB_py()),
+        # Include NaN downsamplers
+        (NanMinMaxDownsampler(), NaNMinMax_py()),
+        (NaNM4Downsampler(), NaNM4_py()),
     ],
 )
 @pytest.mark.parametrize("n", [10_000, 10_032, 20_321, 23_489])
