@@ -129,10 +129,7 @@ pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimiti
     n_out: usize,
     minmax_ratio: usize,
     f_minmax: fn(&[Tx], &[Ty], usize) -> Vec<usize>,
-) -> Vec<usize>
-where
-    // for<'a> &'a [Ty]: ArgMinMax,
-{
+) -> Vec<usize> {
     assert_eq!(x.len(), y.len());
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
@@ -179,10 +176,7 @@ pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
     n_out: usize,
     minmax_ratio: usize,
     f_minmax: fn(&[Ty], usize) -> Vec<usize>,
-) -> Vec<usize>
-where
-    // for<'a> &'a [Ty]: ArgMinMax,
-{
+) -> Vec<usize> {
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {
