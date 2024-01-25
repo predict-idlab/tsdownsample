@@ -164,6 +164,11 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         super().__init__(True, _rust_dtypes, _y_rust_dtypes)  # same for x and y
 
     @property
+    def _downsample_func_prefix(self) -> str:
+        """The prefix of the downsample functions in the rust module."""
+        return DOWNSAMPLE_F
+
+    @property
     def rust_mod(self) -> ModuleType:
         """The compiled Rust module for the current downsampler."""
         raise NotImplementedError
@@ -197,8 +202,32 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         return None  # no parallel compiled module available
 
     @staticmethod
+    def _view_x(x: np.ndarray) -> np.ndarray:
+        """View the x-data as different dtype (if necessary)."""
+        if np.issubdtype(x.dtype, np.datetime64):
+            # datetime64 is viewed as int64
+            return x.view(dtype=np.int64)
+        elif np.issubdtype(x.dtype, np.timedelta64):
+            # timedelta64 is viewed as int64
+            return x.view(dtype=np.int64)
+        return x
+
+    @staticmethod
+    def _view_y(y: np.ndarray) -> np.ndarray:
+        """View the y-data as different dtype (if necessary)."""
+        if y.dtype == "bool":
+            # bool is viewed as int8
+            return y.view(dtype=np.int8)
+        elif np.issubdtype(y.dtype, np.datetime64):
+            # datetime64 is viewed as int64
+            return y.view(dtype=np.int64)
+        elif np.issubdtype(y.dtype, np.timedelta64):
+            # timedelta64 is viewed as int64
+            return y.view(dtype=np.int64)
+        return y
+
     def _switch_mod_with_y(
-        y_dtype: np.dtype, mod: ModuleType, downsample_func: str = DOWNSAMPLE_F
+        self, y_dtype: np.dtype, mod: ModuleType, downsample_func: str = None
     ) -> Callable:
         """Select the appropriate function from the rust module for the y-data.
 
@@ -219,6 +248,8 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             This argument is passed from the `_switch_mod_with_x_and_y` method when
             the x-data is considered in the downsampling.
         """
+        if downsample_func is None:
+            downsample_func = self._downsample_func_prefix
         # FLOATS
         if np.issubdtype(y_dtype, np.floating):
             if y_dtype == np.float16:
@@ -252,12 +283,12 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         # BOOLS -> int8 (bool is viewed as int8)
         raise ValueError(f"Unsupported data type (for y): {y_dtype}")
 
-    @staticmethod
     def _switch_mod_with_x_and_y(
+        self,  # necessary to access the class its _switch_mod_with_y method
         x_dtype: np.dtype,
         y_dtype: np.dtype,
         mod: ModuleType,
-        downsample_func: str = DOWNSAMPLE_F,
+        downsample_func: str = None,
     ) -> Callable:
         """The x-data is considered in the downsampling
 
@@ -274,48 +305,32 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         downsample_func : str, optional
             The name of the function to use, by default DOWNSAMPLE_FUNC.
         """
+        if downsample_func is None:
+            downsample_func = self._downsample_func_prefix
         # FLOATS
         if np.issubdtype(x_dtype, np.floating):
             if x_dtype == np.float16:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_f16"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_f16")
             elif x_dtype == np.float32:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_f32"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_f32")
             elif x_dtype == np.float64:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_f64"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_f64")
         # UINTS
         elif np.issubdtype(x_dtype, np.unsignedinteger):
             if x_dtype == np.uint16:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_u16"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_u16")
             elif x_dtype == np.uint32:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_u32"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_u32")
             elif x_dtype == np.uint64:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_u64"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_u64")
         # INTS (need to be last because uint is subdtype of int)
         elif np.issubdtype(x_dtype, np.integer):
             if x_dtype == np.int16:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_i16"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_i16")
             elif x_dtype == np.int32:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_i32"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_i32")
             elif x_dtype == np.int64:
-                return AbstractRustDownsampler._switch_mod_with_y(
-                    y_dtype, mod, f"{downsample_func}_i64"
-                )
+                return self._switch_mod_with_y(y_dtype, mod, f"{downsample_func}_i64")
         # DATETIME -> i64 (datetime64 is viewed as int64)
         # TIMEDELTA -> i64 (timedelta64 is viewed as int64)
         raise ValueError(f"Unsupported data type (for x): {x_dtype}")
@@ -340,29 +355,14 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
             else:
                 mod = self.mod_multi_core
         ## Viewing the y-data as different dtype (if necessary)
-        if y.dtype == "bool":
-            # bool is viewed as int8
-            y = y.view(dtype=np.int8)
-        elif np.issubdtype(y.dtype, np.datetime64):
-            # datetime64 is viewed as int64
-            y = y.view(dtype=np.int64)
-        elif np.issubdtype(y.dtype, np.timedelta64):
-            # timedelta64 is viewed as int64
-            y = y.view(dtype=np.int64)
+        y = self._view_y(y)
         ## Viewing the x-data as different dtype (if necessary)
         if x is None:
             downsample_f = self._switch_mod_with_y(y.dtype, mod)
             return downsample_f(y, n_out, **kwargs)
-        elif np.issubdtype(x.dtype, np.datetime64):
-            # datetime64 is viewed as int64
-            x = x.view(dtype=np.int64)
-        elif np.issubdtype(x.dtype, np.timedelta64):
-            # timedelta64 is viewed as int64
-            x = x.view(dtype=np.int64)
+        x = self._view_x(x)
         ## Getting the appropriate downsample function
-        downsample_f = self._switch_mod_with_x_and_y(
-            x.dtype, y.dtype, mod, DOWNSAMPLE_F
-        )
+        downsample_f = self._switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
         return downsample_f(x, y, n_out, **kwargs)
 
     def downsample(self, *args, n_out: int, parallel: bool = False, **kwargs):
@@ -389,16 +389,19 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         return result
 
 
-_nan_y_rust_dtypes = ["float16", "float32", "float64"]
 NAN_DOWNSAMPLE_F = "downsample_nan"
 
 
 class AbstractRustNaNDownsampler(AbstractRustDownsampler, ABC):
     """RustNaNDownsampler interface-class, subclassed by concrete downsamplers."""
 
-    @staticmethod
+    @property
+    def _downsample_func_prefix(self) -> str:
+        """The prefix of the downsample functions in the rust module."""
+        return NAN_DOWNSAMPLE_F
+
     def _switch_mod_with_y(
-        y_dtype: np.dtype, mod: ModuleType, downsample_func: str = NAN_DOWNSAMPLE_F
+        self, y_dtype: np.dtype, mod: ModuleType, downsample_func: str = None
     ) -> Callable:
         """Select the appropriate function from the rust module for the y-data.
 
@@ -419,44 +422,11 @@ class AbstractRustNaNDownsampler(AbstractRustDownsampler, ABC):
             This argument is passed from the `_switch_mod_with_x_and_y` method when
             the x-data is considered in the downsampling.
         """
+        if downsample_func is None:
+            downsample_func = self._downsample_func_prefix
         if not np.issubdtype(y_dtype, np.floating):
             # When y is not a float, we need to remove the _nan suffix to use the
             # regular downsample function as the _nan suffix is only used for floats.
             # (Note that NaNs only exist for floats)
             downsample_func = downsample_func.replace("_nan", "")
-        return AbstractRustDownsampler._switch_mod_with_y(y_dtype, mod, downsample_func)
-
-    def _downsample(
-        self,
-        x: Union[np.ndarray, None],
-        y: np.ndarray,
-        n_out: int,
-        parallel: bool = False,
-        **kwargs,
-    ) -> np.ndarray:
-        """Downsample the data in x and y."""
-        mod = self.mod_single_core
-        if parallel:
-            if self.mod_multi_core is None:
-                name = self.__class__.__name__
-                warnings.warn(
-                    f"No parallel implementation available for {name}. "
-                    "Falling back to single-core implementation."
-                )
-            else:
-                mod = self.mod_multi_core
-        ## Viewing the x-data as different dtype (if necessary)
-        if x is None:
-            downsample_f = self._switch_mod_with_y(y.dtype, mod, NAN_DOWNSAMPLE_F)
-            return downsample_f(y, n_out, **kwargs)
-        elif np.issubdtype(x.dtype, np.datetime64):
-            # datetime64 is viewed as int64
-            x = x.view(dtype=np.int64)
-        elif np.issubdtype(x.dtype, np.timedelta64):
-            # timedelta64 is viewed as int64
-            x = x.view(dtype=np.int64)
-        ## Getting the appropriate downsample function
-        downsample_f = self._switch_mod_with_x_and_y(
-            x.dtype, y.dtype, mod, NAN_DOWNSAMPLE_F
-        )
-        return downsample_f(x, y, n_out, **kwargs)
+        return super()._switch_mod_with_y(y_dtype, mod, downsample_func)

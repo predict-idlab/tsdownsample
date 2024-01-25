@@ -2,7 +2,7 @@ from typing import Iterable
 
 import numpy as np
 import pytest
-from test_config import supported_dtypes_x, supported_dtypes_y, supported_dtypes_y_nan
+from test_config import supported_dtypes_x, supported_dtypes_y
 
 from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     EveryNthDownsampler,
@@ -185,12 +185,7 @@ def test_downsampling_different_dtypes(downsampler: AbstractDownsampler):
     """Test downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     res = []
-    y_dtypes = (
-        supported_dtypes_y_nan
-        if is_nan_downsampler(downsampler)
-        else supported_dtypes_y
-    )
-    for dtype_y in y_dtypes:
+    for dtype_y in supported_dtypes_y:
         arr = arr_orig.astype(dtype_y)
         s_downsampled = downsampler.downsample(arr, n_out=100)
         if dtype_y is not np.bool_:
@@ -204,15 +199,10 @@ def test_downsampling_different_dtypes_with_x(downsampler: AbstractDownsampler):
     """Test downsampling with x with different data types."""
     arr_orig = np.random.randint(0, 100, size=10_000)
     idx_orig = np.arange(len(arr_orig))
-    y_dtypes = (
-        supported_dtypes_y_nan
-        if is_nan_downsampler(downsampler)
-        else supported_dtypes_y
-    )
     for dtype_x in supported_dtypes_x:
         res = []
         idx = idx_orig.astype(dtype_x)
-        for dtype_y in y_dtypes:
+        for dtype_y in supported_dtypes_y:
             arr = arr_orig.astype(dtype_y)
             s_downsampled = downsampler.downsample(idx, arr, n_out=100)
             if dtype_y is not np.bool_:
@@ -228,12 +218,7 @@ def test_downsampling_no_out_of_bounds_different_dtypes(
     """Test no out of bounds issues when downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=100)
     res = []
-    y_dtypes = (
-        supported_dtypes_y_nan
-        if is_nan_downsampler(downsampler)
-        else supported_dtypes_y
-    )
-    for dtype in y_dtypes:
+    for dtype in supported_dtypes_y:
         arr = arr_orig.astype(dtype)
         s_downsampled = downsampler.downsample(arr, n_out=76)
         s_downsampled_p = downsampler.downsample(arr, n_out=76, parallel=True)
@@ -251,15 +236,10 @@ def test_downsampling_no_out_of_bounds_different_dtypes_with_x(
     """Test no out of bounds issues when downsampling with different data types."""
     arr_orig = np.random.randint(0, 100, size=100)
     idx_orig = np.arange(len(arr_orig))
-    y_dtypes = (
-        supported_dtypes_y_nan
-        if is_nan_downsampler(downsampler)
-        else supported_dtypes_y
-    )
     for dtype_x in supported_dtypes_x:
         res = []
         idx = idx_orig.astype(dtype_x)
-        for dtype_y in y_dtypes:
+        for dtype_y in supported_dtypes_y:
             arr = arr_orig.astype(dtype_y)
             s_downsampled = downsampler.downsample(idx, arr, n_out=76)
             s_downsampled_p = downsampler.downsample(idx, arr, n_out=76, parallel=True)
