@@ -113,11 +113,6 @@ macro_rules! _create_pyfunc_with_x_with_ratio {
 }
 
 macro_rules! _create_pyfuncs_with_x_generic {
-    // ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
-    //     // The macro will implement the function for all combinations of $t (for type x and y).
-    //     // (duplicate the list of types to iterate over all combinations)
-    //     _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
-    // };
 
     ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+, $($ty:ty)+) => {
         // The macro will implement the function for all combinations of $tx and $ty (for respectively type x and y).
@@ -144,11 +139,6 @@ macro_rules! _create_pyfuncs_with_x_generic {
 
 // TODO: there must be a better way to combine normal and nan macros
 macro_rules! _create_nan_pyfuncs_with_x_generic {
-    // ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($t:ty)+) => {
-    //     // The macro will implement the function for all combinations of $t (for type x and y).
-    //     // (duplicate the list of types to iterate over all combinations)
-    //     _create_pyfuncs_with_x_generic!(@inner $create_macro, $resample_mod, $resample_fn, $mod, $($t)+; $($t),+);
-    // };
 
     ($create_macro:ident, $resample_mod:ident, $resample_fn:ident, $mod:ident, $($tx:ty)+, $($ty:ty)+) => {
         // The macro will implement the function for all combinations of $tx and $ty (for respectively type x and y).
