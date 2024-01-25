@@ -227,7 +227,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         return y
 
     def _switch_mod_with_y(
-        self, y_dtype: np.dtype, mod: ModuleType, downsample_func: str = None
+        self, y_dtype: np.dtype, mod: ModuleType, downsample_func: Optional[str] = None
     ) -> Callable:
         """Select the appropriate function from the rust module for the y-data.
 
@@ -288,7 +288,7 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         x_dtype: np.dtype,
         y_dtype: np.dtype,
         mod: ModuleType,
-        downsample_func: str = None,
+        downsample_func: Optional[str] = None,
     ) -> Callable:
         """The x-data is considered in the downsampling
 
@@ -401,7 +401,7 @@ class AbstractRustNaNDownsampler(AbstractRustDownsampler, ABC):
         return NAN_DOWNSAMPLE_F
 
     def _switch_mod_with_y(
-        self, y_dtype: np.dtype, mod: ModuleType, downsample_func: str = None
+        self, y_dtype: np.dtype, mod: ModuleType, downsample_func: Optional[str] = None
     ) -> Callable:
         """Select the appropriate function from the rust module for the y-data.
 
