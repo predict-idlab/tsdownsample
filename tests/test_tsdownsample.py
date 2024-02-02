@@ -10,8 +10,14 @@ from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
+    NaNM4Downsampler,
+    NaNMinMaxDownsampler,
+    NaNMinMaxLTTBDownsampler,
 )
-from tsdownsample.downsampling_interface import AbstractDownsampler
+from tsdownsample.downsampling_interface import (
+    AbstractDownsampler,
+    AbstractRustNaNDownsampler,
+)
 
 # TODO: Improve tests
 #   - compare implementations with existing plotly_resampler implementations
@@ -24,17 +30,41 @@ RUST_DOWNSAMPLERS = [
     MinMaxLTTBDownsampler(),
 ]
 
+RUST_NAN_DOWNSAMPLERS = [
+    NaNMinMaxDownsampler(),
+    NaNM4Downsampler(),
+    NaNMinMaxLTTBDownsampler(),
+]
+
 OTHER_DOWNSAMPLERS = [EveryNthDownsampler()]
 
 
 def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
-    for downsampler in RUST_DOWNSAMPLERS:
+    for downsampler in RUST_DOWNSAMPLERS + RUST_NAN_DOWNSAMPLERS:
+        yield downsampler
+
+
+def generate_rust_nan_downsamplers() -> Iterable[AbstractDownsampler]:
+    for downsampler in RUST_NAN_DOWNSAMPLERS:
         yield downsampler
 
 
 def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
-    for downsampler in RUST_DOWNSAMPLERS + OTHER_DOWNSAMPLERS:
+    for downsampler in RUST_DOWNSAMPLERS + RUST_NAN_DOWNSAMPLERS + OTHER_DOWNSAMPLERS:
         yield downsampler
+
+
+def generate_datapoints():
+    N_DATAPOINTS = 10_000
+    return np.arange(N_DATAPOINTS)
+
+
+def generate_nan_datapoints():
+    N_DATAPOINTS = 10_000
+    datapoints = np.arange(N_DATAPOINTS, dtype=np.float64)
+    datapoints[0] = np.nan
+    datapoints[9960] = np.nan
+    return datapoints
 
 
 @pytest.mark.parametrize("downsampler", generate_all_downsamplers())
@@ -45,7 +75,8 @@ def test_serialization_copy(downsampler: AbstractDownsampler):
     dc = copy(downsampler)
     ddc = deepcopy(downsampler)
 
-    arr = np.arange(10_000)
+    arr = generate_datapoints()
+
     orig_downsampled = downsampler.downsample(arr, n_out=100)
     dc_downsampled = dc.downsample(arr, n_out=100)
     ddc_downsampled = ddc.downsample(arr, n_out=100)
@@ -60,7 +91,7 @@ def test_serialization_pickle(downsampler: AbstractDownsampler):
 
     dc = pickle.loads(pickle.dumps(downsampler))
 
-    arr = np.arange(10_000)
+    arr = generate_datapoints()
     orig_downsampled = downsampler.downsample(arr, n_out=100)
     dc_downsampled = dc.downsample(arr, n_out=100)
     assert np.all(orig_downsampled == dc_downsampled)
@@ -69,10 +100,21 @@ def test_serialization_pickle(downsampler: AbstractDownsampler):
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
 def test_rust_downsampler(downsampler: AbstractDownsampler):
     """Test the Rust downsamplers."""
-    arr = np.arange(10_000)
+    arr = generate_datapoints()
     s_downsampled = downsampler.downsample(arr, n_out=100)
     assert s_downsampled[0] == 0
     assert s_downsampled[-1] == len(arr) - 1
+
+
+@pytest.mark.parametrize("downsampler", generate_rust_nan_downsamplers())
+def test_rust_nan_downsampler(downsampler: AbstractRustNaNDownsampler):
+    """Test the Rust NaN downsamplers."""
+    datapoints = generate_nan_datapoints()
+    s_downsampled = downsampler.downsample(datapoints, n_out=100)
+    print(s_downsampled)
+    assert s_downsampled[0] == 0
+    assert s_downsampled[-2] == 9960
+    assert s_downsampled[50] != np.nan
 
 
 def test_everynth_downsampler():
@@ -273,7 +315,7 @@ def test_error_invalid_args():
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())
 def test_non_contiguous_array(downsampler: AbstractDownsampler):
     """Test non contiguous array."""
-    arr = np.random.randint(0, 100, size=10_000)
+    arr = np.random.randint(0, 100, size=10_000).astype(np.float32)
     arr = arr[::2]
     assert not arr.flags["C_CONTIGUOUS"]
     with pytest.raises(ValueError) as e_msg:
@@ -290,3 +332,31 @@ def test_everynth_non_contiguous_array():
     s_downsampled = downsampler.downsample(arr, n_out=100)
     assert s_downsampled[0] == 0
     assert s_downsampled[-1] == 4950
+
+
+def test_nan_minmax_downsampler():
+    """Test NaN downsamplers."""
+    arr = np.random.randn(50_000)
+    arr[::5] = np.nan
+    s_downsampled = NaNMinMaxDownsampler().downsample(arr, n_out=100)
+    arr_downsampled = arr[s_downsampled]
+    assert np.all(np.isnan(arr_downsampled))
+
+
+def test_nan_m4_downsampler():
+    """Test NaN downsamplers."""
+    arr = np.random.randn(50_000)
+    arr[::5] = np.nan
+    s_downsampled = NaNM4Downsampler().downsample(arr, n_out=100)
+    arr_downsampled = arr[s_downsampled]
+    assert np.all(np.isnan(arr_downsampled[1::4]))  # min is NaN
+    assert np.all(np.isnan(arr_downsampled[2::4]))  # max is NaN
+
+
+def test_nan_minmaxlttb_downsampler():
+    """Test NaN downsamplers."""
+    arr = np.random.randn(50_000)
+    arr[::5] = np.nan
+    s_downsampled = NaNMinMaxLTTBDownsampler().downsample(arr, n_out=100)
+    arr_downsampled = arr[s_downsampled]
+    assert np.all(np.isnan(arr_downsampled[1:-1]))  # first and last are not NaN

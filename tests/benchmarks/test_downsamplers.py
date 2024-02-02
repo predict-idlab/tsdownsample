@@ -7,6 +7,9 @@ from tsdownsample import (
     M4Downsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
+    NaNM4Downsampler,
+    NaNMinMaxDownsampler,
+    NaNMinMaxLTTBDownsampler,
 )
 
 NB_SAMPLES = ["100,000", "1,000,000"]
@@ -52,6 +55,39 @@ def test_minmax_with_x(benchmark, n_samples, n_out, dtype, parallel):
     benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
 
 
+@pytest.mark.benchmark(group="nanminmax")
+@pytest.mark.parametrize("n_samples", NB_SAMPLES)
+@pytest.mark.parametrize("n_out", N_OUT)
+@pytest.mark.parametrize("dtype", Y_DTYPES)
+@pytest.mark.parametrize("parallel", [False, True])
+def test_nanminmax_no_x(benchmark, n_samples, n_out, dtype, parallel):
+    """Test the MinMaxDownsampler."""
+    downsampler = NaNMinMaxDownsampler()
+    n_samples = int(n_samples.replace(",", ""))
+    n_out = int(n_out.replace(",", ""))
+
+    y = np.random.randn(n_samples).astype(dtype)
+
+    benchmark(downsampler.downsample, y, n_out=n_out, parallel=parallel)
+
+
+@pytest.mark.benchmark(group="nanminmax")
+@pytest.mark.parametrize("n_samples", NB_SAMPLES)
+@pytest.mark.parametrize("n_out", N_OUT)
+@pytest.mark.parametrize("dtype", Y_DTYPES)
+@pytest.mark.parametrize("parallel", [False, True])
+def test_nanminmax_with_x(benchmark, n_samples, n_out, dtype, parallel):
+    """Test the MinMaxDownsampler."""
+    downsampler = NaNMinMaxDownsampler()
+    n_samples = int(n_samples.replace(",", ""))
+    n_out = int(n_out.replace(",", ""))
+
+    x = np.arange(n_samples)
+    y = np.random.randn(n_samples).astype(dtype)
+
+    benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+
+
 # --------------------------------------------------------------------------- #
 #                               M4Downsampler
 # --------------------------------------------------------------------------- #
@@ -81,6 +117,39 @@ def test_m4_no_x(benchmark, n_samples, n_out, dtype, parallel):
 def test_m4_with_x(benchmark, n_samples, n_out, dtype, parallel):
     """Test the M4Downsampler."""
     downsampler = M4Downsampler()
+    n_samples = int(n_samples.replace(",", ""))
+    n_out = int(n_out.replace(",", ""))
+
+    x = np.arange(n_samples)
+    y = np.random.randn(n_samples).astype(dtype)
+
+    benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+
+
+@pytest.mark.benchmark(group="nanm4")
+@pytest.mark.parametrize("n_samples", NB_SAMPLES)
+@pytest.mark.parametrize("n_out", N_OUT)
+@pytest.mark.parametrize("dtype", Y_DTYPES)
+@pytest.mark.parametrize("parallel", [False, True])
+def test_nanm4_no_x(benchmark, n_samples, n_out, dtype, parallel):
+    """Test the M4Downsampler."""
+    downsampler = NaNM4Downsampler()
+    n_samples = int(n_samples.replace(",", ""))
+    n_out = int(n_out.replace(",", ""))
+
+    y = np.random.randn(n_samples).astype(dtype)
+
+    benchmark(downsampler.downsample, y, n_out=n_out, parallel=parallel)
+
+
+@pytest.mark.benchmark(group="nanm4")
+@pytest.mark.parametrize("n_samples", NB_SAMPLES)
+@pytest.mark.parametrize("n_out", N_OUT)
+@pytest.mark.parametrize("dtype", Y_DTYPES)
+@pytest.mark.parametrize("parallel", [False, True])
+def test_nanm4_with_x(benchmark, n_samples, n_out, dtype, parallel):
+    """Test the M4Downsampler."""
+    downsampler = NaNM4Downsampler()
     n_samples = int(n_samples.replace(",", ""))
     n_out = int(n_out.replace(",", ""))
 
@@ -157,6 +226,39 @@ def test_minmaxlttb_no_x(benchmark, n_samples, n_out, dtype, parallel):
 def test_minmaxlttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
     """Test the MinMaxLTTBDownsampler."""
     downsampler = MinMaxLTTBDownsampler()
+    n_samples = int(n_samples.replace(",", ""))
+    n_out = int(n_out.replace(",", ""))
+
+    x = np.arange(n_samples)
+    y = np.random.randn(n_samples).astype(dtype)
+
+    benchmark(downsampler.downsample, x, y, n_out=n_out, parallel=parallel)
+
+
+@pytest.mark.benchmark(group="nanminmaxlttb")
+@pytest.mark.parametrize("n_samples", NB_SAMPLES)
+@pytest.mark.parametrize("n_out", N_OUT)
+@pytest.mark.parametrize("dtype", Y_DTYPES)
+@pytest.mark.parametrize("parallel", [False, True])
+def test_nanminmaxlttb_no_x(benchmark, n_samples, n_out, dtype, parallel):
+    """Test the MinMaxLTTBDownsampler."""
+    downsampler = NaNMinMaxLTTBDownsampler()
+    n_samples = int(n_samples.replace(",", ""))
+    n_out = int(n_out.replace(",", ""))
+
+    y = np.random.randn(n_samples).astype(dtype)
+
+    benchmark(downsampler.downsample, y, n_out=n_out, parallel=parallel)
+
+
+@pytest.mark.benchmark(group="nanminmaxlttb")
+@pytest.mark.parametrize("n_samples", NB_SAMPLES)
+@pytest.mark.parametrize("n_out", N_OUT)
+@pytest.mark.parametrize("dtype", Y_DTYPES)
+@pytest.mark.parametrize("parallel", [False, True])
+def test_nanminmaxlttb_with_x(benchmark, n_samples, n_out, dtype, parallel):
+    """Test the MinMaxLTTBDownsampler."""
+    downsampler = NaNMinMaxLTTBDownsampler()
     n_samples = int(n_samples.replace(",", ""))
     n_out = int(n_out.replace(",", ""))
 

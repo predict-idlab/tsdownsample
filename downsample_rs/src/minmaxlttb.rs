@@ -1,4 +1,4 @@
-use argminmax::ArgMinMax;
+use argminmax::{ArgMinMax, NaNArgMinMax};
 
 use super::lttb::{lttb_with_x, lttb_without_x};
 use super::types::Num;
@@ -10,62 +10,115 @@ use num_traits::{AsPrimitive, FromPrimitive};
 
 // ----------- WITH X
 
-pub fn minmaxlttb_with_x<Tx: Num + AsPrimitive<f64> + FromPrimitive, Ty: Num + AsPrimitive<f64>>(
-    x: &[Tx],
-    y: &[Ty],
-    n_out: usize,
-    minmax_ratio: usize,
-) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
-    minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_with_x)
+macro_rules! minmaxlttb_with_x {
+    ($func_name:ident, $trait:ident, $f_minmax:expr) => {
+        pub fn $func_name<Tx, Ty>(
+            x: &[Tx],
+            y: &[Ty],
+            n_out: usize,
+            minmax_ratio: usize,
+        ) -> Vec<usize>
+        where
+            for<'a> &'a [Ty]: $trait,
+            Tx: Num + AsPrimitive<f64> + FromPrimitive,
+            Ty: Num + AsPrimitive<f64>,
+        {
+            minmaxlttb_generic(x, y, n_out, minmax_ratio, $f_minmax)
+        }
+    };
 }
+
+minmaxlttb_with_x!(minmaxlttb_with_x, ArgMinMax, minmax::min_max_with_x);
+minmaxlttb_with_x!(
+    minmaxlttb_with_x_nan,
+    NaNArgMinMax,
+    minmax::min_max_with_x_nan
+);
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_without_x<Ty: Num + AsPrimitive<f64>>(
-    y: &[Ty],
-    n_out: usize,
-    minmax_ratio: usize,
-) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
-    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_without_x)
+macro_rules! minmaxlttb_without_x {
+    ($func_name:ident, $trait:ident, $f_minmax:expr) => {
+        pub fn $func_name<Ty: Num + AsPrimitive<f64>>(
+            y: &[Ty],
+            n_out: usize,
+            minmax_ratio: usize,
+        ) -> Vec<usize>
+        where
+            for<'a> &'a [Ty]: $trait,
+        {
+            minmaxlttb_generic_without_x(y, n_out, minmax_ratio, $f_minmax)
+        }
+    };
 }
+
+minmaxlttb_without_x!(minmaxlttb_without_x, ArgMinMax, minmax::min_max_without_x);
+minmaxlttb_without_x!(
+    minmaxlttb_without_x_nan,
+    NaNArgMinMax,
+    minmax::min_max_without_x_nan
+);
 
 // ------------------------------------- PARALLEL --------------------------------------
 
 // ----------- WITH X
 
-pub fn minmaxlttb_with_x_parallel<
-    Tx: Num + AsPrimitive<f64> + FromPrimitive + Send + Sync,
-    Ty: Num + AsPrimitive<f64> + Send + Sync,
->(
-    x: &[Tx],
-    y: &[Ty],
-    n_out: usize,
-    minmax_ratio: usize,
-) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
-    minmaxlttb_generic(x, y, n_out, minmax_ratio, minmax::min_max_with_x_parallel)
+macro_rules! minmaxlttb_with_x_parallel {
+    ($func_name:ident, $trait:ident, $f_minmax:expr) => {
+        pub fn $func_name<Tx, Ty>(
+            x: &[Tx],
+            y: &[Ty],
+            n_out: usize,
+            minmax_ratio: usize,
+        ) -> Vec<usize>
+        where
+            for<'a> &'a [Ty]: $trait,
+            Tx: Num + AsPrimitive<f64> + FromPrimitive + Send + Sync,
+            Ty: Num + AsPrimitive<f64> + Send + Sync,
+        {
+            minmaxlttb_generic(x, y, n_out, minmax_ratio, $f_minmax)
+        }
+    };
 }
+
+minmaxlttb_with_x_parallel!(
+    minmaxlttb_with_x_parallel,
+    ArgMinMax,
+    minmax::min_max_with_x_parallel
+);
+minmaxlttb_with_x_parallel!(
+    minmaxlttb_with_x_parallel_nan,
+    NaNArgMinMax,
+    minmax::min_max_with_x_parallel_nan
+);
 
 // ----------- WITHOUT X
 
-pub fn minmaxlttb_without_x_parallel<Ty: Num + AsPrimitive<f64> + Send + Sync>(
-    y: &[Ty],
-    n_out: usize,
-    minmax_ratio: usize,
-) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
-    minmaxlttb_generic_without_x(y, n_out, minmax_ratio, minmax::min_max_without_x_parallel)
+macro_rules! minmaxlttb_without_x_parallel {
+    ($func_name:ident, $trait:ident, $f_minmax:expr) => {
+        pub fn $func_name<Ty: Num + AsPrimitive<f64> + Send + Sync>(
+            y: &[Ty],
+            n_out: usize,
+            minmax_ratio: usize,
+        ) -> Vec<usize>
+        where
+            for<'a> &'a [Ty]: $trait,
+        {
+            minmaxlttb_generic_without_x(y, n_out, minmax_ratio, $f_minmax)
+        }
+    };
 }
+
+minmaxlttb_without_x_parallel!(
+    minmaxlttb_without_x_parallel,
+    ArgMinMax,
+    minmax::min_max_without_x_parallel
+);
+minmaxlttb_without_x_parallel!(
+    minmaxlttb_without_x_parallel_nan,
+    NaNArgMinMax,
+    minmax::min_max_without_x_parallel_nan
+);
 
 // ----------------------------------- GENERICS ------------------------------------
 
@@ -76,10 +129,7 @@ pub(crate) fn minmaxlttb_generic<Tx: Num + AsPrimitive<f64>, Ty: Num + AsPrimiti
     n_out: usize,
     minmax_ratio: usize,
     f_minmax: fn(&[Tx], &[Ty], usize) -> Vec<usize>,
-) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
+) -> Vec<usize> {
     assert_eq!(x.len(), y.len());
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
@@ -126,10 +176,7 @@ pub(crate) fn minmaxlttb_generic_without_x<Ty: Num + AsPrimitive<f64>>(
     n_out: usize,
     minmax_ratio: usize,
     f_minmax: fn(&[Ty], usize) -> Vec<usize>,
-) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-{
+) -> Vec<usize> {
     assert!(minmax_ratio > 1);
     // Apply first min max aggregation (if above ratio)
     if y.len() / n_out > minmax_ratio {

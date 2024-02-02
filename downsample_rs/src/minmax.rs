@@ -1,7 +1,7 @@
 use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
-use argminmax::ArgMinMax;
+use argminmax::{ArgMinMax, NaNArgMinMax};
 use num_traits::{AsPrimitive, FromPrimitive};
 
 use super::searchsorted::{
@@ -14,54 +14,82 @@ use super::POOL;
 
 // ----------- WITH X
 
-pub fn min_max_with_x<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-    Tx: Num + FromPrimitive + AsPrimitive<f64>,
-    Ty: Copy + PartialOrd,
-{
-    assert_eq!(n_out % 2, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 2);
-    min_max_generic_with_x(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
+macro_rules! min_max_with_x {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
+        pub fn $func_name<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
+        where
+            for<'a> &'a [Ty]: $trait,
+            Tx: Num + FromPrimitive + AsPrimitive<f64>,
+            Ty: Copy + PartialOrd,
+        {
+            assert_eq!(n_out % 2, 0);
+            let bin_idx_iterator = get_equidistant_bin_idx_iterator(x, n_out / 2);
+            min_max_generic_with_x(arr, bin_idx_iterator, n_out, $f_argminmax)
+        }
+    };
 }
+
+min_max_with_x!(min_max_with_x, ArgMinMax, |arr| arr.argminmax());
+min_max_with_x!(min_max_with_x_nan, NaNArgMinMax, |arr| arr.nanargminmax());
 
 // ----------- WITHOUT X
 
-pub fn min_max_without_x<T: Copy + PartialOrd>(arr: &[T], n_out: usize) -> Vec<usize>
-where
-    for<'a> &'a [T]: ArgMinMax,
-{
-    assert_eq!(n_out % 2, 0);
-    min_max_generic(arr, n_out, |arr| arr.argminmax())
+macro_rules! min_max_without_x {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
+        pub fn $func_name<T: Copy + PartialOrd>(arr: &[T], n_out: usize) -> Vec<usize>
+        where
+            for<'a> &'a [T]: $trait,
+        {
+            assert_eq!(n_out % 2, 0);
+            min_max_generic(arr, n_out, $f_argminmax)
+        }
+    };
 }
+
+min_max_without_x!(min_max_without_x, ArgMinMax, |arr| arr.argminmax());
+min_max_without_x!(min_max_without_x_nan, NaNArgMinMax, |arr| arr
+    .nanargminmax());
 
 // ------------------------------------- PARALLEL --------------------------------------
 
 // ----------- WITH X
 
-pub fn min_max_with_x_parallel<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
-where
-    for<'a> &'a [Ty]: ArgMinMax,
-    Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
-    Ty: Copy + PartialOrd + Send + Sync,
-{
-    assert_eq!(n_out % 2, 0);
-    let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
-    min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, |arr| arr.argminmax())
+macro_rules! min_max_with_x_parallel {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
+        pub fn $func_name<Tx, Ty>(x: &[Tx], arr: &[Ty], n_out: usize) -> Vec<usize>
+        where
+            for<'a> &'a [Ty]: $trait,
+            Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
+            Ty: Copy + PartialOrd + Send + Sync,
+        {
+            assert_eq!(n_out % 2, 0);
+            let bin_idx_iterator = get_equidistant_bin_idx_iterator_parallel(x, n_out / 2);
+            min_max_generic_with_x_parallel(arr, bin_idx_iterator, n_out, $f_argminmax)
+        }
+    };
 }
+
+min_max_with_x_parallel!(min_max_with_x_parallel, ArgMinMax, |arr| arr.argminmax());
+min_max_with_x_parallel!(min_max_with_x_parallel_nan, NaNArgMinMax, |arr| arr
+    .nanargminmax());
 
 // ----------- WITHOUT X
 
-pub fn min_max_without_x_parallel<T: Copy + PartialOrd + Send + Sync>(
-    arr: &[T],
-    n_out: usize,
-) -> Vec<usize>
-where
-    for<'a> &'a [T]: ArgMinMax,
-{
-    assert_eq!(n_out % 2, 0);
-    min_max_generic_parallel(arr, n_out, |arr| arr.argminmax())
+macro_rules! min_max_without_x_parallel {
+    ($func_name:ident, $trait:path, $f_argminmax:expr) => {
+        pub fn $func_name<T: Copy + PartialOrd + Send + Sync>(arr: &[T], n_out: usize) -> Vec<usize>
+        where
+            for<'a> &'a [T]: $trait,
+        {
+            assert_eq!(n_out % 2, 0);
+            min_max_generic_parallel(arr, n_out, $f_argminmax)
+        }
+    };
 }
+
+min_max_without_x_parallel!(min_max_without_x_parallel, ArgMinMax, |arr| arr.argminmax());
+min_max_without_x_parallel!(min_max_without_x_parallel_nan, NaNArgMinMax, |arr| arr
+    .nanargminmax());
 
 // ----------------------------------- GENERICS ------------------------------------
 

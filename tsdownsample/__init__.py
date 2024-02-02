@@ -6,6 +6,9 @@ from .downsamplers import (
     M4Downsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
+    NaNM4Downsampler,
+    NaNMinMaxDownsampler,
+    NaNMinMaxLTTBDownsampler,
 )
 
 __version__ = "0.1.3rc2"
@@ -17,4 +20,7 @@ __all__ = [
     "M4Downsampler",
     "LTTBDownsampler",
     "MinMaxLTTBDownsampler",
+    "NaNMinMaxDownsampler",
+    "NaNM4Downsampler",
+    "NaNMinMaxLTTBDownsampler",
 ]
