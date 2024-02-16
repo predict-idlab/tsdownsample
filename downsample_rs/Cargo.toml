@@ -11,16 +11,16 @@ license = "MIT"
 argminmax = { version = "0.6.1", features = ["half"] }
 # For some reason we need to explicitely add chrono, otherwise polars refuses to compile?
 chrono = "0.4.31"
-# argminmax = { path = "../../argminmax" , features = ["half", "ndarray"] }
-half = { version = "2.1", default-features = false , features=["num-traits"], optional = true}
-num-traits = { version = "0.2.15", default-features = false }
 polars = { version = "0.33.2", features = ["lazy", "streaming", "zip_with"] }
-rayon = { version = "1.6.0", default-features = false }
+half = { version = "2.3.1", default-features = false , features=["num-traits"], optional = true}
+num-traits = { version = "0.2.17", default-features = false }
+once_cell = "1"
+rayon = { version = "1.8.0", default-features = false }
 
 [dev-dependencies]
-rstest = { version = "0.18.1", default-features = false }
+rstest = { version = "0.18.2", default-features = false }
 rstest_reuse = { version = "0.6", default-features = false }
-criterion = "0.4.0"
+criterion = "0.5.1"
 dev_utils = { path = "dev_utils" }
 
 [[bench]]

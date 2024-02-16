@@ -22,3 +22,4 @@ _core_rust_primitive_types = ["f32", "f64", "i16", "i32", "i64", "u16", "u32", "
 
 rust_primitive_types_x = _core_rust_primitive_types
 rust_primitive_types_y = _core_rust_primitive_types + ["f16", "i8", "u8"]
+rust_primitive_types_y_nan = ["f16", "f32", "f64"]

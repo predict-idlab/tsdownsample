@@ -6,9 +6,12 @@ from .downsamplers import (
     M4Downsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
+    NaNM4Downsampler,
+    NaNMinMaxDownsampler,
+    NaNMinMaxLTTBDownsampler,
 )
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __author__ = "Jeroen Van Der Donckt"
 
 __all__ = [
@@ -17,4 +20,7 @@ __all__ = [
     "M4Downsampler",
     "LTTBDownsampler",
     "MinMaxLTTBDownsampler",
+    "NaNMinMaxDownsampler",
+    "NaNM4Downsampler",
+    "NaNMinMaxLTTBDownsampler",
 ]

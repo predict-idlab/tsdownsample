@@ -25,7 +25,6 @@ fn minmaxlttb_f32_random_array_long_multi_core(c: &mut Criterion) {
     let n = config::ARRAY_LENGTH_LONG;
     let x = (0..n).map(|i| i as i32).collect::<Vec<i32>>();
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    let all_threads: usize = utils::get_all_threads();
     c.bench_function("mlttb_x_p_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_with_x_parallel(
@@ -33,7 +32,6 @@ fn minmaxlttb_f32_random_array_long_multi_core(c: &mut Criterion) {
                 black_box(y.as_slice()),
                 black_box(2_000),
                 black_box(MINMAX_RATIO),
-                black_box(all_threads),
             )
         })
     });
@@ -59,7 +57,6 @@ fn minmaxlttb_f32_random_array_50M_multi_core(c: &mut Criterion) {
     let n = 50_000_000;
     let x = (0..n).map(|i| i as i32).collect::<Vec<i32>>();
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    let all_threads: usize = utils::get_all_threads();
     c.bench_function("mlttb_x_p_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_with_x_parallel(
@@ -67,7 +64,6 @@ fn minmaxlttb_f32_random_array_50M_multi_core(c: &mut Criterion) {
                 black_box(y.as_slice()),
                 black_box(2_000),
                 black_box(MINMAX_RATIO),
-                black_box(all_threads),
             )
         })
     });
@@ -90,14 +86,12 @@ fn minmaxlttb_without_x_f32_random_array_50M_single_core(c: &mut Criterion) {
 fn minmaxlttb_without_x_f32_random_array_50M_multi_core(c: &mut Criterion) {
     let n = 50_000_000;
     let y = utils::get_random_array::<f32>(n, f32::MIN, f32::MAX);
-    let all_threads: usize = utils::get_all_threads();
     c.bench_function("mlttb_p_50M_f32", |b| {
         b.iter(|| {
             minmaxlttb_mod::minmaxlttb_without_x_parallel(
                 black_box(y.as_slice()),
                 black_box(2_000),
                 black_box(MINMAX_RATIO),
-                black_box(all_threads),
             )
         })
     });

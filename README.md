@@ -6,13 +6,14 @@
 [![CodeQL](https://github.com/predict-idlab/tsdownsample/actions/workflows/codeql.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/codeql.yml)
 [![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml)
 [![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml)
+
 <!-- TODO: codecov -->
 
 Extremely fast **time series downsampling 📈** for visualization, written in Rust.
 
 ## Features ✨
 
-* **Fast**: written in rust with PyO3 bindings
+- **Fast**: written in rust with PyO3 bindings
   - leverages optimized [argminmax](https://github.com/jvdd/argminmax) - which is SIMD accelerated with runtime feature detection
   - scales linearly with the number of data points
   <!-- TODO check if it scales sublinearly -->
@@ -25,13 +26,13 @@ Extremely fast **time series downsampling 📈** for visualization, written in R
       </blockquote>
       In Rust - which is a compiled language - there is no GIL, so CPU-bound tasks can be parallelized (with <a href="https://github.com/rayon-rs/rayon">Rayon</a>) with little to no overhead.
     </details>
-* **Efficient**: memory efficient
+- **Efficient**: memory efficient
   - works on views of the data (no copies)
   - no intermediate data structures are created
-* **Flexible**: works on any type of data
-    - supported datatypes are 
-      - for `x`: `f32`, `f64`, `i16`, `i32`, `i64`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`
-      - for `y`: `f16`, `f32`, `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`, `bool`
+- **Flexible**: works on any type of data
+  - supported datatypes are
+    - for `x`: `f32`, `f64`, `i16`, `i32`, `i64`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`
+    - for `y`: `f16`, `f32`, `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `datetime64`, `timedelta64`, `bool`
     <details>
       <summary><i>!! 🚀 <code>f16</code> <a href="https://github.com/jvdd/argminmax">argminmax</a> is 200-300x faster than numpy</i></summary>
       In contrast with all other data types above, <code>f16</code> is *not* hardware supported (i.e., no instructions for f16) by most modern CPUs!! <br>
@@ -39,7 +40,7 @@ Extremely fast **time series downsampling 📈** for visualization, written in R
       💡 As for argminmax, only comparisons are needed - and thus no arithmetic operations - creating a <u>symmetrical ordinal mapping from <code>f16</code> to <code>i16</code></u> is sufficient. This mapping allows to use the hardware supported scalar and SIMD <code>i16</code> instructions - while not producing any memory overhead 🎉 <br>
       <i>More details are described in <a href="https://github.com/jvdd/argminmax/pull/1">argminmax PR #1</a>.</i>
     </details>
-* **Easy to use**: simple & flexible API
+- **Easy to use**: simple & flexible API
 
 ## Install
 
@@ -83,35 +84,54 @@ downsample([x], y, n_out, **kwargs) -> ndarray[uint64]
 ```
 
 **Arguments**:
+
 - `x` is optional
 - `x` and `y` are both positional arguments
 - `n_out` is a mandatory keyword argument that defines the number of output values<sup>*</sup>
 - `**kwargs` are optional keyword arguments *(see [table below](#downsampling-algorithms-📈))*:
-  - `n_threads`: how many threads to use for multi-threading (default `1`, so no multi-threading)
+  - `parallel`: whether to use multi-threading (default: `False`)  
+     ❗ The max number of threads can be configured with the `TSDOWNSAMPLE_MAX_THREADS` ENV var (e.g. `os.environ["TSDOWNSAMPLE_MAX_THREADS"] = "4"`)
   - ...
 
 **Returns**: a `ndarray[uint64]` of indices that can be used to index the original data.
 
-<sup>*</sup><i>When there are gaps in the time series, fewer than `n_out` indices may be returned.</i>
+<sup>\*</sup><i>When there are gaps in the time series, fewer than `n_out` indices may be returned.</i>
+
 ### Downsampling algorithms 📈
 
 The following downsampling algorithms (classes) are implemented:
 
 | Downsampler | Description | `**kwargs` |
 | ---:| --- |--- |
-| `MinMaxDownsampler` | selects the **min and max** value in each bin | `n_threads` |
-| `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `n_threads` |
-| `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm | `n_threads` |
-| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `n_threads`, `minmax_ratio`<sup>*</sup> |
+| `MinMaxDownsampler` | selects the **min and max** value in each bin | `parallel` |
+| `M4Downsampler` | selects the [**min, max, first and last**](https://dl.acm.org/doi/pdf/10.14778/2732951.2732953) value in each bin | `parallel` |
+| `LTTBDownsampler` | performs the [**Largest Triangle Three Buckets**](https://skemman.is/bitstream/1946/15343/3/SS_MSthesis.pdf) algorithm | `parallel` |
+| `MinMaxLTTBDownsampler` | (*new two-step algorithm 🎉*) first selects `n_out` * `minmax_ratio` **min and max** values, then further reduces these to `n_out` values using the **Largest Triangle Three Buckets** algorithm | `parallel`, `minmax_ratio`<sup>*</sup> |
 
-<sup>*</sup><i>Default value for `minmax_ratio` is 30, which is empirically proven to be a good default. (More details in our upcomming paper)</i>
+<sup>*</sup><i>Default value for `minmax_ratio` is 4, which is empirically proven to be a good default. More details here: https://arxiv.org/abs/2305.00332</i>
 
+### Handling NaNs
+
+This library supports two `NaN`-policies:
+
+1. Omit `NaN`s (`NaN`s are ignored during downsampling).
+2. Return index of first `NaN` once there is at least one present in the bin of the considered data.
+
+|             Omit `NaN`s | Return `NaN`s              |
+| ----------------------: | :------------------------- |
+|     `MinMaxDownsampler` | `NaNMinMaxDownsampler`     |
+|         `M4Downsampler` | `NaNM4Downsampler`         |
+| `MinMaxLTTBDownsampler` | `NaNMinMaxLTTBDownsampler` |
+|       `LTTBDownsampler` |                            |
+
+> Note that NaNs are not supported for `x`-data.
 
 ## Limitations & assumptions 🚨
 
 Assumes;
+
 1. `x`-data is (non-strictly) monotonic increasing (i.e., sorted)
-2. no `NaNs` in the data
+2. no `NaN`s in `x`-data
 
 ---
 
