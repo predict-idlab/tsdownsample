@@ -6,6 +6,7 @@
 [![CodeQL](https://github.com/predict-idlab/tsdownsample/actions/workflows/codeql.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/codeql.yml)
 [![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-downsample_rs.yml)
 [![Testing](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml/badge.svg)](https://github.com/predict-idlab/tsdownsample/actions/workflows/ci-tsdownsample.yml)
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://discord.gg/k2d59GrxPX)
 
 <!-- TODO: codecov -->
 
