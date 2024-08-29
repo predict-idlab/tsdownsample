@@ -1,6 +1,5 @@
 use argminmax::{ArgMinMax, NaNArgMinMax};
 use num_traits::{AsPrimitive, FromPrimitive};
-use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
 use super::searchsorted::{

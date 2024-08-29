@@ -1,7 +1,7 @@
 use std::ops::{Add, Sub};
 
+use rand::distributions::Uniform;
 use rand::{thread_rng, Rng};
-use rand_distr::Uniform;
 
 // random array that samples between min and max of T
 pub fn get_random_array<T>(n: usize, min_value: T, max_value: T) -> Vec<T>
@@ -10,8 +10,7 @@ where
 {
     let rng = thread_rng();
     let uni = Uniform::new_inclusive(min_value, max_value);
-    let arr: Vec<T> = rng.sample_iter(uni).take(n).collect();
-    arr
+    rng.sample_iter(uni).take(n).collect()
 }
 
 // worst case array that alternates between increasing max and decreasing min values
