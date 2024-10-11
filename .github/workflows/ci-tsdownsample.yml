@@ -46,7 +46,7 @@ jobs:
       matrix:
         os: ['windows-latest', 'macOS-latest', 'ubuntu-latest']
         rust: ['nightly']  # ['stable', 'beta']
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
         exclude:  # Python < 3.8 is not supported on Apple Silicon ARM64
           - os: macOS-latest
             python-version: '3.7'
