@@ -1,4 +1,3 @@
-use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
 use super::types::Num;

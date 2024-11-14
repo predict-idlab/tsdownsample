@@ -1,4 +1,3 @@
-use rayon::iter::IndexedParallelIterator;
 use rayon::prelude::*;
 
 use argminmax::{ArgMinMax, NaNArgMinMax};
