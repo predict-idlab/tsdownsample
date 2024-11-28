@@ -11,13 +11,13 @@ install-dev-requirements:
 
 .PHONY: format
 format:
-	ruff --fix tsdownsample tests
+	ruff format tsdownsample tests
 	$(black)
 	cargo fmt
 
 .PHONY: lint-python
 lint-python:
-	ruff tsdownsample tests
+	ruff check tsdownsample tests
 	$(black) --check --diff
 
 .PHONY: lint-rust
