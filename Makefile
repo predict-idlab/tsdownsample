@@ -11,13 +11,13 @@ install-dev-requirements:
 
 .PHONY: format
 format:
-	ruff --fix tsdownsample tests
+	ruff format tsdownsample tests
 	$(black)
 	cargo fmt
 
 .PHONY: lint-python
 lint-python:
-	ruff tsdownsample tests
+	ruff check tsdownsample tests
 	$(black) --check --diff
 
 .PHONY: lint-rust
@@ -25,7 +25,7 @@ lint-rust:
 	cargo fmt --version
 	cargo fmt --all -- --check
 	cargo clippy --version
-	cargo clippy -- -D warnings -A incomplete_features -W clippy::dbg_macro -W clippy::print_stdout
+	cargo clippy -- -D warnings -A incomplete_features -W clippy::dbg_macro -W clippy::print_stdout -A clippy::empty_line_after_doc_comments
 
 .PHONY: lint
 lint: lint-python lint-rust

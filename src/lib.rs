@@ -22,10 +22,10 @@ macro_rules! _create_pyfunc_without_x {
             py: Python<'py>,
             y: PyReadonlyArray1<$type>,
             n_out: usize,
-        ) -> &'py PyArray1<usize> {
+        ) -> Bound<'py, PyArray1<usize>> {
             let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out);
-            sampled_indices.into_pyarray(py)
+            sampled_indices.into_pyarray_bound(py)
         }
         // Add the function to the module
         $mod.add_wrapped(wrap_pyfunction!($name))?;
@@ -41,10 +41,10 @@ macro_rules! _create_pyfunc_without_x_with_ratio {
             y: PyReadonlyArray1<$type>,
             n_out: usize,
             ratio: usize,
-        ) -> &'py PyArray1<usize> {
+        ) -> Bound<'py, PyArray1<usize>> {
             let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(y, n_out, ratio);
-            sampled_indices.into_pyarray(py)
+            sampled_indices.into_pyarray_bound(py)
         }
         // Add the function to the module
         $mod.add_wrapped(wrap_pyfunction!($name))?;
@@ -80,11 +80,11 @@ macro_rules! _create_pyfunc_with_x {
             x: PyReadonlyArray1<$type_x>,
             y: PyReadonlyArray1<$type_y>,
             n_out: usize,
-        ) -> &'py PyArray1<usize> {
+        ) -> Bound<'py, PyArray1<usize>> {
             let x = x.as_slice().unwrap();
             let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out);
-            sampled_indices.into_pyarray(py)
+            sampled_indices.into_pyarray_bound(py)
         }
         // Add the function to the module
         $mod.add_wrapped(wrap_pyfunction!($name))?;
@@ -101,11 +101,11 @@ macro_rules! _create_pyfunc_with_x_with_ratio {
             y: PyReadonlyArray1<$type_y>,
             n_out: usize,
             ratio: usize,
-        ) -> &'py PyArray1<usize> {
+        ) -> Bound<'py, PyArray1<usize>> {
             let x = x.as_slice().unwrap();
             let y = y.as_slice().unwrap();
             let sampled_indices = $resample_mod::$resample_fn(x, y, n_out, ratio);
-            sampled_indices.into_pyarray(py)
+            sampled_indices.into_pyarray_bound(py)
         }
         // Add the function to the module
         $mod.add_wrapped(wrap_pyfunction!($name))?;
@@ -255,10 +255,10 @@ use downsample_rs::minmax as minmax_mod;
 
 // Create a sub module for the minmax algorithm
 #[pymodule]
-fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn minmax(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // ----------------- SEQUENTIAL
 
-    let sequential_mod = PyModule::new(_py, "sequential")?;
+    let sequential_mod = PyModule::new_bound(_py, "sequential")?;
 
     // ----- WITHOUT X
     {
@@ -274,7 +274,7 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 
     // ----------------- PARALLEL
 
-    let parallel_mod = PyModule::new(_py, "parallel")?;
+    let parallel_mod = PyModule::new_bound(_py, "parallel")?;
 
     // ----- WITHOUT X
     {
@@ -289,8 +289,8 @@ fn minmax(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     }
 
     // Add the sub modules to the module
-    m.add_submodule(sequential_mod)?;
-    m.add_submodule(parallel_mod)?;
+    m.add_submodule(&sequential_mod)?;
+    m.add_submodule(&parallel_mod)?;
 
     Ok(())
 }
@@ -301,10 +301,10 @@ use downsample_rs::m4 as m4_mod;
 
 // Create a sub module for the M4 algorithm
 #[pymodule]
-fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
+fn m4(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // ----------------- SEQUENTIAL
 
-    let sequential_mod = PyModule::new(_py, "sequential")?;
+    let sequential_mod = PyModule::new_bound(_py, "sequential")?;
 
     // ----- WITHOUT X
     {
@@ -320,7 +320,7 @@ fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----------------- PARALLEL
 
-    let parallel_mod = PyModule::new(_py, "parallel")?;
+    let parallel_mod = PyModule::new_bound(_py, "parallel")?;
 
     // ----- WITHOUT X
     {
@@ -335,8 +335,8 @@ fn m4(_py: Python, m: &PyModule) -> PyResult<()> {
     }
 
     // Add the sub modules to the module
-    m.add_submodule(sequential_mod)?;
-    m.add_submodule(parallel_mod)?;
+    m.add_submodule(&sequential_mod)?;
+    m.add_submodule(&parallel_mod)?;
 
     Ok(())
 }
@@ -347,10 +347,10 @@ use downsample_rs::lttb as lttb_mod;
 
 // Create a sub module for the LTTB algorithm
 #[pymodule]
-fn lttb(_py: Python, m: &PyModule) -> PyResult<()> {
+fn lttb(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // ----------------- SEQUENTIAL
 
-    let sequential_mod = PyModule::new(_py, "sequential")?;
+    let sequential_mod = PyModule::new_bound(_py, "sequential")?;
 
     // Create the Python functions for the module
     // ----- WITHOUT X
@@ -364,7 +364,7 @@ fn lttb(_py: Python, m: &PyModule) -> PyResult<()> {
     }
 
     // Add the sub modules to the module
-    m.add_submodule(sequential_mod)?;
+    m.add_submodule(&sequential_mod)?;
 
     Ok(())
 }
@@ -375,10 +375,10 @@ use downsample_rs::minmaxlttb as minmaxlttb_mod;
 
 // Create a sub module for the MINMAXLTTB algorithm
 #[pymodule]
-fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
+fn minmaxlttb(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // ----------------- SEQUENTIAL
 
-    let sequential_mod = PyModule::new(_py, "sequential")?;
+    let sequential_mod = PyModule::new_bound(_py, "sequential")?;
 
     // ----- WITHOUT X
     {
@@ -394,7 +394,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // ----------------- PARALLEL
 
-    let parallel_mod = PyModule::new(_py, "parallel")?;
+    let parallel_mod = PyModule::new_bound(_py, "parallel")?;
 
     // ----- WITHOUT X
     {
@@ -417,8 +417,8 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
     }
 
     // Add the submodules to the module
-    m.add_submodule(sequential_mod)?;
-    m.add_submodule(parallel_mod)?;
+    m.add_submodule(&sequential_mod)?;
+    m.add_submodule(&parallel_mod)?;
 
     Ok(())
 }
@@ -427,7 +427,7 @@ fn minmaxlttb(_py: Python, m: &PyModule) -> PyResult<()> {
 
 #[pymodule] // The super module
 #[pyo3(name = "_tsdownsample_rs")] // How the module is imported in Python: https://github.com/PyO3/maturin/issues/256#issuecomment-1038576218
-fn tsdownsample(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn tsdownsample(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(minmax))?;
     m.add_wrapped(wrap_pymodule!(m4))?;
     m.add_wrapped(wrap_pymodule!(lttb))?;
