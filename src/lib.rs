@@ -5,7 +5,7 @@ use paste::paste;
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
 
-/// ------------------------- MACROS -------------------------
+// ------------------------- MACROS -------------------------
 
 // Create macros to avoid duplicate code for the various resample functions over the
 // different data types.
