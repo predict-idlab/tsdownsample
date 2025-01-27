@@ -50,8 +50,12 @@ jobs:
         exclude:  # Python < 3.8 is not supported on Apple Silicon ARM64
           - os: macOS-latest
             python-version: '3.7'
+          - os: ubuntu-latest
+            python-version: '3.7'
         include:  # So run on older version on Intel CPU
           - os: macOS-13
+            python-version: '3.7'
+          - os: ubuntu-22.04
             python-version: '3.7'
     
     env:
