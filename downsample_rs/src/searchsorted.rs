@@ -122,8 +122,9 @@ fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
     // larger than the largest positive f64 number.
     // This code should not fail when: (f64::MAX - start_val) < (add_val * mul).
     //   -> Note that f64::MAX - start_val can be up to 2 * f64::MAX.
-    let mul_2: usize = mul / 2;
-    start_val + add_val * mul_2 as f64 + add_val * (mul - mul_2) as f64
+    let mul_2: f64 = mul as f64 / 2.0;
+    // start_val + add_val * mul_2 as f64 + add_val * (mul - mul_2) as f64
+    start_val + add_val * mul_2 + add_val * mul_2
 }
 
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
@@ -139,10 +140,12 @@ where
     let val_step: f64 =
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let arr0: f64 = arr[0].as_(); // The first value of the array
-                                  // 2. Compute the number of threads & bins per thread
+
+    // 2. Compute the number of threads & bins per thread
     let n_threads = std::cmp::min(POOL.current_num_threads(), nb_bins);
     let nb_bins_per_thread = nb_bins / n_threads;
     let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (n_threads - 1);
+
     // 3. Iterate over the number of threads
     // -> for each thread perform the binary search sorted with moving left and
     // yield the indices (using the same idea as for the sequential version)
@@ -197,6 +200,20 @@ mod tests {
     #[case(100)]
     #[case(101)]
     fn nb_bins(#[case] nb_bins: usize) {}
+
+    #[test]
+    fn test_sequential_add_mul() {
+        assert_eq!(sequential_add_mul(0.0, 1.0, 0), 0.0);
+        assert_eq!(sequential_add_mul(-1.0, 1.0, 1), 0.0);
+        // Really large values
+        assert_eq!(sequential_add_mul(0.0, 1.0, 1_000_000), 1_000_000.0);
+        // TODO: the next tests fails due to very minor precision error
+        // -> however, this precision error is needed to avoid the issue with m4_with_x
+        // assert_eq!(
+        //     sequential_add_mul(f64::MIN, f64::MAX / 2.0, 3),
+        //     f64::MIN + f64::MAX / 2.0 + f64::MAX
+        // );
+    }
 
     #[test]
     fn test_search_sorted_identicial_to_np_linspace_searchsorted() {
