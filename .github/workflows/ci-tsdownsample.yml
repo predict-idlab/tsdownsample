@@ -177,7 +177,7 @@ jobs:
       # with:
         # python-version: '3.10'
 
-    - run: pip install -U twine
+    - run: pip install -U twine packaging
 
     - name: get dist artifacts
       uses: actions/download-artifact@v3
