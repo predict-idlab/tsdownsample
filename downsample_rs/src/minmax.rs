@@ -415,6 +415,17 @@ mod tests {
         assert_eq!(sampled_indices, expected_indices);
     }
 
+    #[test]
+    fn test_same_output() {
+        const N: usize = 1001 - 2;
+        const n_out: usize = 26 * 4;
+        let y = (0..N).map(|v| v as f32).collect::<Vec<f32>>();
+        let x = (1..(N + 1) as i32).collect::<Vec<i32>>();
+        let sampled_indices1 = min_max_with_x(&x, &y, n_out);
+        let sampled_indices2 = min_max_without_x(&y, n_out);
+        assert_eq!(sampled_indices1, sampled_indices2);
+    }
+
     #[apply(n_outs)]
     fn test_many_random_runs_same_output(n_out: usize) {
         const N: usize = 20_003;

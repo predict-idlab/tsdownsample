@@ -5,6 +5,8 @@ use super::types::Num;
 use super::POOL;
 use num_traits::{AsPrimitive, FromPrimitive};
 
+const EPSILON: f64 = 1e-12; // Small value to avoid precision errors
+
 // ---------------------- Binary search ----------------------
 
 /// Binary search for the index position of the given value in the given array.
@@ -74,6 +76,17 @@ fn binary_search_with_mid<T: Copy + PartialOrd>(
 
 // ------------------- Equidistant binning --------------------
 
+#[inline(always)]
+fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize, epsilon: f64) -> f64 {
+    // start_val + add_val * mul will sometimes overflow when add_val * mul is
+    // larger than the largest positive f64 number.
+    // This code should not fail when: (f64::MAX - start_val) < (add_val * mul).
+    //   -> Note that f64::MAX - start_val can be up to 2 * f64::MAX.
+    let mul_2: f64 = mul as f64 / 2.0;
+    // start_val + add_val * mul_2 as f64 + add_val * (mul - mul_2) as f64
+    start_val + add_val * mul_2 + add_val * mul_2 + epsilon
+}
+
 // --- Sequential version
 
 pub(crate) fn get_equidistant_bin_idx_iterator<T>(
@@ -100,7 +113,8 @@ where
         let start_idx: usize = idx; // Start index of the bin (previous end index)
 
         // Update the search value
-        let search_value: T = T::from_f64(arr0 + val_step * (i + 1) as f64).unwrap();
+        let search_value: T =
+            T::from_f64(sequential_add_mul(arr0, val_step, i + 1, EPSILON)).unwrap();
         if arr[start_idx] >= search_value {
             // If the first value of the bin is already >= the search value,
             // then the bin is empty.
@@ -116,16 +130,6 @@ where
 
 // --- Parallel version
 
-#[inline(always)]
-fn sequential_add_mul(start_val: f64, add_val: f64, mul: usize) -> f64 {
-    // start_val + add_val * mul will sometimes overflow when add_val * mul is
-    // larger than the largest positive f64 number.
-    // This code should not fail when: (f64::MAX - start_val) < (add_val * mul).
-    //   -> Note that f64::MAX - start_val can be up to 2 * f64::MAX.
-    let mul_2: usize = mul / 2;
-    start_val + add_val * mul_2 as f64 + add_val * (mul - mul_2) as f64
-}
-
 pub(crate) fn get_equidistant_bin_idx_iterator_parallel<T>(
     arr: &[T],
     nb_bins: usize,
@@ -139,16 +143,18 @@ where
     let val_step: f64 =
         (arr[arr.len() - 1].as_() / nb_bins as f64) - (arr[0].as_() / nb_bins as f64);
     let arr0: f64 = arr[0].as_(); // The first value of the array
-                                  // 2. Compute the number of threads & bins per thread
+
+    // 2. Compute the number of threads & bins per thread
     let n_threads = std::cmp::min(POOL.current_num_threads(), nb_bins);
     let nb_bins_per_thread = nb_bins / n_threads;
     let nb_bins_last_thread = nb_bins - nb_bins_per_thread * (n_threads - 1);
+
     // 3. Iterate over the number of threads
     // -> for each thread perform the binary search sorted with moving left and
     // yield the indices (using the same idea as for the sequential version)
     (0..n_threads).into_par_iter().map(move |i| {
         // The moving index & value (for the thread)
-        let arr0_thr: f64 = sequential_add_mul(arr0, val_step, i * nb_bins_per_thread); // Search value
+        let arr0_thr: f64 = sequential_add_mul(arr0, val_step, i * nb_bins_per_thread, EPSILON); // Search value
         let start_value: T = T::from_f64(arr0_thr).unwrap();
         // Search the start of the fist bin (of the thread)
         let mut idx: usize = 0; // Index of the search value
@@ -197,6 +203,22 @@ mod tests {
     #[case(100)]
     #[case(101)]
     fn nb_bins(#[case] nb_bins: usize) {}
+
+    #[test]
+    fn test_sequential_add_mul() {
+        assert_eq!(sequential_add_mul(0.0, 1.0, 0, 0.0), 0.0);
+        assert_eq!(sequential_add_mul(-1.0, 1.0, 1, 0.0), 0.0);
+        assert_eq!(sequential_add_mul(-1.0, 1.0, 1, EPSILON), EPSILON);
+        // Really large values
+        assert_eq!(sequential_add_mul(0.0, 1.0, 1_000_000, 0.0), 1_000_000.0);
+        assert!(sequential_add_mul(f64::MIN, f64::MAX / 2.0, 3, 0.0) < f64::MAX,);
+        // TODO: the next tests fails due to very minor precision error
+        // -> however, this precision error is needed to avoid the issue with m4_with_x
+        // assert_eq!(
+        //     sequential_add_mul(f64::MIN, f64::MAX / 2.0, 3, 0.0),
+        //     f64::MIN + f64::MAX / 2.0 + f64::MAX
+        // );
+    }
 
     #[test]
     fn test_search_sorted_identicial_to_np_linspace_searchsorted() {

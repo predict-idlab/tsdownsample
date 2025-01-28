@@ -258,6 +258,25 @@ mod tests {
         assert_eq!(sampled_indices, vec![0, 1, 5, 9]);
     }
 
+    #[test]
+    fn test_same_output() {
+        let N: usize = 2001;
+        let n_out: usize = 100;
+        let y = (0..N).map(|v| v as f32).collect::<Vec<f32>>();
+        let x = (0..N as i32).collect::<Vec<i32>>();
+        let sampled_indices1 = minmaxlttb_with_x(&x, &y, n_out, 4);
+        let sampled_indices2 = minmaxlttb_without_x(&y, n_out, 4);
+        assert_eq!(sampled_indices1, sampled_indices2);
+
+        let N: usize = 1001;
+        let n_out: usize = 26;
+        let y = (0..N).map(|v| v as f32).collect::<Vec<f32>>();
+        let x = (0..N as i32).collect::<Vec<i32>>();
+        let sampled_indices1 = minmaxlttb_with_x(&x, &y, n_out, 4);
+        let sampled_indices2 = minmaxlttb_without_x(&y, n_out, 4);
+        assert_eq!(sampled_indices1, sampled_indices2);
+    }
+
     #[apply(n_outs)]
     fn test_many_random_runs_same_output(n_out: usize) {
         const N: usize = 20_000;
