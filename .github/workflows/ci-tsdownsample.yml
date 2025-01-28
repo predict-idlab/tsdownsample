@@ -147,9 +147,9 @@ jobs:
 
     - name: set up python
       uses: actions/setup-python@v4
-      # with:
-        # python-version: '3.11'
-        # architecture: ${{ matrix.python-architecture || 'x64' }}
+      with:
+        python-version: '3.13'
+        architecture: ${{ matrix.python-architecture || 'x64' }}
 
     - name: build sdist
       if: ${{ matrix.os == 'ubuntu' && matrix.target == 'x86_64' && matrix.manylinux == 'auto' }}
@@ -165,7 +165,7 @@ jobs:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux || 'auto' }}
         container: ${{ matrix.container }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 3.13' }}
 
     - run: ${{ matrix.ls || 'ls -lh' }} dist/
 
