@@ -62,8 +62,8 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -r tests/requirements.txt
@@ -91,7 +91,7 @@ jobs:
       - run: make test  # Test Python
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
 
   Build:
   # Perhaps smth more in line with this https://github.com/messense/crfs-rs/blob/main/.github/workflows/Python.yml
