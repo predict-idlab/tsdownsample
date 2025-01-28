@@ -46,17 +46,7 @@ jobs:
       matrix:
         os: ['windows-latest', 'macOS-latest', 'ubuntu-latest']
         rust: ['nightly']  # ['stable', 'beta']
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12', "3.13"]
-        exclude:  # Python < 3.8 is not supported on Apple Silicon ARM64
-          - os: macOS-latest
-            python-version: '3.7'
-          - os: ubuntu-latest
-            python-version: '3.7'
-        include:  # So run on older version on Intel CPU
-          - os: macOS-13
-            python-version: '3.7'
-          - os: ubuntu-22.04
-            python-version: '3.7'
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', "3.13"]
     
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -165,7 +155,7 @@ jobs:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux || 'auto' }}
         container: ${{ matrix.container }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 3.13' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13' }}
 
     - run: ${{ matrix.ls || 'ls -lh' }} dist/
 

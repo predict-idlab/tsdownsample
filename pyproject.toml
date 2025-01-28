@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "tsdownsample"
 description = "Time series downsampling in rust"
 version = "0.1.4"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = ["numpy"]
 authors = [{name = "Jeroen Van Der Donckt"}]
 readme = "README.md"
@@ -16,7 +16,6 @@ classifiers = [
     'Intended Audience :: Developers',
     'License :: OSI Approved :: MIT License',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
