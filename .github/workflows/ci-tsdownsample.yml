@@ -162,7 +162,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: pypi_files
-        path: dist
+        path: dist/*
 
   Release:
     needs: [Lint_and_Check, Test, Build]
