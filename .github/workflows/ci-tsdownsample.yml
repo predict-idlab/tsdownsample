@@ -161,8 +161,8 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: pypi_files
-        path: dist/*
+        name: pypi_files-${{ matrix.os }}-${{ matrix.target }}-${{ matrix.interpreter || 'all' }}-${{ matrix.manylinux || 'auto' }}
+        path: dist
 
   Release:
     needs: [Lint_and_Check, Test, Build]
@@ -182,7 +182,7 @@ jobs:
     - name: get dist artifacts
       uses: actions/download-artifact@v4
       with:
-        name: pypi_files
+        name: pypi_files-*
         path: dist
 
     - run: twine check dist/*
