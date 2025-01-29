@@ -183,6 +183,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: pypi_files-*
+        merge-multiple: true
         path: dist
 
     - run: twine check dist/*
