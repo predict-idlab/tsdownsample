@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "tsdownsample"
 description = "Time series downsampling in rust"
-version = "0.1.4"
+version = "0.1.4.1"
 requires-python = ">=3.8"
 dependencies = ["numpy"]
 authors = [{name = "Jeroen Van Der Donckt"}]

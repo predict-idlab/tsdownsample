@@ -11,7 +11,7 @@ from .downsamplers import (
     NaNMinMaxLTTBDownsampler,
 )
 
-__version__ = "0.1.4"
+__version__ = "0.1.4.1"
 __author__ = "Jeroen Van Der Donckt"
 
 __all__ = [
