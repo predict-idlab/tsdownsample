@@ -335,6 +335,10 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         # TIMEDELTA -> i64 (timedelta64 is viewed as int64)
         raise ValueError(f"Unsupported data type (for x): {x_dtype}")
 
+    def _prune_nans(self, sampled_idxs: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Remove all nan indices."""
+        return sampled_idxs[~np.isnan(y[sampled_idxs])]
+
     def _downsample(
         self,
         x: Union[np.ndarray, None],
@@ -359,11 +363,11 @@ class AbstractRustDownsampler(AbstractDownsampler, ABC):
         ## Viewing the x-data as different dtype (if necessary)
         if x is None:
             downsample_f = self._switch_mod_with_y(y.dtype, mod)
-            return downsample_f(y, n_out, **kwargs)
+            return self._prune_nans(downsample_f(y, n_out, **kwargs), y)
         x = self._view_x(x)
         ## Getting the appropriate downsample function
         downsample_f = self._switch_mod_with_x_and_y(x.dtype, y.dtype, mod)
-        return downsample_f(x, y, n_out, **kwargs)
+        return self._prune_nans(downsample_f(x, y, n_out, **kwargs), y)
 
     def downsample(self, *args, n_out: int, parallel: bool = False, **kwargs):
         """Downsample the data in x and y.
@@ -399,6 +403,11 @@ class AbstractRustNaNDownsampler(AbstractRustDownsampler, ABC):
     def _downsample_func_prefix(self) -> str:
         """The prefix of the downsample functions in the rust module."""
         return NAN_DOWNSAMPLE_F
+
+    ## Overriding the _prune_nans method to return the sampled indices without pruning
+    def _prune_nans(self, sampled_idxs: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Remove all nan indices."""
+        return sampled_idxs
 
     def _switch_mod_with_y(
         self, y_dtype: np.dtype, mod: ModuleType, downsample_func: Optional[str] = None
