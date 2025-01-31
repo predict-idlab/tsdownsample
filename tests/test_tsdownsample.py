@@ -44,11 +44,6 @@ def generate_rust_downsamplers() -> Iterable[AbstractDownsampler]:
         yield downsampler
 
 
-def generate_rust_nan_downsamplers() -> Iterable[AbstractDownsampler]:
-    for downsampler in RUST_NAN_DOWNSAMPLERS:
-        yield downsampler
-
-
 def generate_all_downsamplers() -> Iterable[AbstractDownsampler]:
     for downsampler in RUST_DOWNSAMPLERS + RUST_NAN_DOWNSAMPLERS + OTHER_DOWNSAMPLERS:
         yield downsampler
@@ -106,7 +101,7 @@ def test_rust_downsampler(downsampler: AbstractDownsampler):
     assert s_downsampled[-1] == len(arr) - 1
 
 
-@pytest.mark.parametrize("downsampler", generate_rust_nan_downsamplers())
+@pytest.mark.parametrize("downsampler", RUST_NAN_DOWNSAMPLERS)
 def test_rust_nan_downsampler(downsampler: AbstractRustNaNDownsampler):
     """Test the Rust NaN downsamplers."""
     datapoints = generate_nan_datapoints()
@@ -360,3 +355,41 @@ def test_nan_minmaxlttb_downsampler():
     s_downsampled = NaNMinMaxLTTBDownsampler().downsample(arr, n_out=100)
     arr_downsampled = arr[s_downsampled]
     assert np.all(np.isnan(arr_downsampled[1:-1]))  # first and last are not NaN
+
+
+@pytest.mark.parametrize("downsampler", RUST_DOWNSAMPLERS)
+def test_no_nans_omitted(downsampler: AbstractDownsampler):
+    n = 10_000
+    y = np.arange(n, dtype=np.float64)
+    for i in range(1, 100):
+        y[i + 100] = np.nan
+
+    s_downsampled = downsampler.downsample(y, n_out=1000)
+    assert np.all(~np.isnan(y[s_downsampled]))
+    s_downsampled = downsampler.downsample(y, n_out=1000, parallel=True)
+    assert np.all(~np.isnan(y[s_downsampled]))
+
+    x = np.arange(n)
+    s_downsampled = downsampler.downsample(x, y, n_out=1000)
+    assert np.all(~np.isnan(y[s_downsampled]))
+    s_downsampled = downsampler.downsample(x, y, n_out=1000, parallel=True)
+    assert np.all(~np.isnan(y[s_downsampled]))
+
+
+@pytest.mark.parametrize("downsampler", RUST_NAN_DOWNSAMPLERS)
+def tests_nans_returned(downsampler: AbstractDownsampler):
+    n = 10_000
+    y = np.arange(n, dtype=np.float64)
+    for i in range(1, 100):
+        y[i + 100] = np.nan
+
+    s_downsampled = downsampler.downsample(y, n_out=1000)
+    assert np.any(np.isnan(y[s_downsampled]))
+    s_downsampled = downsampler.downsample(y, n_out=1000, parallel=True)
+    assert np.any(np.isnan(y[s_downsampled]))
+
+    x = np.arange(n)
+    s_downsampled = downsampler.downsample(x, y, n_out=1000)
+    assert np.any(np.isnan(y[s_downsampled]))
+    s_downsampled = downsampler.downsample(x, y, n_out=1000, parallel=True)
+    assert np.any(np.isnan(y[s_downsampled]))
