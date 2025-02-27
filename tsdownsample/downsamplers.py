@@ -136,6 +136,36 @@ class NaNMinMaxLTTBDownsampler(AbstractRustNaNDownsampler):
         )
 
 
+class FPCSDownsampler(AbstractRustDownsampler):
+    """Downsampler that uses the Feature Preserving Compensated Sampling (FPCS)
+    algorithm.
+
+    FPCS paper: https://doi.org/10.1109/TVCG.2024.3456375
+    """
+
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.fpcs
+
+    def downsample(self, *args, n_out: int, parallel: bool = False, **_):
+        return super().downsample(*args, n_out=n_out, parallel=parallel)
+
+
+class NaNFPCSDownsampler(AbstractRustNaNDownsampler):
+    """Downsampler that uses the Feature Preserving Compensated Sampling (FPCS)
+     algorithm. If the y data contains NaNs, the indices of these NaNs are returned.
+
+    FPCS paper: https://doi.org/10.1109/TVCG.2024.3456375
+    """
+
+    @property
+    def rust_mod(self):
+        return _tsdownsample_rs.fpcs
+
+    def downsample(self, *args, n_out: int, parallel: bool = False, **_):
+        return super().downsample(*args, n_out=n_out, parallel=parallel)
+
+
 # ------------------ EveryNth Downsampler ------------------
 
 
