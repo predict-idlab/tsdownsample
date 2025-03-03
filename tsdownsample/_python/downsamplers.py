@@ -1,4 +1,5 @@
-from typing import Union
+from enum import Enum
+from typing import NamedTuple, Union
 
 import numpy as np
 
@@ -255,3 +256,76 @@ class NaNM4_py(AbstractDownsampler):
 
         # NOTE: we do not use the np.unique so that all indices are retained
         return np.array(sorted(rel_idxs))
+
+
+class FPCS_py(AbstractDownsampler):
+    def _downsample(
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
+    ) -> np.ndarray:
+        # fmt: off
+        # ------------------------- Helper datastructures -------------------------
+        class Flag(Enum):
+            NONE = -1   # -1: no data points have been retained
+            MAX = 0     #  0: a max has been retained
+            MIN = 1     #  1: a min has been retained
+
+        Point = NamedTuple("point", [("x", int), ("val", y.dtype)])
+        # ------------------------------------------------------------------------
+
+        # 0. Downsample the data using the MinMax algorithm
+        MINMAX_FACTOR = 2
+        n_1 = len(x) - 1
+        # NOTE: as we include the first and last point, we reduce the number of points
+        downsampled_idxs = MinMax_py().downsample(
+            x[1:n_1], y[1:n_1], n_out=(n_out - 2) * MINMAX_FACTOR
+        )
+        downsampled_idxs += 1
+
+        previous_min_flag: Flag = Flag.NONE
+        potential_point = Point(0, 0)
+        max_point = Point(0, y[0])
+        min_point = Point(0, y[0])
+
+        sampled_indices = []
+        sampled_indices.append(0)  # prepend the first point
+        for i in range(0, len(downsampled_idxs), 2):
+            # get the min and max indices and convert them to the correct order
+            min_idx, max_idxs = downsampled_idxs[i], downsampled_idxs[i + 1]
+            if y[min_idx] > y[max_idxs]:
+                min_idx, max_idxs = max_idxs, min_idx
+            bin_min = Point(min_idx, y[min_idx])
+            bin_max = Point(max_idxs, y[max_idxs])
+
+            # update the max and min points based on the extrema of the current bin
+            if max_point.val < bin_max.val:
+                max_point = bin_max
+            if min_point.val > bin_min.val:
+                min_point = bin_min
+
+            # if the min is to the left of the max
+            if min_point.x < max_point.x:
+                # if the min was not selected in the previous bin
+                if previous_min_flag == Flag.MIN and min_point.x != potential_point.x:
+                    # Both adjacent samplings retain MinPoint, and PotentialPoint and
+                    # MinPoint are not the same point
+                    sampled_indices.append(potential_point.x)
+
+                sampled_indices.append(min_point.x)  # receiving min_point b4 max_point -> retain min_point
+                potential_point = (max_point)  # update potential point to unselected max_point
+                min_point = max_point  # update min_point to unselected max_point
+                previous_min_flag = Flag.MIN  # min_point has been selected
+
+            else:
+                if previous_min_flag == Flag.MAX and max_point.x != potential_point.x:
+                    # # Both adjacent samplings retain MaxPoint, and PotentialPoint and
+                    # MaxPoint are not the same point
+                    sampled_indices.append(potential_point.x)
+
+                sampled_indices.append(max_point.x) # receiving max_point b4 min_point -> retain max_point
+                potential_point = (min_point)  # update potential point to unselected min_point
+                max_point = min_point  # update max_point to unselected min_point
+                previous_min_flag = Flag.MAX  # max_point has been selected
+
+        sampled_indices.append(len(y) - 1) # append the last point
+        # fmt: on
+        return np.array(sampled_indices, dtype=np.int64)

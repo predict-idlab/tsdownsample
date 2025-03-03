@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from tsdownsample import (
+    FPCSDownsampler,  # TODO -> include MinMaxLTTB?
     LTTBDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
@@ -9,6 +10,7 @@ from tsdownsample import (
     NaNMinMaxDownsampler,
 )
 from tsdownsample._python.downsamplers import (
+    FPCS_py,
     LTTB_py,
     M4_py,
     MinMax_py,
@@ -23,6 +25,7 @@ from tsdownsample._python.downsamplers import (
         (MinMaxDownsampler(), MinMax_py()),
         (M4Downsampler(), M4_py()),
         (LTTBDownsampler(), LTTB_py()),
+        (FPCSDownsampler(), FPCS_py()),
         # Include NaN downsamplers
         (NaNMinMaxDownsampler(), NaNMinMax_py()),
         (NaNM4Downsampler(), NaNM4_py()),
