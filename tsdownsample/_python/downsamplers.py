@@ -4,6 +4,7 @@ from typing import NamedTuple, Union
 import numpy as np
 
 from ..downsampling_interface import AbstractDownsampler
+from abc import ABC
 
 
 def _get_bin_idxs(x: np.ndarray, nb_bins: int) -> np.ndarray:
@@ -258,7 +259,59 @@ class NaNM4_py(AbstractDownsampler):
         return np.array(sorted(rel_idxs))
 
 
-class FPCS_py(AbstractDownsampler):
+class _MinMaxLTTB_py(AbstractDownsampler, ABC):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler: AbstractDownsampler = None
+        self.lttb_downsampler: AbstractDownsampler = None
+
+    def _downsample(self, x, y, n_out, **kwargs):
+        minmax_ratio = kwargs.get("minmax_ratio", 4)
+        kwargs.pop("minmax_ratio", None)  # remove the minmax_ratio from kwargs
+
+        # Is fine for this implementation as this is only used for testing
+        if x is None:
+            x = np.arange(y.shape[0])
+
+        n_1 = len(x) - 1
+        idxs = self.minmax_downsampler.downsample(
+            x[1:n_1], y[1:n_1], n_out=n_out * minmax_ratio, **kwargs
+        )
+        idxs += 1
+        idxs = np.concat(([0], idxs, [len(y) - 1])).ravel()
+        print("idxs", idxs)
+        return idxs[
+            self.lttb_downsampler.downsample(x[idxs], y[idxs], n_out=n_out, **kwargs)
+        ]
+
+
+class MinMaxLTTB_py(_MinMaxLTTB_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = MinMax_py()
+        self.lttb_downsampler = LTTB_py()
+
+
+class NaNMinMaxLTTB_py(_MinMaxLTTB_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = NaNMinMax_py()
+        self.lttb_downsampler = LTTB_py()
+
+
+class _FPCS_py(AbstractDownsampler, ABC):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler: AbstractDownsampler = None
+
     def _downsample(
         self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
     ) -> np.ndarray:
@@ -272,11 +325,16 @@ class FPCS_py(AbstractDownsampler):
         Point = NamedTuple("point", [("x", int), ("val", y.dtype)])
         # ------------------------------------------------------------------------
 
+        # NOTE: is fine for this implementation as this is only used for testing
+        if x is None:
+            # Is fine for this implementation as this is only used for testing
+            x = np.arange(y.shape[0])
+
         # 0. Downsample the data using the MinMax algorithm
         MINMAX_FACTOR = 2
         n_1 = len(x) - 1
         # NOTE: as we include the first and last point, we reduce the number of points
-        downsampled_idxs = MinMax_py().downsample(
+        downsampled_idxs = self.minmax_downsampler.downsample(
             x[1:n_1], y[1:n_1], n_out=(n_out - 2) * MINMAX_FACTOR
         )
         downsampled_idxs += 1
@@ -329,3 +387,19 @@ class FPCS_py(AbstractDownsampler):
         sampled_indices.append(len(y) - 1) # append the last point
         # fmt: on
         return np.array(sampled_indices, dtype=np.int64)
+
+
+class FPCS_py(_FPCS_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = MinMax_py()
+
+
+class NaNFPCS_py(_FPCS_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = NaNMinMax_py()

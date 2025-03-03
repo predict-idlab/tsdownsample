@@ -2,20 +2,26 @@ import numpy as np
 import pytest
 
 from tsdownsample import (
-    FPCSDownsampler,  # TODO -> include MinMaxLTTB?
+    FPCSDownsampler,
     LTTBDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
+    # MinMaxLTTBDownsampler,
+    NaNFPCSDownsampler,
     NaNM4Downsampler,
     NaNMinMaxDownsampler,
+    # NaNMinMaxLTTBDownsampler,
 )
 from tsdownsample._python.downsamplers import (
     FPCS_py,
     LTTB_py,
     M4_py,
     MinMax_py,
+    # MinMaxLTTB_py,
+    NaNFPCS_py,
     NaNM4_py,
     NaNMinMax_py,
+    # NaNMinMaxLTTB_py,
 )
 
 
@@ -25,10 +31,13 @@ from tsdownsample._python.downsamplers import (
         (MinMaxDownsampler(), MinMax_py()),
         (M4Downsampler(), M4_py()),
         (LTTBDownsampler(), LTTB_py()),
+        # (MinMaxLTTBDownsampler(), MinMaxLTTB_py()),
         (FPCSDownsampler(), FPCS_py()),
         # Include NaN downsamplers
         (NaNMinMaxDownsampler(), NaNMinMax_py()),
         (NaNM4Downsampler(), NaNM4_py()),
+        # (NaNMinMaxLTTBDownsampler(), NaNMinMaxLTTB_py()),
+        (NaNFPCSDownsampler(), NaNFPCS_py()),
     ],
 )
 @pytest.mark.parametrize("n", [10_000, 10_032, 20_321, 23_489])
@@ -51,7 +60,12 @@ def test_resampler_accordance(rust_python_pair, n, n_out):
 
 @pytest.mark.parametrize(
     "rust_python_pair",
-    [(NaNMinMaxDownsampler(), NaNMinMax_py()), (NaNM4Downsampler(), NaNM4_py())],
+    [
+        (NaNMinMaxDownsampler(), NaNMinMax_py()),
+        (NaNM4Downsampler(), NaNM4_py()),
+        # (NaNMinMaxLTTBDownsampler(), NaNMinMaxLTTB_py()),
+        (NaNFPCSDownsampler(), NaNFPCS_py()),
+    ],
 )
 @pytest.mark.parametrize("n", [10_000, 10_032, 20_321, 23_489])
 @pytest.mark.parametrize("n_random_nans", [100, 200, 500, 2000, 5000])
