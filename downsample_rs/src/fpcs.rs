@@ -89,7 +89,7 @@ fn fpcs_outer_loop<Ty: PartialOrd + Copy>(
 
             // NOTE: the minmax_idxs are not ordered!!
             // So we need to check if the min is actually the min
-            if arr[min_idx] >= arr[max_idx] {
+            if arr[min_idx] > arr[max_idx] {
                 min_idx = chunk[1];
                 max_idx = chunk[0];
             }
@@ -225,7 +225,7 @@ pub(crate) fn fpcs_generic<Tx: Num + AsPrimitive<f64>, Ty: PartialOrd + Copy>(
     f_minmax: fn(&[Tx], &[Ty], usize) -> Vec<usize>,
 ) -> Vec<usize> {
     assert_eq!(x.len(), y.len());
-    let mut minmax_idxs = f_minmax(&x[1..(x.len() - 1)], &y[1..(x.len() - 1)], n_out * 2);
+    let mut minmax_idxs = f_minmax(&x[1..(x.len() - 1)], &y[1..(x.len() - 1)], (n_out - 2) * 2);
     minmax_idxs.iter_mut().for_each(|elem| *elem += 1); // inplace + 1
     return fpcs_outer_loop(y, minmax_idxs, n_out);
 }
@@ -238,7 +238,7 @@ pub(crate) fn fpcs_generic_without_x<T: PartialOrd + Copy>(
     n_out: usize,
     f_minmax: fn(&[T], usize) -> Vec<usize>,
 ) -> Vec<usize> {
-    let mut minmax_idxs: Vec<usize> = f_minmax(&arr[1..(arr.len() - 1)], n_out * 2);
+    let mut minmax_idxs: Vec<usize> = f_minmax(&arr[1..(arr.len() - 1)], (n_out - 2) * 2);
     minmax_idxs.iter_mut().for_each(|elem| *elem += 1); // inplace + 1
     return fpcs_outer_loop(arr, minmax_idxs, n_out);
 }
