@@ -1,10 +1,10 @@
+from abc import ABC
 from enum import Enum
 from typing import NamedTuple, Union
 
 import numpy as np
 
 from ..downsampling_interface import AbstractDownsampler
-from abc import ABC
 
 
 def _get_bin_idxs(x: np.ndarray, nb_bins: int) -> np.ndarray:
