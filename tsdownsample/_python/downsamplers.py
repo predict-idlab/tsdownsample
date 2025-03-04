@@ -78,8 +78,8 @@ class LTTB_py(AbstractDownsampler):
 
         # Construct the output array
         sampled_x = np.empty(n_out, dtype="int64")
+        # Add the first point
         sampled_x[0] = 0
-        sampled_x[-1] = x.shape[0] - 1
 
         # Convert x & y to int if it is boolean
         if x.dtype == np.bool_:
@@ -93,7 +93,17 @@ class LTTB_py(AbstractDownsampler):
                 LTTB_py._argmax_area(
                     prev_x=x[a],
                     prev_y=y[a],
-                    avg_next_x=np.mean(x[offset[i + 1] : offset[i + 2]]),
+                    # NOTE: In a 100% correct implementation of LTTB the next x average 
+                    # should be implemented as the following:
+                    # avg_next_x=np.mean(x[offset[i + 1] : offset[i + 2]]),
+                    # To improve performance we use the following approximation
+                    # which is the average of the first and last point of the next bucket
+                    # NOTE: this is not as accurate when x is not sampled equidistant
+                    # or when the buckets do not contain tht much data points, but it:
+                    # (1) aligns with visual perception (visual middle)
+                    # (2) is much faster
+                    # (3) is how the LTTB rust implementation works
+                    avg_next_x=(x[offset[i + 1]] + x[offset[i + 2] - 1]) / 2.0,
                     avg_next_y=y[offset[i + 1] : offset[i + 2]].mean(),
                     x_bucket=x[offset[i] : offset[i + 1]],
                     y_bucket=y[offset[i] : offset[i + 1]],
@@ -115,6 +125,8 @@ class LTTB_py(AbstractDownsampler):
             )
             + offset[-2]
         )
+        # Always include the last point
+        sampled_x[-1] = x.shape[0] - 1
         return sampled_x
 
 
