@@ -43,6 +43,10 @@ select = ["E", "F", "I"]
 line-length = 88
 extend-select = ["Q"]
 ignore = ["E402", "F403"]
+ 
+[tool.ruff.per-file-ignores]
+"tsdownsample/_python/downsamplers.py" = ["E501"] # NOTE "downsamplers.py" also works
+
 
 # Formatting
 [tool.black]
