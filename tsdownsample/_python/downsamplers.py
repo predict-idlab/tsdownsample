@@ -93,7 +93,7 @@ class LTTB_py(AbstractDownsampler):
                 LTTB_py._argmax_area(
                     prev_x=x[a],
                     prev_y=y[a],
-                    # NOTE: In a 100% correct implementation of LTTB the next x average 
+                    # NOTE: In a 100% correct implementation of LTTB the next x average
                     # should be implemented as the following:
                     # avg_next_x=np.mean(x[offset[i + 1] : offset[i + 2]]),
                     # To improve performance we use the following approximation

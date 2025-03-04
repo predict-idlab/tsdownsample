@@ -6,10 +6,12 @@ from test_config import supported_dtypes_x, supported_dtypes_y
 
 from tsdownsample import (  # MeanDownsampler,; MedianDownsampler,
     EveryNthDownsampler,
+    FPCSDownsampler,
     LTTBDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
+    NaNFPCSDownsampler,
     NaNM4Downsampler,
     NaNMinMaxDownsampler,
     NaNMinMaxLTTBDownsampler,
@@ -28,12 +30,14 @@ RUST_DOWNSAMPLERS = [
     M4Downsampler(),
     LTTBDownsampler(),
     MinMaxLTTBDownsampler(),
+    FPCSDownsampler(),
 ]
 
 RUST_NAN_DOWNSAMPLERS = [
     NaNMinMaxDownsampler(),
     NaNM4Downsampler(),
     NaNMinMaxLTTBDownsampler(),
+    NaNFPCSDownsampler(),
 ]
 
 OTHER_DOWNSAMPLERS = [EveryNthDownsampler()]
@@ -167,8 +171,12 @@ def test_downsampling_with_gaps_in_x(downsampler: AbstractDownsampler):
     idx = np.arange(len(arr))
     idx[: len(idx) // 2] += len(idx) // 2  # add large gap in x
     s_downsampled = downsampler.downsample(idx, arr, n_out=100)
-    assert len(s_downsampled) <= 100
-    assert len(s_downsampled) >= 66
+    if "FPCS" in downsampler.__class__.__name__:
+        assert len(s_downsampled) >= 100
+        assert len(s_downsampled) <= 200
+    else:
+        assert len(s_downsampled) <= 100
+        assert len(s_downsampled) >= 66
 
 
 @pytest.mark.parametrize("downsampler", generate_rust_downsamplers())

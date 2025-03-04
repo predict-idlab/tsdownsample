@@ -6,22 +6,22 @@ from tsdownsample import (
     LTTBDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
-    # MinMaxLTTBDownsampler,
+    MinMaxLTTBDownsampler,
     NaNFPCSDownsampler,
     NaNM4Downsampler,
     NaNMinMaxDownsampler,
-    # NaNMinMaxLTTBDownsampler,
+    NaNMinMaxLTTBDownsampler,
 )
 from tsdownsample._python.downsamplers import (
     FPCS_py,
     LTTB_py,
     M4_py,
     MinMax_py,
-    # MinMaxLTTB_py,
+    MinMaxLTTB_py,
     NaNFPCS_py,
     NaNM4_py,
     NaNMinMax_py,
-    # NaNMinMaxLTTB_py,
+    NaNMinMaxLTTB_py,
 )
 
 
@@ -31,12 +31,12 @@ from tsdownsample._python.downsamplers import (
         (MinMaxDownsampler(), MinMax_py()),
         (M4Downsampler(), M4_py()),
         (LTTBDownsampler(), LTTB_py()),
-        # (MinMaxLTTBDownsampler(), MinMaxLTTB_py()),
+        (MinMaxLTTBDownsampler(), MinMaxLTTB_py()),
         (FPCSDownsampler(), FPCS_py()),
         # Include NaN downsamplers
         (NaNMinMaxDownsampler(), NaNMinMax_py()),
         (NaNM4Downsampler(), NaNM4_py()),
-        # (NaNMinMaxLTTBDownsampler(), NaNMinMaxLTTB_py()),
+        (NaNMinMaxLTTBDownsampler(), NaNMinMaxLTTB_py()),
         (NaNFPCSDownsampler(), NaNFPCS_py()),
     ],
 )
@@ -63,7 +63,7 @@ def test_resampler_accordance(rust_python_pair, n, n_out):
     [
         (NaNMinMaxDownsampler(), NaNMinMax_py()),
         (NaNM4Downsampler(), NaNM4_py()),
-        # (NaNMinMaxLTTBDownsampler(), NaNMinMaxLTTB_py()),
+        (NaNMinMaxLTTBDownsampler(), NaNMinMaxLTTB_py()),
         (NaNFPCSDownsampler(), NaNFPCS_py()),
     ],
 )
