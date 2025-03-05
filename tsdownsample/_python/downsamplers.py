@@ -293,7 +293,6 @@ class _MinMaxLTTB_py(AbstractDownsampler, ABC):
         )
         idxs += 1
         idxs = np.concat(([0], idxs, [len(y) - 1])).ravel()
-        print("idxs", idxs)
         return idxs[
             self.lttb_downsampler.downsample(x[idxs], y[idxs], n_out=n_out, **kwargs)
         ]
@@ -334,7 +333,7 @@ class _FPCS_py(AbstractDownsampler, ABC):
             MAX = 0     #  0: a max has been retained
             MIN = 1     #  1: a min has been retained
 
-        Point = NamedTuple("point", [("x", int), ("val", y.dtype)])
+        Point = NamedTuple("point", [("x", int), ("y", y.dtype)])
         # ------------------------------------------------------------------------
 
         # NOTE: is fine for this implementation as this is only used for testing
@@ -366,10 +365,12 @@ class _FPCS_py(AbstractDownsampler, ABC):
             bin_min = Point(min_idx, y[min_idx])
             bin_max = Point(max_idxs, y[max_idxs])
 
-            # update the max and min points based on the extrema of the current bin
-            if max_point.val < bin_max.val:
+            # Use the (nan-aware) comparison function to update the min and max points
+            # As comparisons with NaN always return False, we inverted the comparison
+            # the (inverted) > and <= stem from the pseudo code details in the paper
+            if not (max_point.y > bin_max.y):
                 max_point = bin_max
-            if min_point.val > bin_min.val:
+            if not (min_point.y <= bin_min.y):
                 min_point = bin_min
 
             # if the min is to the left of the max
@@ -381,7 +382,7 @@ class _FPCS_py(AbstractDownsampler, ABC):
                     sampled_indices.append(potential_point.x)
 
                 sampled_indices.append(min_point.x)  # receiving min_point b4 max_point -> retain min_point
-                potential_point = (max_point)  # update potential point to unselected max_point
+                potential_point = max_point  # update potential point to unselected max_point
                 min_point = max_point  # update min_point to unselected max_point
                 previous_min_flag = Flag.MIN  # min_point has been selected
 
@@ -392,11 +393,11 @@ class _FPCS_py(AbstractDownsampler, ABC):
                     sampled_indices.append(potential_point.x)
 
                 sampled_indices.append(max_point.x) # receiving max_point b4 min_point -> retain max_point
-                potential_point = (min_point)  # update potential point to unselected min_point
+                potential_point = min_point  # update potential point to unselected min_point
                 max_point = min_point  # update max_point to unselected min_point
                 previous_min_flag = Flag.MAX  # max_point has been selected
 
-        sampled_indices.append(len(y) - 1) # append the last point
+        sampled_indices.append(len(y) - 1)  # append the last point
         # fmt: on
         return np.array(sampled_indices, dtype=np.int64)
 
