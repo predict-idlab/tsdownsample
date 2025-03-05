@@ -84,3 +84,33 @@ def test_nan_resampler_accordance(rust_python_pair, n, n_random_nans, n_out):
         rust_downsampler.downsample(x, y, n_out=n_out),
         python_downsampler.downsample(x, y, n_out=n_out),
     )
+
+
+@pytest.mark.parametrize(
+    "nan_no_nan_pair",
+    [
+        (NaNFPCS_py(), FPCS_py()),
+        (NaNM4_py(), M4_py()),
+        (NaNMinMax_py(), MinMax_py()),
+        (NaNMinMaxLTTB_py(), MinMaxLTTB_py()),
+        (NaNFPCSDownsampler(), FPCSDownsampler()),
+        (NaNM4Downsampler(), M4Downsampler()),
+        (NaNMinMaxDownsampler(), MinMaxDownsampler()),
+        (NaNMinMaxLTTBDownsampler(), MinMaxLTTBDownsampler()),
+    ],
+)
+@pytest.mark.parametrize("n", [10_000, 10_032, 20_321, 23_489])
+@pytest.mark.parametrize("n_out", [100, 200, 252])
+def test_nan_no_nan_resampler_accordance(nan_no_nan_pair, n, n_out):
+    nan_downsampler, no_nan_downsampler = nan_no_nan_pair
+    x = np.arange(n)
+    y = np.random.randn(n)
+    # Wihtout x passed to the downsamplers
+    nan_result = nan_downsampler.downsample(y, n_out=n_out)
+    no_nan_result = no_nan_downsampler.downsample(y, n_out=n_out)
+    assert np.allclose(nan_result, no_nan_result)
+
+    # With x passed to the downsamplers
+    nan_result = nan_downsampler.downsample(x, y, n_out=n_out)
+    no_nan_result = no_nan_downsampler.downsample(x, y, n_out=n_out)
+    assert np.allclose(nan_result, no_nan_result)
