@@ -2,7 +2,7 @@ use super::minmax;
 use super::types::Num;
 use argminmax::{ArgMinMax, NaNArgMinMax};
 use num_traits::{AsPrimitive, FromPrimitive};
-use std::{fmt::Debug, ops::Not};
+use std::ops::Not;
 
 // ------------------------------- Helper datastructures -------------------------------
 // NOTE: the pub(crate) is added to match the visibility of the fpcs_generic function
@@ -76,7 +76,7 @@ fn fpcs_inner_comp<Ty: PartialOrd + Copy>(
 }
 
 #[inline(always)]
-fn fpcs_outer_loop<Ty: PartialOrd + Copy + Debug>(
+fn fpcs_outer_loop<Ty: PartialOrd + Copy>(
     arr: &[Ty],
     minmax_idxs: Vec<usize>,
     n_out: usize,
@@ -91,7 +91,6 @@ fn fpcs_outer_loop<Ty: PartialOrd + Copy + Debug>(
     // Prepend first point
     sampled_indices.push(0);
 
-    println!("minmax_idxs: {:?}", minmax_idxs);
     // Process the min/max pairs
     for chunk in minmax_idxs.chunks(2) {
         if chunk.len() == 2 {
@@ -136,7 +135,7 @@ macro_rules! fpcs_with_x {
         where
             for<'a> &'a [Ty]: $trait,
             Tx: Num + FromPrimitive + AsPrimitive<f64>,
-            Ty: Copy + PartialOrd + Debug,
+            Ty: Copy + PartialOrd,
         {
             fpcs_generic(x, y, n_out, $f_minmax, $f_fpcs_inner_comp)
         }
@@ -160,7 +159,7 @@ fpcs_with_x!(
 
 macro_rules! fpcs_without_x {
     ($func_name:ident, $trait:path, $f_minmax:expr, $f_fpcs_inner_comp:expr) => {
-        pub fn $func_name<T: Copy + PartialOrd + Debug>(arr: &[T], n_out: usize) -> Vec<usize>
+        pub fn $func_name<T: Copy + PartialOrd>(arr: &[T], n_out: usize) -> Vec<usize>
         where
             for<'a> &'a [T]: $trait,
         {
@@ -192,7 +191,7 @@ macro_rules! fpcs_with_x_parallel {
         where
             for<'a> &'a [Ty]: $trait,
             Tx: Num + FromPrimitive + AsPrimitive<f64> + Send + Sync,
-            Ty: Num + Copy + PartialOrd + Send + Sync + Debug,
+            Ty: Num + Copy + PartialOrd + Send + Sync,
         {
             // collect the parrallel iterator to a vector
             fpcs_generic(x, y, n_out, $f_argminmax, $f_fpcs_inner_comp)
@@ -217,7 +216,7 @@ fpcs_with_x_parallel!(
 
 macro_rules! fpcs_without_x_parallel {
     ($func_name:ident, $trait:path, $f_argminmax:expr, $f_fpcs_inner_comp:expr) => {
-        pub fn $func_name<Ty: Copy + PartialOrd + Send + Sync + Debug>(
+        pub fn $func_name<Ty: Copy + PartialOrd + Send + Sync>(
             arr: &[Ty],
             n_out: usize,
         ) -> Vec<usize>
@@ -248,7 +247,7 @@ fpcs_without_x_parallel!(
 // ----------- WITH X
 
 #[inline(always)]
-pub(crate) fn fpcs_generic<Tx: Num + AsPrimitive<f64>, Ty: PartialOrd + Copy + Debug>(
+pub(crate) fn fpcs_generic<Tx: Num + AsPrimitive<f64>, Ty: PartialOrd + Copy>(
     x: &[Tx],
     y: &[Ty],
     n_out: usize,
@@ -264,7 +263,7 @@ pub(crate) fn fpcs_generic<Tx: Num + AsPrimitive<f64>, Ty: PartialOrd + Copy + D
 // ----------- WITHOUT X
 
 #[inline(always)]
-pub(crate) fn fpcs_generic_without_x<Ty: PartialOrd + Copy + Debug>(
+pub(crate) fn fpcs_generic_without_x<Ty: PartialOrd + Copy>(
     arr: &[Ty],
     n_out: usize,
     f_minmax: fn(&[Ty], usize) -> Vec<usize>,
