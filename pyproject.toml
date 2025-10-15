@@ -40,8 +40,10 @@ module-name = "tsdownsample._rust._tsdownsample_rs" # The path to place the comp
 
 # Linting
 [tool.ruff]
-select = ["E", "F", "I"]
 line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
 extend-select = ["Q"]
 ignore = ["E402", "F403"]
 
