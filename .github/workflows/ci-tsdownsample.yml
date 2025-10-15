@@ -46,7 +46,7 @@ jobs:
       matrix:
         os: ['windows-latest', 'macOS-latest', 'ubuntu-latest']
         rust: ['nightly']  # ['stable', 'beta']
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', "3.13"]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', "3.13", "3.14"]
     
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -155,7 +155,7 @@ jobs:
         target: ${{ matrix.target }}
         manylinux: ${{ matrix.manylinux || 'auto' }}
         container: ${{ matrix.container }}
-        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13' }}
+        args: --release --out dist --interpreter ${{ matrix.interpreter || '3.8 3.9 3.10 3.11 3.12 3.13 3.14' }}
 
     - run: ${{ matrix.ls || 'ls -lh' }} dist/
 
