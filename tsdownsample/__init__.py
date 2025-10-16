@@ -2,10 +2,12 @@
 
 from .downsamplers import (
     EveryNthDownsampler,
+    FPCSDownsampler,
     LTTBDownsampler,
     M4Downsampler,
     MinMaxDownsampler,
     MinMaxLTTBDownsampler,
+    NaNFPCSDownsampler,
     NaNM4Downsampler,
     NaNMinMaxDownsampler,
     NaNMinMaxLTTBDownsampler,
@@ -16,10 +18,12 @@ __author__ = "Jeroen Van Der Donckt"
 
 __all__ = [
     "EveryNthDownsampler",
+    "FPCSDownsampler",
     "MinMaxDownsampler",
     "M4Downsampler",
     "LTTBDownsampler",
     "MinMaxLTTBDownsampler",
+    "NaNFPCSDownsampler",
     "NaNMinMaxDownsampler",
     "NaNM4Downsampler",
     "NaNMinMaxLTTBDownsampler",

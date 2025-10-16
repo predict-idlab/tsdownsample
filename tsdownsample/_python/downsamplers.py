@@ -1,4 +1,6 @@
-from typing import Union
+from abc import ABC
+from enum import Enum
+from typing import NamedTuple, Union
 
 import numpy as np
 
@@ -76,8 +78,8 @@ class LTTB_py(AbstractDownsampler):
 
         # Construct the output array
         sampled_x = np.empty(n_out, dtype="int64")
+        # Add the first point
         sampled_x[0] = 0
-        sampled_x[-1] = x.shape[0] - 1
 
         # Convert x & y to int if it is boolean
         if x.dtype == np.bool_:
@@ -91,7 +93,17 @@ class LTTB_py(AbstractDownsampler):
                 LTTB_py._argmax_area(
                     prev_x=x[a],
                     prev_y=y[a],
-                    avg_next_x=np.mean(x[offset[i + 1] : offset[i + 2]]),
+                    # NOTE: In a 100% correct implementation of LTTB the next x average
+                    # should be implemented as the following:
+                    # avg_next_x=np.mean(x[offset[i + 1] : offset[i + 2]]),
+                    # To improve performance we use the following approximation
+                    # which is the average of the first and last point of the next bucket
+                    # NOTE: this is not as accurate when x is not sampled equidistant
+                    # or when the buckets do not contain tht much data points, but it:
+                    # (1) aligns with visual perception (visual middle)
+                    # (2) is much faster
+                    # (3) is how the LTTB rust implementation works
+                    avg_next_x=(x[offset[i + 1]] + x[offset[i + 2] - 1]) / 2.0,
                     avg_next_y=y[offset[i + 1] : offset[i + 2]].mean(),
                     x_bucket=x[offset[i] : offset[i + 1]],
                     y_bucket=y[offset[i] : offset[i + 1]],
@@ -113,6 +125,8 @@ class LTTB_py(AbstractDownsampler):
             )
             + offset[-2]
         )
+        # Always include the last point
+        sampled_x[-1] = x.shape[0] - 1
         return sampled_x
 
 
@@ -255,3 +269,150 @@ class NaNM4_py(AbstractDownsampler):
 
         # NOTE: we do not use the np.unique so that all indices are retained
         return np.array(sorted(rel_idxs))
+
+
+class _MinMaxLTTB_py(AbstractDownsampler, ABC):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler: AbstractDownsampler = None
+        self.lttb_downsampler: AbstractDownsampler = None
+
+    def _downsample(self, x, y, n_out, **kwargs):
+        minmax_ratio = kwargs.get("minmax_ratio", 4)
+        kwargs.pop("minmax_ratio", None)  # remove the minmax_ratio from kwargs
+
+        # Is fine for this implementation as this is only used for testing
+        if x is None:
+            x = np.arange(y.shape[0])
+
+        n_1 = len(x) - 1
+        idxs = self.minmax_downsampler.downsample(
+            x[1:n_1], y[1:n_1], n_out=n_out * minmax_ratio, **kwargs
+        )
+        idxs += 1
+        idxs = np.concat(([0], idxs, [len(y) - 1])).ravel()
+        return idxs[
+            self.lttb_downsampler.downsample(x[idxs], y[idxs], n_out=n_out, **kwargs)
+        ]
+
+
+class MinMaxLTTB_py(_MinMaxLTTB_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = MinMax_py()
+        self.lttb_downsampler = LTTB_py()
+
+
+class NaNMinMaxLTTB_py(_MinMaxLTTB_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = NaNMinMax_py()
+        self.lttb_downsampler = LTTB_py()
+
+
+class _FPCS_py(AbstractDownsampler, ABC):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler: AbstractDownsampler = None
+
+    def _downsample(
+        self, x: Union[np.ndarray, None], y: np.ndarray, n_out: int, **kwargs
+    ) -> np.ndarray:
+        # fmt: off
+        # ------------------------- Helper datastructures -------------------------
+        class Flag(Enum):
+            NONE = -1   # -1: no data points have been retained
+            MAX = 0     #  0: a max has been retained
+            MIN = 1     #  1: a min has been retained
+
+        Point = NamedTuple("point", [("x", int), ("y", y.dtype)])
+        # ------------------------------------------------------------------------
+
+        # NOTE: is fine for this implementation as this is only used for testing
+        if x is None:
+            # Is fine for this implementation as this is only used for testing
+            x = np.arange(y.shape[0])
+
+        # 0. Downsample the data using the MinMax algorithm
+        MINMAX_FACTOR = 2
+        n_1 = len(x) - 1
+        # NOTE: as we include the first and last point, we reduce the number of points
+        downsampled_idxs = self.minmax_downsampler.downsample(
+            x[1:n_1], y[1:n_1], n_out=(n_out - 2) * MINMAX_FACTOR
+        )
+        downsampled_idxs += 1
+
+        previous_min_flag: Flag = Flag.NONE
+        potential_point = Point(0, 0)
+        max_point = Point(0, y[0])
+        min_point = Point(0, y[0])
+
+        sampled_indices = []
+        sampled_indices.append(0)  # prepend the first point
+        for i in range(0, len(downsampled_idxs), 2):
+            # get the min and max indices and convert them to the correct order
+            min_idx, max_idxs = downsampled_idxs[i], downsampled_idxs[i + 1]
+            if y[min_idx] > y[max_idxs]:
+                min_idx, max_idxs = max_idxs, min_idx
+            bin_min = Point(min_idx, y[min_idx])
+            bin_max = Point(max_idxs, y[max_idxs])
+
+            # Use the (nan-aware) comparison function to update the min and max points
+            # As comparisons with NaN always return False, we inverted the comparison
+            # the (inverted) > and <= stem from the pseudo code details in the paper
+            if not (max_point.y > bin_max.y):
+                max_point = bin_max
+            if not (min_point.y <= bin_min.y):
+                min_point = bin_min
+
+            # if the min is to the left of the max
+            if min_point.x < max_point.x:
+                # if the min was not selected in the previous bin
+                if previous_min_flag == Flag.MIN and min_point.x != potential_point.x:
+                    # Both adjacent samplings retain MinPoint, and PotentialPoint and
+                    # MinPoint are not the same point
+                    sampled_indices.append(potential_point.x)
+
+                sampled_indices.append(min_point.x)  # receiving min_point b4 max_point -> retain min_point
+                potential_point = max_point  # update potential point to unselected max_point
+                min_point = max_point  # update min_point to unselected max_point
+                previous_min_flag = Flag.MIN  # min_point has been selected
+
+            else:
+                if previous_min_flag == Flag.MAX and max_point.x != potential_point.x:
+                    # # Both adjacent samplings retain MaxPoint, and PotentialPoint and
+                    # MaxPoint are not the same point
+                    sampled_indices.append(potential_point.x)
+
+                sampled_indices.append(max_point.x) # receiving max_point b4 min_point -> retain max_point
+                potential_point = min_point  # update potential point to unselected min_point
+                max_point = min_point  # update max_point to unselected min_point
+                previous_min_flag = Flag.MAX  # max_point has been selected
+
+        sampled_indices.append(len(y) - 1)  # append the last point
+        # fmt: on
+        return np.array(sampled_indices, dtype=np.int64)
+
+
+class FPCS_py(_FPCS_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = MinMax_py()
+
+
+class NaNFPCS_py(_FPCS_py):
+    def __init__(
+        self, check_contiguous=True, x_dtype_regex_list=None, y_dtype_regex_list=None
+    ):
+        super().__init__(check_contiguous, x_dtype_regex_list, y_dtype_regex_list)
+        self.minmax_downsampler = NaNMinMax_py()

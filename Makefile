@@ -49,11 +49,12 @@ all: lint mypy test
 
 .PHONY: clean
 clean:
-	rm -rf `find . -name __pycache__`
-	rm -f `find . -type f -name '*.py[co]' `
-	rm -f `find . -type f -name '*~' `
-	rm -f `find . -type f -name '.*~' `
-	rm -f `find . -type f -name '*.cpython-*' `
+	# TODO -> this kinda wipes a lot of stuff in the python environment, maybe we should be more specific
+	rm -rf `find . -name __pycache__ -not -path "./.venv/*"`
+	rm -f `find . -type f -name '*.py[co]' -not -path "./.venv/*"`
+	rm -f `find . -type f -name '*~' -not -path "./.venv/*"`
+	rm -f `find . -type f -name '.*~' -not -path "./.venv/*"`
+	rm -f `find . -type f -name '*.cpython-*' -not -path "./.venv/*"`
 	rm -rf dist
 	rm -rf build
 	rm -rf target

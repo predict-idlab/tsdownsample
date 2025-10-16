@@ -11,6 +11,8 @@ pub mod minmaxlttb;
 pub use minmaxlttb::*;
 pub mod m4;
 pub use m4::*;
+pub mod fpcs;
+pub use fpcs::*;
 pub(crate) mod helpers;
 pub(crate) mod searchsorted;
 pub(crate) mod types;

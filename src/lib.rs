@@ -423,6 +423,52 @@ fn minmaxlttb(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 
+// --------------------------------------- FPCS ---------------------------------------
+
+use downsample_rs::fpcs as fpcs_mod;
+
+// Create a sub module for the FPCS algorithm
+#[pymodule]
+fn fpcs(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    // ----------------- SEQUENTIAL
+
+    let sequential_mod = PyModule::new_bound(_py, "sequential")?;
+
+    // ----- WITHOUT X
+    {
+        create_pyfuncs_without_x!(fpcs_mod, fpcs_without_x, sequential_mod);
+        create_pyfuncs_without_x!(@nan fpcs_mod, fpcs_without_x_nan, sequential_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(fpcs_mod, fpcs_with_x, sequential_mod);
+        create_pyfuncs_with_x!(@nan fpcs_mod, fpcs_with_x_nan, sequential_mod);
+    }
+
+    // ----------------- PARALLEL
+
+    let parallel_mod = PyModule::new_bound(_py, "parallel")?;
+
+    // ----- WITHOUT X
+    {
+        create_pyfuncs_without_x!(fpcs_mod, fpcs_without_x_parallel, parallel_mod);
+        create_pyfuncs_without_x!(@nan fpcs_mod, fpcs_without_x_parallel_nan, parallel_mod);
+    }
+
+    // ----- WITH X
+    {
+        create_pyfuncs_with_x!(fpcs_mod, fpcs_with_x_parallel, parallel_mod);
+        create_pyfuncs_with_x!(@nan fpcs_mod, fpcs_with_x_parallel_nan, parallel_mod);
+    }
+
+    // Add the sub modules to the module
+    m.add_submodule(&sequential_mod)?;
+    m.add_submodule(&parallel_mod)?;
+
+    Ok(())
+}
+
 // ------------------------------- DOWNSAMPLING MODULE ------------------------------ //
 
 #[pymodule] // The super module
@@ -432,6 +478,7 @@ fn tsdownsample(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_wrapped(wrap_pymodule!(m4))?;
     m.add_wrapped(wrap_pymodule!(lttb))?;
     m.add_wrapped(wrap_pymodule!(minmaxlttb))?;
+    m.add_wrapped(wrap_pymodule!(fpcs))?;
 
     Ok(())
 }
