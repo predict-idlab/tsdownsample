@@ -1,10 +1,9 @@
+import tsdownsample._rust._tsdownsample_rs as tsds_rs
 from test_config import (
     rust_primitive_types_x,
     rust_primitive_types_y,
     rust_primitive_types_y_nan,
 )
-
-import tsdownsample._rust._tsdownsample_rs as tsds_rs
 
 
 def _test_rust_mod_correctly_build(mod, sub_mods, has_x_impl: bool):
