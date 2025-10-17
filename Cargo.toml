@@ -11,8 +11,8 @@ license = "MIT"
 downsample_rs = { path = "downsample_rs", features = ["half"]}
 pyo3 = { version = "0.26", features = ["extension-module"] }
 numpy = { version = "0.26", features = ["half"] }
-half = { version = "2.3.1", default-features = false }
-paste = { version = "1.0.14", default-features = false }
+half = { version = "2.6", default-features = false }
+paste = { version = "1.0", default-features = false }
 
 [lib]
 name = "tsdownsample"
