@@ -6,5 +6,6 @@ edition = "2021"
 description = "Shared utilities for development (tests & benchmarks)"
 
 [dependencies]
-rand = { version = "0.7.2", default-features = false }
-rand_distr = { version = "0.2.2", default-features = false }
+num-traits = { version = "0.2", default-features = false }
+half = { version = "2.7", default-features = false, features = ["num-traits", "rand_distr"] }
+rand = { version = "0.9", default-features = false }
