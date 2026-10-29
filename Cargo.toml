@@ -9,8 +9,8 @@ license = "MIT"
 
 [dependencies]
 downsample_rs = { path = "downsample_rs", features = ["half"]}
-pyo3 = { version = "0.28", features = ["extension-module", "generate-import-lib"] }
-numpy = { version = "0.28", features = ["half"] }
+pyo3 = { version = "0.29", features = ["extension-module", "generate-import-lib"] }
+numpy = { version = "0.29", features = ["half"] }
 half = { version = "2.7.1", default-features = false }
 paste = { version = "1.0.15", default-features = false }
 
